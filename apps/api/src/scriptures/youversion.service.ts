@@ -1,9 +1,29 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
-import { bibleBookName, formatBibleReference, parseBibleReference, passageHeldKey, usfmBookId, type PassageChapter, type SetItemPassage } from "@oneverse/core";
+import { createHash } from "node:crypto";
+import { bibleBookName, formatBibleReference, parseBibleReference, passageHeldKey, referenceFromUsfm, usfmBookId, type BibleReference, type BookNames, type PassageChapter, type SetItemPassage } from "@oneverse/core";
 import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { redis } from "../jobs/redis.js";
-import { cacheFreshness, youVersionBibleById, youVersionBibles, youVersionPassage, youVersionPiece, withoutBooks, YouVersionApiError, type Fetcher, type YouVersionBible, type YouVersionBibleBooks, type YouVersionPassagePart, type YouVersionPiece } from "./youversion-api.js";
+import {
+  cacheFreshness,
+  youVersionBibleById,
+  youVersionBibles,
+  youVersionBooks,
+  youVersionPassage,
+  youVersionPiece,
+  youVersionSearch,
+  withoutBooks,
+  YouVersionApiError,
+  type Fetcher,
+  type YouVersionBible,
+  type YouVersionBibleBooks,
+  type YouVersionBook,
+  type YouVersionPassagePart,
+  type YouVersionPiece,
+  type YouVersionSearchAnswer,
+  type YouVersionSearchIntent,
+  type YouVersionSearchTopic,
+} from "./youversion-api.js";
 
 export interface YouVersionSettings {
   /** Where the App Key comes from: the database's, YOUVERSION_APP_KEY, or none (YouVersion off). */
@@ -16,6 +36,11 @@ export interface YouVersionSettings {
 
 /** Where kept passages are in Redis (issue #485): never in the database, so never in a backup. */
 const CACHE_PREFIX = "oneverse:youversion:passage:";
+/** The page after search-unified's top verses (issue #507): search-verses' first. */
+const MORE = "more";
+
+/** Where kept search answers are (issue #507), kept as their Cache-Control allows too. */
+const SEARCH_PREFIX = "oneverse:youversion:search:";
 
 /** YOUVERSION_CACHE: "off" (or false, 0, no) turns keeping off, "on" (true, 1, yes) on; anything else, null - the default. */
 function envCache(): boolean | null {
@@ -61,6 +86,11 @@ export interface YouVersionRights {
   export: false;
 }
 
+/** A version's names for its books, abbreviations too, to read a reference written with them (issue #507). */
+function bookNames(books: YouVersionBook[]): BookNames {
+  return books.map((one) => ({ number: one.number, names: one.abbreviation ? [one.name, one.abbreviation] : [one.name] }));
+}
+
 /** How long a version's name and attribution are kept in memory: its details, never its text. */
 const VERSION_TTL_MS = 60 * 60 * 1000;
 
@@ -78,6 +108,22 @@ function chaptersOf(book: number, parts: YouVersionPassagePart[]): PassageChapte
     into.verses.push({ number, ...(Number.isInteger(to) && to! > number && { endNumber: to }), text: part.text });
   }
   return chapters;
+}
+
+/** A verse a search found (issue #507): its USFM id, and its reference with the version's own book names. */
+export interface YouVersionSearchVerse {
+  id: string;
+  reference: string;
+}
+
+/** A search's answer as clients get it (issue #507): verses as references - never their text - topics, and what YouVersion made of the query. */
+export interface YouVersionSearchResult {
+  verses: YouVersionSearchVerse[];
+  topics: YouVersionSearchTopic[];
+  userIntent: YouVersionSearchAnswer["userIntent"];
+  didYouMean: string[];
+  searchInsteadFor: string | null;
+  next: string | null;
 }
 
 export interface YouVersionPassage {
@@ -184,12 +230,14 @@ export class YouVersionService {
   /** Every kept passage removed (issue #485): keeping turned off, or another App Key whose licences may differ. */
   async forget(): Promise<void> {
     try {
-      let cursor = "0";
-      do {
-        const [next, keys] = await redis().scan(cursor, "MATCH", `${CACHE_PREFIX}*`, "COUNT", 500);
-        cursor = next;
-        if (keys.length) await redis().del(...keys);
-      } while (cursor !== "0");
+      for (const prefix of [CACHE_PREFIX, SEARCH_PREFIX]) {
+        let cursor = "0";
+        do {
+          const [next, keys] = await redis().scan(cursor, "MATCH", `${prefix}*`, "COUNT", 500);
+          cursor = next;
+          if (keys.length) await redis().del(...keys);
+        } while (cursor !== "0");
+      }
     } catch (err) {
       this.logger.warn(`YouVersion's kept passages couldn't be removed: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -236,14 +284,85 @@ export class YouVersionService {
    * info - a version out of copyright has no line to show), written as the
    * version's language writes it (books named in French for a French one).
    */
-  async passage(bibleId: number, text: string, locale?: "en" | "fr"): Promise<YouVersionPassage> {
+  async passage(bibleId: number, text: string): Promise<YouVersionPassage> {
     const appKey = await this.requireKey();
-    const reference = parseBibleReference(text);
-    if (!reference) throw new BadRequestException(["reference must be a passage of one book, like John 3:16-18"]);
-    if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
+    const reference = await this.readReference(bibleId, appKey, text);
     const bible = withoutBooks(await this.asked(() => this.version(bibleId, appKey)));
     const { parts } = await this.asked(async () => youVersionPassage(bibleId, reference, appKey, this.ask, this.pieceAsker(bibleId, appKey, await this.caching())));
-    return { reference: formatBibleReference(reference, { locale: locale ?? (bible.languageTag.startsWith("fr") ? "fr" : "en") }), bible, parts, rights: { offline: false, projection: true, export: false } };
+    // Named as the version names the book (issue #507), when its books were asked for already.
+    const own = this.keptBooks(bibleId)?.find((one) => one.number === reference.book)?.name;
+    return { reference: formatBibleReference(reference, { locale: bible.languageTag.startsWith("fr") ? "fr" : "en", ...(own && { bookName: () => own }) }), bible, parts, rights: { offline: false, projection: true, export: false } };
+  }
+
+  /**
+   * A reference as people write it, in English, French or the version's own
+   * names for its books (issue #507: "Juan 3:16" in a Spanish version). The
+   * version's books are asked for only when the reference can't be read
+   * without them and they weren't asked for already.
+   */
+  private async readReference(bibleId: number, appKey: string, text: string): Promise<BibleReference> {
+    const kept = this.keptBooks(bibleId);
+    let reference = parseBibleReference(text, kept ? { books: bookNames(kept) } : {});
+    if (!reference && !kept) {
+      const books = await this.asked(() => this.booksOf(bibleId, appKey)).catch(() => null);
+      if (books) reference = parseBibleReference(text, { books: bookNames(books) });
+    }
+    if (!reference) throw new BadRequestException(["reference must be a passage of one book, like John 3:16-18"]);
+    if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
+    return reference;
+  }
+
+  /** A version's books as it names them, with each chapter's verses (issue #507): one request a version, kept as YouVersion allows. */
+  async books(bibleId: number): Promise<YouVersionBook[]> {
+    const appKey = await this.requireKey();
+    return this.asked(() => this.booksOf(bibleId, appKey));
+  }
+
+  /**
+   * A search in a version (issue #507): the top verses and related topics in
+   * one request, or the next page of verses (`page`). Verses come as
+   * references with the version's book names, never their text: each is
+   * read when it's picked. Answers kept as their Cache-Control allows.
+   */
+  async search(bibleId: number, ask: { query: string; language: string; intent?: YouVersionSearchIntent; page?: string }): Promise<YouVersionSearchResult> {
+    const appKey = await this.requireKey();
+    const caching = await this.caching();
+    // "more": search-verses from its first page, after search-unified's top verses; else its next page's token.
+    const params = { bibleId, query: ask.query.trim(), language: ask.language, intent: ask.intent ?? "unknown", ...(ask.page ? { pageToken: ask.page === MORE ? "" : ask.page, pageSize: 50 } : {}) };
+    const key = `${SEARCH_PREFIX}${bibleId}:${createHash("sha256").update(JSON.stringify(params).toLowerCase()).digest("hex").slice(0, 32)}`;
+    let answer: YouVersionSearchAnswer | null = null;
+    if (caching) {
+      const kept = await redis()
+        .get(key)
+        .catch(() => null);
+      try {
+        answer = kept ? (JSON.parse(kept) as YouVersionSearchAnswer) : null;
+      } catch {
+        answer = null;
+      }
+    }
+    if (!answer) {
+      const asked = await this.asked(() => youVersionSearch(params, appKey, this.ask));
+      answer = asked.answer;
+      if (caching && (asked.fresh.shared ?? 0) > 0) {
+        await redis()
+          .set(key, JSON.stringify(answer), "EX", asked.fresh.shared!)
+          .catch(() => undefined);
+      }
+    }
+    // Named as the version names its books; without them (YouVersion not answering), as its language does.
+    const books = await this.booksOf(bibleId, appKey).catch(() => null);
+    const bible = await this.version(bibleId, appKey).catch(() => null);
+    const locale = bible?.languageTag.startsWith("fr") ? "fr" : "en";
+    const verses: YouVersionSearchVerse[] = [];
+    for (const id of answer.verses) {
+      const reference = referenceFromUsfm(id);
+      if (!reference) continue;
+      const own = books?.find((one) => one.number === reference.book)?.name;
+      verses.push({ id, reference: formatBibleReference(reference, { locale, ...(own && { bookName: () => own }) }) });
+    }
+    const next = ask.page ? answer.nextPageToken : answer.verses.length > 0 ? MORE : null;
+    return { verses, topics: answer.topics, userIntent: answer.userIntent, didYouMean: answer.didYouMean, searchInsteadFor: answer.searchInsteadFor, next };
   }
 
   /**
@@ -253,9 +372,7 @@ export class YouVersionService {
    */
   async reference(bibleId: number, text: string): Promise<string> {
     const appKey = await this.requireKey();
-    const reference = parseBibleReference(text);
-    if (!reference) throw new BadRequestException(["reference must be a passage of one book, like John 3:16-18"]);
-    if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
+    const reference = await this.readReference(bibleId, appKey, text);
     const bible = await this.asked(() => this.version(bibleId, appKey));
     const book = usfmBookId(reference.book);
     if (bible.books && book && !bible.books.includes(book)) throw new NotFoundException(`YouVersion has no such passage or version: ${bible.abbreviation} has no ${bibleBookName(reference.book, "en")}`);
@@ -340,6 +457,34 @@ export class YouVersionService {
     // As long as its Cache-Control allows (issue #485); an hour when it says nothing.
     this.versions.set(bibleId, { bible, until: Date.now() + (fresh.shared === null ? VERSION_TTL_MS : fresh.shared * 1000) });
     return bible;
+  }
+
+  /**
+   * A version's books (issue #507), kept in memory as long as YouVersion's
+   * answer allows (an hour when it says nothing, as a version's details):
+   * names and verse counts, never text. The same version asked at once is
+   * asked once.
+   */
+  private readonly bookLists = new Map<number, { books: YouVersionBook[]; until: number }>();
+  private readonly askingBooks = new Map<number, Promise<YouVersionBook[]>>();
+  private keptBooks(bibleId: number): YouVersionBook[] | null {
+    const kept = this.bookLists.get(bibleId);
+    return kept && Date.now() < kept.until ? kept.books : null;
+  }
+  private booksOf(bibleId: number, appKey: string): Promise<YouVersionBook[]> {
+    const kept = this.keptBooks(bibleId);
+    if (kept) return Promise.resolve(kept);
+    const pending = this.askingBooks.get(bibleId);
+    if (pending) return pending;
+    const ask = youVersionBooks(bibleId, appKey, this.ask)
+      .then(({ books, fresh }) => {
+        const seconds = fresh.shared === null ? VERSION_TTL_MS / 1000 : fresh.shared;
+        if (seconds > 0) this.bookLists.set(bibleId, { books, until: Date.now() + seconds * 1000 });
+        return books;
+      })
+      .finally(() => this.askingBooks.delete(bibleId));
+    this.askingBooks.set(bibleId, ask);
+    return ask;
   }
 
   private async requireKey(): Promise<string> {

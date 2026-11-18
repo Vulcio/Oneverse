@@ -39,3 +39,21 @@ export const BibleUpdateSchema = z.strictObject({
 export const BiblePassageQuerySchema = z.strictObject({
   reference: z.string().trim().min(1).max(200),
 });
+
+/** What YouVersion's search looks for (issue #507): words in verses, a theme, a reference, or it works it out (unknown). */
+export const YOUVERSION_SEARCH_INTENTS = ["unknown", "text", "topical", "reference"] as const;
+
+/**
+ * A search in a YouVersion version (issue #507): the words (1-100
+ * characters, as YouVersion takes), the language topics are named in, and
+ * what is looked for; `page`: the next page of verses a search gave.
+ */
+export const YouVersionSearchQuerySchema = z.strictObject({
+  query: z.string().trim().min(1).max(100),
+  language: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/, "language must be a language tag, like en or fr"),
+  intent: optional(z.enum(YOUVERSION_SEARCH_INTENTS)),
+  page: optional(z.string().trim().min(1).max(1000)),
+});

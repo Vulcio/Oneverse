@@ -171,6 +171,44 @@ await api(admin, "PUT", "/admin/scriptures/youversion", { cache: false });
 await api(admin, "PUT", "/admin/scriptures/youversion", { cache: null });
 check("no per-version switch left", (await call(admin, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: true })).status === 404);
 
+// --- a version's books in its language, references written with them, and search (issue #507)
+r = await call(reader, "GET", "/scriptures/youversion/bibles?language=es");
+check("a Spanish version, in Spanish", r.status === 200 && r.body.length === 1 && r.body[0].id === 128, JSON.stringify(r.body));
+const books = youversionKey.books;
+r = await call(reader, "GET", "/scriptures/youversion/bibles/128/books");
+check("its books as it names them, each chapter's verses counted, intros left out", r.status === 200 && r.body[0]?.name === "Juan" && r.body[0].abbreviation === "Jn" && r.body[0].verses.length === 21 && r.body[0].verses[2] === 36, JSON.stringify(r.body?.[0] ?? r.body).slice(0, 300));
+await call(reader, "GET", "/scriptures/youversion/bibles/128/books");
+check("…asked of YouVersion once a version", youversionKey.books - books <= 1, String(youversionKey.books - books));
+r = await call(reader, "GET", `/scriptures/youversion/bibles/128/passage?${new URLSearchParams({ reference: "Juan 3:16" })}`);
+check("a passage written with its names is read, and named with them", r.status === 200 && r.body.reference === "Juan 3:16" && r.body.parts[0]?.text === "VPE text of John 3:16.", JSON.stringify(r.body).slice(0, 300));
+r = await call(reader, "GET", `/scriptures/youversion/bibles/3034/passage?${new URLSearchParams({ reference: "Juan 3:16" })}`);
+check("…not in a version whose names they aren't", r.status === 400, String(r.status));
+r = await call(reader, "GET", `/scriptures/youversion/bibles/128/search?${new URLSearchParams({ query: "lvoe", language: "es" })}`);
+check(
+  "a search: verses as references with the version's names, topics, the corrected query and suggestions",
+  r.status === 200 && JSON.stringify(r.body.verses) === JSON.stringify([{ id: "JHN.3.16", reference: "Juan 3:16" }, { id: "JHN.3.17", reference: "Juan 3:17" }]) && r.body.topics[0]?.text === "love" && r.body.searchInsteadFor === "love" && r.body.didYouMean[0] === "love" && r.body.userIntent === "topical" && r.body.next === "more",
+  JSON.stringify(r.body),
+);
+check("…in one request, with no images", youversionKey.searches.at(-1)?.startsWith("search-unified?") && !youversionKey.searches.at(-1).includes("images"), youversionKey.searches.at(-1));
+r = await call(reader, "GET", `/scriptures/youversion/bibles/128/search?${new URLSearchParams({ query: "lvoe", language: "es", intent: "text", page: r.body.next })}`);
+check("more verses: search-verses' first page", r.status === 200 && r.body.verses.some((one) => one.id === "JHN.3.18") && r.body.next === null && youversionKey.searches.at(-1).startsWith("search-verses?"), JSON.stringify(r.body));
+r = await call(reader, "GET", `/scriptures/youversion/bibles/128/search?${new URLSearchParams({ query: "x".repeat(101), language: "es" })}`);
+check("a search is 100 characters at most", r.status === 400, String(r.status));
+r = await call(reader, "GET", `/scriptures/youversion/bibles/4242/search?${new URLSearchParams({ query: "love", language: "en" })}`);
+check("a version this App Key can't use: not found", r.status === 404, String(r.status));
+youversionKey.cacheControl = "public, max-age=600";
+let searches = youversionKey.searches.length;
+await call(reader, "GET", `/scriptures/youversion/bibles/3034/search?${new URLSearchParams({ query: "peace", language: "en" })}`);
+await call(reader, "GET", `/scriptures/youversion/bibles/3034/search?${new URLSearchParams({ query: "peace", language: "en" })}`);
+check("an answer kept as its Cache-Control allows: asked once", youversionKey.searches.length - searches === 1, String(youversionKey.searches.length - searches));
+youversionKey.cacheControl = null;
+searches = youversionKey.searches.length;
+await call(reader, "GET", `/scriptures/youversion/bibles/3034/search?${new URLSearchParams({ query: "grace", language: "en" })}`);
+await call(reader, "GET", `/scriptures/youversion/bibles/3034/search?${new URLSearchParams({ query: "grace", language: "en" })}`);
+check("…and asked again when it says nothing", youversionKey.searches.length - searches === 2, String(youversionKey.searches.length - searches));
+const added = await call(reader, "POST", `/setlists/${set.id}/items`, { passage: { youversionId: 128, reference: "Juan 3:16" } });
+check("into a set: kept as the server reads it in any language", added.status === 201 && added.body.items?.some((item) => item.passage?.youversionId === 128 && item.passage.reference === "John 3:16"), `${added.status} ${JSON.stringify(added.body).slice(0, 300)}`);
+
 // --- a refused key, a spent one, then back to the environment (none here)
 await api(admin, "PUT", "/admin/scriptures/youversion", { appKey: "yvp-another-app-key-987654" });
 r = await call(admin, "POST", "/admin/scriptures/youversion/test");

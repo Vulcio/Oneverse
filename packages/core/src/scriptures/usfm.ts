@@ -59,3 +59,20 @@ export function usfmChapterParts(reference: BibleReference): UsfmChapterPart[] |
 export function usfmPassageId(book: string, chapter: number, verse?: number): string {
   return verse === undefined ? `${book}.${chapter}` : `${book}.${chapter}.${verse}`;
 }
+
+/**
+ * A USFM passage id as a reference (issue #507, YouVersion's search answers
+ * with them): "JHN.3.16", "1CO.13.4-8", "PSA.23". Null for a book USFM's
+ * list doesn't have, or anything else.
+ */
+export function referenceFromUsfm(id: string): BibleReference | null {
+  const found = /^([0-9A-Z]{3})\.(\d+)(?:\.(\d+)(?:-(\d+))?)?$/i.exec(id.trim());
+  if (!found) return null;
+  const book = bibleBookByUsfm(found[1]!);
+  if (!book) return null;
+  const chapter = Number(found[2]);
+  const from = found[3] === undefined ? null : Number(found[3]);
+  const to = found[4] === undefined ? from : Math.max(Number(found[4]), from!);
+  if (chapter < 1 || from === 0) return null;
+  return { book, ranges: [{ start: { chapter, verse: from }, end: { chapter, verse: to } }] };
+}

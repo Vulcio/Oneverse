@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { BIBLE_BOOKS, bibleBookByOsisId, bibleBookChapters, bibleTestament, bookKey, findBibleBook } from "../scriptures/books.js";
+import { BIBLE_BOOKS, bibleBookByOsisId, bibleBookChapters, bibleBookVerses, bibleTestament, bookKey, findBibleBook } from "../scriptures/books.js";
 import { BibleSchema, bibleCounts, tidyBible, type Bible } from "../scriptures/bible.js";
 import { formatBibleReference, parseBibleReference, parseBibleReferences, passageVerses } from "../scriptures/references.js";
-import { bibleBookByUsfm, usfmBookId, usfmChapterParts, usfmPassageId } from "../scriptures/usfm.js";
+import { bibleBookByUsfm, referenceFromUsfm, usfmBookId, usfmChapterParts, usfmPassageId } from "../scriptures/usfm.js";
 
 describe("books", () => {
   it("every name and abbreviation means one book", () => {
@@ -212,5 +212,56 @@ describe("bibleBookChapters and bibleTestament (issue #310)", () => {
 
   it("puts each book in its testament", () => {
     expect([1, 39, 40, 66, 67].map(bibleTestament)).toEqual(["old", "old", "new", "new", "deuterocanon"]);
+  });
+});
+
+describe("a version's own book names (issue #507)", () => {
+  const spanish = [
+    { number: 43, names: ["Juan", "Jn"] },
+    { number: 62, names: ["1 Juan", "1 Jn"] },
+    { number: 19, names: ["Salmos", "Sal"] },
+  ];
+  const chinese = [{ number: 43, names: ["约翰福音", "约"] }];
+  const hindi = [{ number: 43, names: ["यूहन्ना"] }];
+
+  it("reads a reference written with them", () => {
+    expect(parseBibleReference("Juan 3:16", { books: spanish })).toEqual({ book: 43, ranges: [{ start: { chapter: 3, verse: 16 }, end: { chapter: 3, verse: 16 } }] });
+    expect(parseBibleReference("1 Juan 4:8", { books: spanish })?.book).toBe(62);
+    expect(parseBibleReference("Salmos 23", { books: spanish })?.book).toBe(19);
+    expect(parseBibleReference("Salm 23", { books: spanish })?.book).toBe(19);
+    expect(parseBibleReference("约翰福音 3:16", { books: chinese })?.book).toBe(43);
+    expect(parseBibleReference("यूहन्ना 3:16", { books: hindi })?.book).toBe(43);
+  });
+
+  it("keeps reading English and French names, and nothing new without them", () => {
+    expect(parseBibleReference("John 3:16", { books: spanish })?.book).toBe(43);
+    expect(parseBibleReference("Jean 3.16", { books: spanish })?.book).toBe(43);
+    expect(parseBibleReference("Salmos 23")).toBeNull();
+  });
+
+  it("reads a USFM passage id as a reference", () => {
+    expect(referenceFromUsfm("JHN.3.16")).toEqual({ book: 43, ranges: [{ start: { chapter: 3, verse: 16 }, end: { chapter: 3, verse: 16 } }] });
+    expect(referenceFromUsfm("1CO.13.4-8")).toEqual({ book: 46, ranges: [{ start: { chapter: 13, verse: 4 }, end: { chapter: 13, verse: 8 } }] });
+    expect(referenceFromUsfm("PSA.23")).toEqual({ book: 19, ranges: [{ start: { chapter: 23, verse: null }, end: { chapter: 23, verse: null } }] });
+    expect(referenceFromUsfm("XYZ.1.1")).toBeNull();
+    expect(referenceFromUsfm("John 3:16")).toBeNull();
+  });
+});
+
+describe("bibleBookVerses (issue #507)", () => {
+  it("counts every chapter's verses, as English Bibles number them: 31,102 in all", () => {
+    let chapters = 0;
+    let verses = 0;
+    for (let book = 1; book <= 66; book++) {
+      const counts = bibleBookVerses(book)!;
+      expect(counts).toHaveLength(bibleBookChapters(book)!);
+      chapters += counts.length;
+      verses += counts.reduce((a, b) => a + b, 0);
+    }
+    expect(chapters).toBe(1189);
+    expect(verses).toBe(31102);
+    expect(bibleBookVerses(19)![118]).toBe(176);
+    expect(bibleBookVerses(43)![2]).toBe(36);
+    expect(bibleBookVerses(70)).toBeUndefined();
   });
 });

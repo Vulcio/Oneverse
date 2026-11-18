@@ -55,7 +55,7 @@ import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
 import type { CreateLocationRequest, UpdateLocationRequest } from "../requests/locations.js";
 import type { z } from "zod";
-import type { BibleUpdateSchema } from "../requests/scriptures.js";
+import type { BibleUpdateSchema, YouVersionSearchQuerySchema } from "../requests/scriptures.js";
 import type { SetItemPassage } from "../screens/index.js";
 import type { BibleSourceFormat } from "../scriptures/bible.js";
 import type { PassageChapter } from "../scriptures/references.js";
@@ -2400,6 +2400,47 @@ export interface YouVersionPassage {
   rights: { offline: boolean; projection: boolean; export: boolean };
 }
 
+/**
+ * A version's book as the version names it (issue #507): its name and
+ * abbreviation in the version's language, and each chapter's verses (index
+ * 0: chapter 1) - for an imported Bible, what its file has; for YouVersion's,
+ * what YouVersion lists.
+ */
+export interface BibleVersionBook {
+  number: number;
+  name: string;
+  abbreviation: string | null;
+  verses: number[];
+}
+
+/** A verse YouVersion's search found (issue #507): its USFM id ("JHN.3.16", "1CO.13.4-8") and its reference as the version names its books - never its text. */
+export interface YouVersionSearchVerse {
+  id: string;
+  reference: string;
+}
+
+/** A topic YouVersion relates to a search: a theme to search for in turn, with narrower ones. */
+export interface YouVersionSearchTopic {
+  id: number | null;
+  text: string;
+  subtopics: string[];
+}
+
+/**
+ * What a search in a YouVersion version found (issue #507): verses (as
+ * references, read one at a time), related topics, and what YouVersion made
+ * of the query - its intent, spellings it suggests, and the corrected query
+ * it searched instead, if it did. `next`: the next page of verses, if any.
+ */
+export interface YouVersionSearchResult {
+  verses: YouVersionSearchVerse[];
+  topics: YouVersionSearchTopic[];
+  userIntent: "unknown" | "text" | "topical" | "reference" | null;
+  didYouMean: string[];
+  searchInsteadFor: string | null;
+  next: string | null;
+}
+
 /** What an imported Bible may be used for beyond being read (issue #301): the admin's to say, off until then. */
 export interface BibleRights {
   projection: boolean;
@@ -3644,7 +3685,14 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getYouVersionPassage: (bibleId: number, reference: string) =>
       request<YouVersionPassage>(`/scriptures/youversion/bibles/${bibleId}/passage?${new URLSearchParams({ reference })}`),
     /** Bibles imported from files (issue #301): those anyone can read, and a passage of one. */
+    /** A YouVersion version's books as it names them, with each chapter's verses (issue #507). */
+    getYouVersionBooks: (bibleId: number) => request<BibleVersionBook[]>(`/scriptures/youversion/bibles/${bibleId}/books`),
+    /** A search in a YouVersion version (issue #507): verses and topics; with `page`, the next page of verses. */
+    searchYouVersion: (bibleId: number, search: z.input<typeof YouVersionSearchQuerySchema>) =>
+      request<YouVersionSearchResult>(`/scriptures/youversion/bibles/${bibleId}/search?${new URLSearchParams(Object.entries(search).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1] !== ""))}`),
     listBibles: () => request<ImportedBible[]>("/scriptures/bibles"),
+    /** An imported Bible's books as its file names them, with each chapter's verses (issue #507). */
+    getBibleBooks: (bibleId: string) => request<BibleVersionBook[]>(`/scriptures/bibles/${encodeURIComponent(bibleId)}/books`),
     getBiblePassage: (bibleId: string, reference: string) =>
       request<BiblePassage>(`/scriptures/bibles/${encodeURIComponent(bibleId)}/passage?${new URLSearchParams({ reference })}`),
     /** The admin's: every imported Bible, a file to import (by the Worker), its details and rights, deleting one. */

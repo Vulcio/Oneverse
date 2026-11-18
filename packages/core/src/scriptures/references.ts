@@ -4,7 +4,7 @@
  * written back, and resolved against a translation. A set holds a passage
  * as a reference and a translation, never a copy of its text.
  */
-import { bibleBook, bibleBookName, findBibleBook, type BibleBookLocale } from "./books.js";
+import { bibleBook, bibleBookName, findBibleBook, type BibleBookLocale, type BookNames } from "./books.js";
 import type { Bible, BibleVerse } from "./bible.js";
 
 /** A place in a book: a chapter, and a verse or none (the whole chapter). */
@@ -27,7 +27,7 @@ export interface BibleReference {
 
 const DASH = /\s*[-–—]\s*/;
 // A book, then what's after it: "1 John 3:16", "1Jn3.16", "Song of Songs 2".
-const BOOK_AND_REST = /^\s*((?:[1-3]|i{1,3})?\s*\p{L}[\p{L}\s.'’]*?)\.?\s*(\d[\d\s:.,;\-–—]*)?\s*$/iu;
+const BOOK_AND_REST = /^\s*((?:[1-3]|i{1,3})?\s*\p{L}[\p{L}\p{M}\s.'’]*?)\.?\s*(\d[\d\s:.,;\-–—]*)?\s*$/iu;
 
 function point(text: string): BiblePoint | null {
   const match = /^(\d+)(?:\s*[:.]\s*(\d+))?$/.exec(text.trim());
@@ -75,7 +75,7 @@ function rangeOf(part: string, chapter: number | null, oneChapter: boolean): Bib
  * or dot is chapter 23, verse 1, as French writes it. Null when any part
  * can't be read or a book isn't known; a book alone is the whole book.
  */
-export function parseBibleReferences(text: string): BibleReference[] | null {
+export function parseBibleReferences(text: string, options: ParseReferenceOptions = {}): BibleReference[] | null {
   const references: BibleReference[] = [];
   for (const segment of text.split(";")) {
     if (!segment.trim()) continue;
@@ -84,7 +84,7 @@ export function parseBibleReferences(text: string): BibleReference[] | null {
     let reference: BibleReference;
     let rest: string;
     if (named && /\p{L}/u.test(named[1]!)) {
-      const info = findBibleBook(named[1]!);
+      const info = findBibleBook(named[1]!, options.books);
       if (!info) return null;
       reference = { book: info.number, ranges: [] };
       references.push(reference);
@@ -114,9 +114,14 @@ export function parseBibleReferences(text: string): BibleReference[] | null {
   return references.length > 0 ? references : null;
 }
 
+export interface ParseReferenceOptions {
+  /** The version's own names for its books (issue #507), read before the English and French ones. */
+  books?: BookNames;
+}
+
 /** The one passage `text` names; null when it names none or several books. */
-export function parseBibleReference(text: string): BibleReference | null {
-  const references = parseBibleReferences(text);
+export function parseBibleReference(text: string, options: ParseReferenceOptions = {}): BibleReference | null {
+  const references = parseBibleReferences(text, options);
   return references?.length === 1 ? references[0]! : null;
 }
 

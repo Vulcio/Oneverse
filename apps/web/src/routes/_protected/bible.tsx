@@ -7,6 +7,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { BibleSearch } from "#/components/bible-search";
 import { PassagePicker } from "#/components/passage-picker";
 import { PassageTemplateSelect } from "#/components/passage-template-select";
 import { PassageVerses } from "#/components/set-passage-item";
@@ -46,15 +47,15 @@ function BiblePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function readPassage() {
-    if (!version) return;
+  async function readPassage(text = reference) {
+    if (!version || !text.trim()) return;
     setBusy(true);
     setError(null);
     try {
       setRead(
         version.kind === "youversion"
-          ? { kind: "youversion", passage: await apiClient.getYouVersionPassage(Number(version.id), reference.trim()) }
-          : { kind: "imported", passage: await apiClient.getBiblePassage(version.id, reference.trim()) },
+          ? { kind: "youversion", passage: await apiClient.getYouVersionPassage(Number(version.id), text.trim()) }
+          : { kind: "imported", passage: await apiClient.getBiblePassage(version.id, text.trim()) },
       );
     } catch (err) {
       setRead(null);
@@ -100,6 +101,18 @@ function BiblePage() {
             busy={busy}
           />
         </form>
+      )}
+      {bible.none ? null : (
+        <BibleSearch
+          version={version}
+          language={version?.language ?? bible.language}
+          picked={read ? reference.trim() : null}
+          onPick={(text) => {
+            // A verse found: written in the passage's field and read (one request), the search kept.
+            setReference(text);
+            void readPassage(text);
+          }}
+        />
       )}
       {shownError ? (
         <FieldError>

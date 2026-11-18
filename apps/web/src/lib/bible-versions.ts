@@ -1,7 +1,7 @@
-import type { BibleBookLocale, ImportedBible, SetItemPassage, YouVersionBible } from "@oneverse/core";
+import type { BibleBookLocale, BibleVersionBook, ImportedBible, SetItemPassage, YouVersionBible } from "@oneverse/core";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { importedVersion, languageTag, pickerLanguages, youVersionVersion, type PickerVersion } from "#/components/passage-picker";
+import { importedVersion, languageTag, pickerLanguages, withVersionBooks, youVersionVersion, type PickerVersion } from "#/components/passage-picker";
 import { apiClient } from "#/lib/api-client";
 
 /** Where the last language and version read are kept on this device. */
@@ -28,7 +28,26 @@ export function versionOfPassage(passage: Pick<SetItemPassage, "bibleId" | "youv
   if (passage.youversionId !== undefined) {
     return youVersionVersion({ id: passage.youversionId, abbreviation: passage.bible?.abbreviation ?? "", title: passage.bible?.name ?? `YouVersion ${passage.youversionId}`, languageTag: "", copyright: null, attribution: "", info: null, link: null }, locale);
   }
-  return { key: `imported:${passage.bibleId}`, kind: "imported", id: passage.bibleId, name: passage.bible?.name ?? "", abbreviation: passage.bible?.abbreviation ?? null, books: [] };
+  return { key: `imported:${passage.bibleId}`, kind: "imported", id: passage.bibleId, name: passage.bible?.name ?? "", abbreviation: passage.bible?.abbreviation ?? null, language: null, books: [] };
+}
+
+/**
+ * Each version's own list of books (issue #507), asked once a page load: the
+ * server keeps YouVersion's as long as YouVersion allows, so a version is
+ * asked of YouVersion once, whoever picks it.
+ */
+const bookLists = new Map<string, Promise<BibleVersionBook[]>>();
+function versionBooks(version: Pick<PickerVersion, "key" | "kind" | "id">): Promise<BibleVersionBook[]> {
+  let found = bookLists.get(version.key);
+  if (!found) {
+    found = (version.kind === "youversion" ? apiClient.getYouVersionBooks(Number(version.id)) : apiClient.getBibleBooks(version.id)).catch(() => {
+      // Asked again next time; the built-in names and counts meanwhile.
+      bookLists.delete(version.key);
+      return [];
+    });
+    bookLists.set(version.key, found);
+  }
+  return found;
 }
 
 /**
@@ -83,7 +102,18 @@ export function useBibleVersions(current?: PickerVersion | null) {
     }
     return listed;
   }, [imported, youversion, language, locale, current]);
-  const version = versions.find((one) => one.key === versionKey) ?? versions[0] ?? null;
+  const listed = versions.find((one) => one.key === versionKey) ?? versions[0] ?? null;
+  // Its books as it names them, with its chapters' verses (issue #507), once they've come.
+  const [ownBooks, setOwnBooks] = useState<{ key: string; books: BibleVersionBook[] } | null>(null);
+  useEffect(() => {
+    if (!listed) return;
+    let live = true;
+    void versionBooks(listed).then((books) => live && setOwnBooks({ key: listed.key, books }));
+    return () => {
+      live = false;
+    };
+  }, [listed]);
+  const version = useMemo(() => (listed ? withVersionBooks(listed, ownBooks?.key === listed.key ? ownBooks.books : undefined) : null), [listed, ownBooks]);
 
   return {
     loaded: imported !== null,

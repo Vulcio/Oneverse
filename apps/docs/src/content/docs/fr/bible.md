@@ -11,9 +11,20 @@ description: Lisez un passage de la Bible depuis la barre latérale de votre éq
 - **Version** : les Bibles importées sur ce serveur (**Sur ce serveur**) et, quand l'administrateur du serveur l'a configuré, les versions YouVersion dans cette langue. Tapez son nom ou son abréviation pour la trouver.
 - **Livre** : tapez pour chercher, ou choisissez-le dans la liste. **Ordre biblique** range les livres comme la Bible, l'**Ancien Testament** puis le **Nouveau Testament** ; **A-Z** les range par nom. Votre choix est gardé sur cet appareil.
 - **Chapitre** : choisir un livre ouvre ses chapitres, pour en choisir un.
-- **Versets** : le premier et le dernier, ou aucun pour tout le chapitre.
+- **Versets** : choisir un chapitre ouvre ses versets, autant que la version en a : touchez le premier, puis le dernier (le même une seconde fois pour un seul verset). **Tout le chapitre** le lit en entier. Quelques chapitres sont numérotés autrement d'une Bible à l'autre (le titre d'un psaume compté comme son premier verset, par exemple) : la grille suit la numérotation de la version.
 
-Les noms des livres et tout le reste restent dans votre langue, quelle que soit la langue de la version. Ce que vous choisissez s'écrit dans **Passage** (« Jean 3,16-18 »). Vous pouvez aussi l'y taper, comme on l'écrit (« Ps 23,1-4 », « John 3:16 »), puis **Lire**.
+Les livres sont nommés comme la version les nomme, dans sa langue : « Juan » dans une version espagnole. Tant que la liste de la version n'est pas arrivée, et pour une version qui n'en a pas, ils sont nommés dans votre langue. Ce que vous choisissez s'écrit dans **Passage** (« Jean 3,16-18 »). Vous pouvez aussi l'y taper, comme on l'écrit, en français, en anglais ou avec les noms de la version (« Ps 23,1-4 », « John 3:16 », « Salmos 23 »), puis **Lire**.
+
+## Rechercher
+
+Sous le choix du passage, **Rechercher** trouve des versets dans une version YouVersion : tapez des mots (« aimez vos ennemis »), un thème (« paix ») ou une référence, puis **Rechercher**.
+
+- **Versets** : les versets trouvés, en références. Touchez-en un pour le lire plus bas et l'ajouter à une liste. **Plus de versets** en montre d'autres.
+- **Thèmes proches** : des thèmes voisins de votre recherche, avec des thèmes plus précis à côté. Touchez-en un pour le rechercher.
+- **Vouliez-vous dire** : d'autres orthographes, à rechercher à la place. Quand YouVersion a corrigé une faute probable, les résultats disent pour quoi ils sont (« Résultats pour love. »).
+- Ce que YouVersion a compris de votre recherche est indiqué à côté : des mots des versets, un thème ou une référence. Une référence a son propre bouton **Lire**.
+
+La recherche fonctionne dans les versions de YouVersion seulement, pas dans les Bibles importées sur le serveur. YouVersion limite le nombre de requêtes par heure : la recherche part quand vous appuyez sur **Rechercher**, jamais pendant la frappe, et le texte d'un verset n'est demandé que quand vous le touchez.
 
 Le passage s'affiche avec la mention de copyright de sa version. Un passage YouVersion a aussi un lien pour le lire sur YouVersion.
 
