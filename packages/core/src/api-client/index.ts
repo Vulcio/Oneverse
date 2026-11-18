@@ -1725,8 +1725,8 @@ export interface MemberEventAnswer {
   note: string | null;
   /** The admin who answered for them. */
   answeredBy: string | null;
-  /** Hosts the team's dates, by a role (issue #520). */
-  canHost?: boolean;
+  /** The given parts a role lets them fill there (GIVEN_PARTS, issue #520): HOST. */
+  givenParts?: string[];
   /** The parts they'd like to play (issue #520), by partKey(). */
   wishes?: string[];
 }
