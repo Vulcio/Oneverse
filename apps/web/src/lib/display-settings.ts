@@ -229,6 +229,22 @@ export function stepTextSize(current: number, direction: 1 | -1): number {
   return [...DISPLAY_TEXT_SIZES].reverse().find((size) => size < current - 0.001) ?? current;
 }
 
+/**
+ * A mode's chart a step bigger or smaller (issue #508: pinch, A- and A+): its
+ * words and chords together - chords sized apart from the words move by the
+ * same step, keeping their gap - or the Words view's own size. Null when
+ * there's no further step.
+ */
+export function stepChartSizes(settings: EffectiveDisplaySettings, words: boolean, direction: 1 | -1): { size: number; change: { textSize?: number; chordSize?: number; wordsSize?: number } } | null {
+  if (words) {
+    const size = stepTextSize(settings.words.size, direction);
+    return size === settings.words.size ? null : { size, change: { wordsSize: size } };
+  }
+  const size = stepTextSize(settings.textSize, direction);
+  if (size === settings.textSize) return null;
+  return { size, change: settings.sizesLinked ? { textSize: size } : { textSize: size, chordSize: stepTextSize(settings.chordSize, direction) } };
+}
+
 /** What a chart takes from a mode's settings. */
 export function chartDisplayProps(settings: EffectiveDisplaySettings) {
   return {

@@ -5,7 +5,7 @@ import { PresenceChip } from "#/components/presence";
 import { useSongPresence, watchSong } from "#/lib/live-notes";
 import { TempoControl } from "#/components/tempo-control";
 import { ChevronDown, ListPlus, Metronome, Mic, MoreHorizontal, Pencil, RefreshCw, Share } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { startMetronome, stopMetronome, useMetronome } from "#/lib/metronome-engine";
 import { setRecordingClick, useRecordingClick } from "#/lib/recording-click";
@@ -15,7 +15,8 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { BarsRow } from "#/components/bars-row";
 import { useGridControls } from "#/lib/grid-controls";
 import { DisplayPanel } from "#/components/display-panel";
-import { chartDisplayProps, useDiagramPlayer, useDisplaySettings } from "#/lib/display-settings";
+import { changeDisplaySettings, chartDisplayProps, stepChartSizes, useDiagramPlayer, useDisplaySettings } from "#/lib/display-settings";
+import { PinchZoomLabel, usePinchZoom } from "#/lib/pinch-zoom";
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { ChartOrPdf, songViewStore } from "#/components/chart-or-pdf";
 import { ChordGrid } from "#/components/chord-grid";
@@ -195,6 +196,24 @@ export function PracticeSongPage({
     },
     onEnd: () => setAutoscrolling(false),
   });
+  // Pinch to zoom (issue #508): the chart and the grid by their text size (chords with it), the Words view by its own.
+  const zoomStep = (words: boolean) => (step: 1 | -1) => {
+    const next = stepChartSizes(display, words, step);
+    if (next) changeDisplaySettings("PRACTICE", next.change);
+    return next?.size ?? null;
+  };
+  const chartZoom = usePinchZoom({ enabled: true, onStep: zoomStep(false) });
+  const gridZoom = usePinchZoom({ enabled: true, onStep: zoomStep(false) });
+  const wordsZoom = usePinchZoom({ enabled: true, onStep: zoomStep(true) });
+  const chartZoomRef = chartZoom.ref;
+  const chartRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      chartArea.current = element;
+      chartZoomRef(element);
+    },
+    [chartZoomRef],
+  );
+
   const length = songLengthText(written, songDuration, version.documentJson);
   const details = [...references, chart.key].filter(Boolean);
   const recordingTake = useRecordingTake();
@@ -301,7 +320,9 @@ export function PracticeSongPage({
         store={songViewStore(version.id)}
         structure={display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} music={{ bars, position: music.position }} className="sticky top-14 z-20 -mx-4 px-4 sm:px-4" /> : undefined}
         words={
-          <WordsView songId={version.id} chart={chart} document={version.documentJson} settings={display.words} currentPass={currentPass} emptyText={t("sets.noChart")} />
+          <div ref={wordsZoom.ref}>
+            <WordsView songId={version.id} chart={chart} document={version.documentJson} settings={display.words} currentPass={currentPass} emptyText={t("sets.noChart")} />
+          </div>
         }
         drums={<DrumsView songId={version.id} chart={chart} document={version.documentJson} settings={display} />}
         // Autoscroll, over the chart, the grid or the PDF; the tracks have their own playhead.
@@ -321,7 +342,7 @@ export function PracticeSongPage({
         grid={
           <>
             {/* What the grid keeps in view as it scrolls goes under the page's header (h-14) and over the docked player, in the zoomed grid's own pixels. */}
-            <div style={{ zoom: display.textSize, ["--grid-sticky-top" as string]: `calc(3.5rem / ${display.textSize})`, ["--grid-sticky-bottom" as string]: `calc(var(--stem-dock-height, 0px) / ${display.textSize})` }}>
+            <div ref={gridZoom.ref} style={{ zoom: display.textSize, ["--grid-sticky-top" as string]: `calc(3.5rem / ${display.textSize})`, ["--grid-sticky-bottom" as string]: `calc(var(--stem-dock-height, 0px) / ${display.textSize})` }}>
               <ChordGrid
                 songId={version.id}
                 chart={chart}
@@ -347,7 +368,7 @@ export function PracticeSongPage({
         <div className="flex flex-col gap-3">
             {/* Zoom, not font size: the chart's own sizes keep their proportions. */}
             {notes.top}
-            <div ref={chartArea} style={{ zoom: display.textSize }} data-testid="practice-chart">
+            <div ref={chartRef} style={{ zoom: display.textSize }} data-testid="practice-chart">
               <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} currentPass={currentPass} player={player} songVersionId={version.id} notes={notes.layer} />
             </div>
         </div>
@@ -355,6 +376,7 @@ export function PracticeSongPage({
       </div>
 
       {notes.dialogs}
+      <PinchZoomLabel label={chartZoom.label ?? gridZoom.label ?? wordsZoom.label} />
 
       {/* What plays with it, docked at the bottom (issues #64, #66, #366). */}
       {playback.dock}

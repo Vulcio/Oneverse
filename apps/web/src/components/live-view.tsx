@@ -2,7 +2,7 @@ import { prettyChord, barSeconds, chartBars, chartSeconds, type ControlsPosition
 import { TextItemSlides } from "#/components/set-text-item";
 import { PassageReading } from "#/components/set-passage-item";
 import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Search, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type TouchEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type TouchEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { PdfPages, ViewSwitch, type ReadingView } from "#/components/chart-or-pdf";
@@ -35,7 +35,8 @@ import { useSongNotes, type NotesContext } from "#/lib/notes";
 import { Button } from "@oneverse/ui/components/button";
 import { SyncControl } from "#/components/sync-control";
 import { SidebarTrigger } from "@oneverse/ui/components/sidebar";
-import { chartDisplayProps, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
+import { chartDisplayProps, changeDisplaySettings, stepChartSizes, stepTextSize } from "#/lib/display-settings";
+import { PinchZoomLabel, usePinchZoom } from "#/lib/pinch-zoom";
 import { cn } from "@oneverse/ui/lib/utils";
 import { useBarsClock } from "#/lib/bars-clock";
 import { songLengthText, useAutoscroll } from "#/lib/autoscroll";
@@ -174,8 +175,11 @@ export function LiveView({
   const seconds = secondsOf(at);
   const anySeconds = charts.some((_, i) => secondsOf(i) > 0);
 
-  function changeTextSize(step: 1 | -1) {
-    changeDisplaySettings("LIVE", onWords ? { wordsSize: stepTextSize(textSize, step) } : { textSize: stepTextSize(textSize, step) });
+  // Words and chords together (issue #508), or the Words view's own size.
+  function changeTextSize(step: 1 | -1): number | null {
+    const next = stepChartSizes(display, onWords, step);
+    if (next) changeDisplaySettings("LIVE", next.change);
+    return next?.size ?? null;
   }
   function changeSpeed(step: 1 | -1) {
     setSpeed(SPEEDS[Math.min(SPEEDS.length - 1, Math.max(0, SPEEDS.indexOf(speed) + step))]!);
@@ -261,6 +265,17 @@ export function LiveView({
     readingLine: (element) => element.clientHeight / 3,
     onEnd: () => setPlaying(false),
   });
+
+  // Pinch to zoom (issue #508): a step at a time, as A- and A+. A PDF keeps the browser's own.
+  const pinch = usePinchZoom({ enabled: !song.reading?.shown, onStep: changeTextSize });
+  const pinchRef = pinch.ref;
+  const scrollerRef = useCallback(
+    (element: HTMLElement | null) => {
+      scroller.current = element;
+      pinchRef(element);
+    },
+    [pinchRef],
+  );
 
   // Played through (issue #153): scrolled to 95% of the way down, once it's been seen higher up
   // (the router's scroll restoration can put the last song's position back for a moment).
@@ -491,7 +506,8 @@ export function LiveView({
       <SongGroove songId={song.id} chart={chart} document={song.notes?.document} />
       {steps.length > 0 && !pdf && !drumsOnScreen && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} music={{ bars, position: clock.position }} /> : null}
 
-      <main ref={scroller} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <PinchZoomLabel label={pinch.label} />
+      <main ref={scrollerRef} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {/* The whole screen's width (issue #177): a long song flows into columns rather than down. */}
         <div className={cn("flex w-full flex-col px-4 pt-6 pb-[40vh] sm:px-8", head.reading?.shown && "max-sm:pt-0")}>
           {songs.map((one, i) => (
