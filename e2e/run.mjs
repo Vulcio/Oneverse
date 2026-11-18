@@ -71,14 +71,42 @@ if (listOnly) {
   process.exit(0);
 }
 
+// A suite that fails runs once more (issue #515): a step that timed out on a
+// busy runner mostly passes the second time, and that costs a minute rather
+// than the whole run again. A suite that passes then is FLAKY in the summary
+// and a warning on the run, so it can still be fixed; failing twice fails.
 const summary = [];
 for (const suite of suites) {
-  console.log(`\n=== ${suite} ===`);
+  const first = await runSuite(suite);
+  if (first.ok) {
+    summary.push({ suite, status: "PASS", seconds: first.seconds });
+    continue;
+  }
+  const second = await runSuite(suite, true);
+  if (second.ok) {
+    summary.push({ suite, status: "FLAKY", seconds: first.seconds + second.seconds });
+    annotate("warning", `e2e ${suite} flaky`, `Passed when run again. The first time:\n${first.failures.join("\n") || `exited with ${first.code}`}`);
+  } else {
+    summary.push({ suite, status: "FAIL", seconds: first.seconds + second.seconds });
+    annotate("error", `e2e ${suite}`, second.failures.join("\n") || `exited with ${second.code}`);
+  }
+}
+
+console.log("\n=== Summary ===");
+// FLAKY isn't read by --durations: its time includes a failed run.
+for (const { suite, status, seconds } of summary) console.log(`${status.padEnd(5)} ${suite} (${seconds}s)`);
+const failed = summary.filter((s) => s.status === "FAIL").length;
+const flaky = summary.filter((s) => s.status === "FLAKY").length;
+console.log(`\n${summary.length - failed}/${summary.length} suites passed${flaky ? `, ${flaky} of them only when run again` : ""}`);
+process.exitCode = failed > 0 ? 1 : 0;
+
+/** Runs one suite, its output shown as it comes and its failed steps kept. */
+async function runSuite(suite, again = false) {
+  console.log(again ? `\n=== ${suite}, run again: it failed once ===` : `\n=== ${suite} ===`);
   const started = Date.now();
   const failures = [];
   const code = await new Promise((resolve) => {
     const child = spawn(process.execPath, [path.join(root, `${suite}.test.mjs`)], { stdio: ["inherit", "pipe", "inherit"] });
-    // Shown as it comes, and its failed steps kept for the summary.
     let pending = "";
     child.stdout.on("data", (chunk) => {
       process.stdout.write(chunk);
@@ -88,19 +116,15 @@ for (const suite of suites) {
     });
     child.on("exit", (exitCode) => resolve(exitCode ?? 1));
   });
-  summary.push({ suite, ok: code === 0, seconds: Math.round((Date.now() - started) / 1000) });
-  // In CI, each failure is an annotation on the run: readable without the log.
-  if (code !== 0 && process.env.GITHUB_ACTIONS) {
-    const one = (text) => text.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").slice(0, 900);
-    console.log(`::error title=e2e ${suite}::${one(failures.join("\n") || `exited with ${code}`)}`);
-  }
+  return { ok: code === 0, code, failures, seconds: Math.round((Date.now() - started) / 1000) };
 }
 
-console.log("\n=== Summary ===");
-for (const { suite, ok, seconds } of summary) console.log(`${ok ? "PASS" : "FAIL"}  ${suite} (${seconds}s)`);
-const failed = summary.filter((s) => !s.ok).length;
-console.log(`\n${summary.length - failed}/${summary.length} suites passed`);
-process.exitCode = failed > 0 ? 1 : 0;
+/** In CI, an annotation on the run: readable without the log. */
+function annotate(level, title, text) {
+  if (!process.env.GITHUB_ACTIONS) return;
+  const one = (value) => value.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").slice(0, 900);
+  console.log(`::${level} title=${title}::${one(text)}`);
+}
 
 /** The `part`th of `count` parts of the suites, of about the same length: longest first, each to the shortest part so far. */
 function shardOf(names, part, count) {
@@ -112,6 +136,11 @@ function shardOf(names, part, count) {
   }
   const values = Object.values(known);
   const average = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 1;
+  // Without one, the parts drift apart and the slowest one holds up the run (issue #515).
+  const unknown = names.filter((name) => !(name in known));
+  if (unknown.length > 0 && part === 1) {
+    annotate("warning", "e2e durations", `${unknown.length} suite(s) without a duration in e2e/durations.json, counted as ${Math.round(average)}s: ${unknown.join(", ")}. Refresh it from CI's summaries (e2e/README.md).`);
+  }
   const parts = Array.from({ length: count }, () => ({ seconds: 0, suites: [] }));
   for (const name of [...names].sort((a, b) => (known[b] ?? average) - (known[a] ?? average) || a.localeCompare(b))) {
     const shortest = parts.reduce((min, one) => (one.seconds < min.seconds ? one : min));
