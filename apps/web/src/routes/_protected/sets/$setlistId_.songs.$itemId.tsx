@@ -209,26 +209,14 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
             ) : undefined
           }
           grid={
-            <Card>
-              <CardContent>
-                <PlayerChart view={view} openNoteId={note} grid />
-              </CardContent>
-            </Card>
+            <PlayerChart view={view} openNoteId={note} grid />
           }
           words={
-            <Card>
-              <CardContent>
-                <PlayerChart view={view} openNoteId={note} words />
-              </CardContent>
-            </Card>
+            <PlayerChart view={view} openNoteId={note} words />
           }
           drums={<PlayerChart view={view} openNoteId={note} drums />}
         >
-          <Card>
-            <CardContent>
-              <PlayerChart view={view} openNoteId={note} />
-            </CardContent>
-          </Card>
+          <PlayerChart view={view} openNoteId={note} />
         </ChartOrPdf>
       ) : view.text ? (
         // Slides of text (issue #305), as the screens show them.

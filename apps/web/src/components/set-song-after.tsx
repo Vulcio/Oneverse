@@ -110,11 +110,7 @@ export function SetSongAfter({ view, onChanged }: { view: SetlistSongView; onCha
               <ChevronRight />
             </Button>
           </div>
-          <Card>
-            <CardContent>
-              <PlayerChart view={next} />
-            </CardContent>
-          </Card>
+          <PlayerChart view={next} />
         </section>
       ) : null}
     </>

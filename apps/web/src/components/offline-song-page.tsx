@@ -114,15 +114,14 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
       {/* Practice: what plays, of the files kept on the device, docked at the bottom. */}
       {playback.dock}
 
-      <Card>
-        <CardContent>
-          {notes.top}
-          <div ref={chartArea} style={{ zoom: display.textSize }}>
-            <ChartWithDiagrams chart={chart} {...chartDisplayProps(display)} player={player} songVersionId={song.songVersionId} notes={notes.layer} />
-          </div>
-          {notes.dialogs}
-        </CardContent>
-      </Card>
+      {/* No box around the chart (issue #504), as on the song's own page. */}
+      <div>
+        {notes.top}
+        <div ref={chartArea} style={{ zoom: display.textSize }}>
+          <ChartWithDiagrams chart={chart} {...chartDisplayProps(display)} player={player} songVersionId={song.songVersionId} notes={notes.layer} />
+        </div>
+        {notes.dialogs}
+      </div>
 
       {song.attachments.length > 0 ? (
         <Card>
