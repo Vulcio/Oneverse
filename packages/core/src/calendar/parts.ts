@@ -67,6 +67,12 @@ export const MUSIC_LEADER = "MUSIC_LEADER";
  * (Role.canHost) - not something one lists oneself.
  */
 export const HOST = "HOST";
+/**
+ * Who speaks or preaches (issue #523). A given part too, from those a role
+ * lets speak (Role.canSpeak) - and, unlike hosting, a guest: one of the
+ * admin's People or someone without an account (GUEST_PARTS).
+ */
+export const SPEAKER = "SPEAKER";
 
 /**
  * Parts filled only by those a role gives them (issue #520), never listed by
@@ -74,7 +80,10 @@ export const HOST = "HOST";
  * organisation's role given to one of its groups gives it to the group's
  * members; given to one person, to them alone.
  */
-export const GIVEN_PARTS = { [HOST]: "canHost" } as const satisfies Record<string, string>;
+export const GIVEN_PARTS = { [HOST]: "canHost", [SPEAKER]: "canSpeak" } as const satisfies Record<string, string>;
+
+/** Given parts a guest can fill too (issue #523): someone from outside, by name or one of the admin's People. */
+export const GUEST_PARTS: readonly string[] = [SPEAKER];
 
 /** Whether a part is one a role gives (GIVEN_PARTS). */
 export function isGivenPart(key: string): boolean {
@@ -187,12 +196,12 @@ export interface EventTypeTemplate {
 export const EVENT_TYPES_LIMIT = 30;
 
 /**
- * Types a team with none is offered (issue #523): a service with its host
- * and music leader; a worship night led by its music leader; a
+ * Types a team with none is offered (issue #523): a service with its host,
+ * speaker and music leader; a worship night led by its music leader; a
  * meeting, with no set.
  */
 export const EVENT_TYPE_SUGGESTIONS: readonly EventTypeTemplate[] = [
-  { key: "service", startTime: "10:00", durationMinutes: 120, parts: [{ part: HOST, count: 1 }, { part: MUSIC_LEADER, count: 1 }], withSet: true },
+  { key: "service", startTime: "10:00", durationMinutes: 120, parts: [{ part: HOST, count: 1 }, { part: SPEAKER, count: 1 }, { part: MUSIC_LEADER, count: 1 }], withSet: true },
   { key: "worshipNight", startTime: "19:30", durationMinutes: 120, parts: [{ part: MUSIC_LEADER, count: 1 }], withSet: true },
   { key: "meeting", startTime: "19:00", durationMinutes: 60, parts: [], withSet: false },
 ];

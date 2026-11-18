@@ -3223,6 +3223,8 @@ model Role {
   // Hosts a team's dates ("Présidence", issue #520): may be put on a date's
   // line-up as its Host - who edits that date's set, beside its admins.
   canHost                    Boolean  @default(false)
+  // Speaks at a team's dates (issue #523): may be on a date's line-up as its Speaker.
+  canSpeak                   Boolean  @default(false)
   // Manages screens (issue #322): pairs, changes and disconnects the screens
   // and Pulses of the teams and organisations it's given for, without being
   // their admin - nothing over the sets they show or who owns them.

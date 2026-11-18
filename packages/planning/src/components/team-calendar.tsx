@@ -1,4 +1,4 @@
-import { addDays, coversPart, HOST, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, coversPart, GIVEN_PARTS, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -1007,7 +1007,7 @@ export function PartsEditor({
             ))}
           </optgroup>
           <optgroup label={t("teamCalendar.partRoles")}>
-            {choices([HOST, ...TECH_ROLES]).map((choice) => (
+            {choices([...Object.keys(GIVEN_PARTS), ...TECH_ROLES]).map((choice) => (
               <option key={choice.key} value={choice.key}>
                 {choice.label}
               </option>

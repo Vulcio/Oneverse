@@ -21,10 +21,11 @@ let r = await call(admin, "POST", types, {
   durationMinutes: 120,
   parts: [
     { part: "HOST", count: 1 },
+    { part: "SPEAKER", count: 1 },
     { part: "MUSIC_LEADER", count: 1 },
   ],
 });
-check("a type: a host, a music leader, with a set", r.status === 201 && r.body.withSet === true && r.body.parts.map((part) => part.part).join() === "HOST,MUSIC_LEADER" && r.body.eventCount === 0, JSON.stringify(r.body));
+check("a type: a host, a speaker, a music leader, with a set", r.status === 201 && r.body.withSet === true && r.body.parts.map((part) => part.part).join() === "HOST,SPEAKER,MUSIC_LEADER" && r.body.eventCount === 0, JSON.stringify(r.body));
 const service = r.body;
 r = await call(admin, "POST", types, { name: "Meeting", startTime: "19:00", durationMinutes: 60, withSet: false });
 check("a type without a set", r.status === 201 && r.body.withSet === false && r.body.parts.length === 0, JSON.stringify(r.body));
@@ -65,11 +66,11 @@ check("…and none can be made for it", r.status === 400 && r.body.message.join(
 r = await call(admin, "PATCH", `${types}/${service.id}`, { parts: [{ part: "HOST", count: 1 }] });
 check("a type changed", r.status === 200 && r.body.parts.length === 1 && r.body.eventCount === 1, JSON.stringify(r.body));
 r = await call(admin, "GET", `/teams/${team.id}/events/${serviceEvent.id}`);
-check("…its event keeps its parts", r.body.parts.length === 2, JSON.stringify(r.body));
+check("…its event keeps its parts", r.body.parts.length === 3, JSON.stringify(r.body));
 r = await call(admin, "DELETE", `${types}/${service.id}`);
 check("a type deleted", r.status === 204, JSON.stringify(r.body));
 r = await call(admin, "GET", `/teams/${team.id}/events/${serviceEvent.id}`);
-check("…its event stays, with no type", r.status === 200 && r.body.typeId === null && r.body.parts.length === 2, JSON.stringify(r.body));
+check("…its event stays, with no type", r.status === 200 && r.body.typeId === null && r.body.parts.length === 3, JSON.stringify(r.body));
 
 // --- sets turned off and on again
 const repeating = (await call(admin, "POST", `/teams/${team.id}/events`, { title: "Weekly", date: plus(1), startTime: "10:00", timeZone: "UTC", repeat: { everyWeeks: 1 } })).body;

@@ -10,7 +10,7 @@ import { FieldError } from "@oneverse/ui/components/field";
 /** A role's short account of what it allows, for a list or a badge's title. */
 export function useRoleSummary() {
   const { t } = useTranslation();
-  return (role: Pick<AdminRole, "canReview" | "canSeparateStems" | "canKeepLosslessAudio" | "canUploadAudio" | "canOperateScreens" | "stemSeparationMonthlyLimit" | "storageLimitMb"> & { canCue?: boolean; canRoute?: boolean; canHost?: boolean; canManageScreens?: boolean; canUseOwnStorage?: boolean; teamAssignable?: boolean }) =>
+  return (role: Pick<AdminRole, "canReview" | "canSeparateStems" | "canKeepLosslessAudio" | "canUploadAudio" | "canOperateScreens" | "stemSeparationMonthlyLimit" | "storageLimitMb"> & { canCue?: boolean; canRoute?: boolean; canHost?: boolean; canSpeak?: boolean; canManageScreens?: boolean; canUseOwnStorage?: boolean; teamAssignable?: boolean }) =>
     [
       role.canReview ? t("admin.roleAllowsReview") : null,
       role.canSeparateStems
@@ -24,6 +24,7 @@ export function useRoleSummary() {
       role.canCue ? t("admin.roleAllowsCue") : null,
       role.canRoute ? t("admin.roleAllowsRoute") : null,
       role.canHost ? t("admin.roleAllowsHost") : null,
+      role.canSpeak ? t("admin.roleAllowsSpeak") : null,
       role.canManageScreens ? t("admin.roleAllowsManageScreens") : null,
       role.canUseOwnStorage ? t("admin.roleAllowsOwnStorage") : null,
       role.teamAssignable ? t("admin.roleAllowsTeamAssignable") : null,

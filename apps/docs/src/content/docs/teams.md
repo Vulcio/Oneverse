@@ -19,7 +19,7 @@ The team's page starts with its **Calendar**: its services, rehearsals and other
 
 ### Event types
 
-Not every event is the same: a service needs a host and a music leader and gets a set; a meeting needs neither. **Event types**, beside **New event**, keeps the kinds of events the team holds. A team with none is offered **Add Service** (Host, Music leader), **Add Worship night** (Music leader) and **Add Meeting** (no set); **New type** makes your own: its **Name**, its usual **Start time**, length and call time, its **Parts needed** (see [Parts needed](/teams/#parts-needed)), and **Make a set for each date**. The pencil beside a type changes it; **Delete type** removes it.
+Not every event is the same: a service needs a host, a speaker and a music leader and gets a set; a meeting needs neither. **Event types**, beside **New event**, keeps the kinds of events the team holds. A team with none is offered **Add Service** (Host, Speaker, Music leader), **Add Worship night** (Music leader) and **Add Meeting** (no set); **New type** makes your own: its **Name**, its usual **Start time**, length and call time, its **Parts needed** (see [Parts needed](/teams/#parts-needed)), and **Make a set for each date**. The pencil beside a type changes it; **Delete type** removes it.
 
 In **New event**, **Type** picks one: the event takes its name as its title (unless you typed one), its time, its parts and whether it gets sets. Everything can still be changed for that event. An event keeps what it was given: changing or deleting its type later leaves it as it is.
 
@@ -48,6 +48,8 @@ Once a date's parts are set, its admins choose who plays what: **Line-up** besid
 The line-up flags what clashes: someone **Away**, who **Said not available**, or **Playing elsewhere then** - on another event at the same time, of any of their teams. Each part shows how many it has of how many it needs, and **Short** counts those on the line-up once a date has one.
 
 **Music leader** is a role like the others (list it under **Roles** on your dashboard). **Host** ("Présidence") isn't one you list yourself: only people given a role that lets them **Host the dates** (see [Roles](/admin/#roles), or a team's or organisation's own roles) can wish for it or be put on it. In an organisation, its admins can give such a role to one of its groups - a "Présidence" group, say: everyone in it can then host the dates of all the organisation's teams, without being in them - or to one person alone. An event asks for either in **Parts needed**; not every event needs a host. Whoever is on a date's line-up as its **Host** or **Music leader**, and hasn't declined, can change that date's set - its songs, passages and texts - like the team's admins. They can't delete the set or give it to someone else.
+
+**Speaker** works like **Host**: only people given a role that lets them **Speak at the dates** - a whole group of the organisation's, or one person alone - can be put on it from among the members. Unlike a host, a speaker can also be a guest: one of your People, or **Someone without an account…** by name.
 
 **Guests**: **Add someone** also lists **Your People (guests)** - people you're connected with on [People](/people/) who aren't in the team. A guest is told and answers like a member, sees that date on their **My calendar** and its set (read-only), and loses it when taken off. **Someone without an account…** adds a name for reference: they're on the line-up, marked **No account**, but never told anything.
 

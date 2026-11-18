@@ -10,7 +10,7 @@ import { FieldError } from "@oneverse/ui/components/field";
 
 /** What a role allows, all optional: the server's roles have every field, a team's or an organisation's some. */
 export type EditableRole = { name: string; description: string } & Partial<
-  Record<"canReview" | "canSeparateStems" | "canKeepLosslessAudio" | "canUploadAudio" | "canOperateScreens" | "canCue" | "canRoute" | "canHost" | "canManageScreens" | "canUseOwnStorage" | "canStoreFiles" | "teamAssignable", boolean>
+  Record<"canReview" | "canSeparateStems" | "canKeepLosslessAudio" | "canUploadAudio" | "canOperateScreens" | "canCue" | "canRoute" | "canHost" | "canSpeak" | "canManageScreens" | "canUseOwnStorage" | "canStoreFiles" | "teamAssignable", boolean>
 > & { stemSeparationMonthlyLimit?: number | null; storageLimitMb?: number | null };
 
 /**
@@ -36,6 +36,7 @@ export function RoleEditor({ kind, role, onClose, onSubmit }: { kind: RoleEditor
   const [canCue, setCanCue] = useState(role?.canCue ?? false);
   const [canRoute, setCanRoute] = useState(role?.canRoute ?? false);
   const [canHost, setCanHost] = useState(role?.canHost ?? false);
+  const [canSpeak, setCanSpeak] = useState(role?.canSpeak ?? false);
   const [canManageScreens, setCanManageScreens] = useState(role?.canManageScreens ?? false);
   const [canUseOwnStorage, setCanUseOwnStorage] = useState(role?.canUseOwnStorage ?? false);
   const [teamAssignable, setTeamAssignable] = useState(role?.teamAssignable ?? false);
@@ -58,6 +59,7 @@ export function RoleEditor({ kind, role, onClose, onSubmit }: { kind: RoleEditor
       canCue,
       canRoute,
       canHost,
+      canSpeak,
       canManageScreens,
       ...(server || organization ? { canUploadAudio, canKeepLosslessAudio: canKeepLossless, storageLimitMb: hasStorage && storageMb.trim() ? Number(storageMb) : null } : {}),
       ...(server ? { canReview, canUseOwnStorage, teamAssignable } : {}),
@@ -124,6 +126,7 @@ export function RoleEditor({ kind, role, onClose, onSubmit }: { kind: RoleEditor
             {check(canCue, setCanCue, t("admin.roleCue"), hint("roleCue"), "role-cue")}
             {check(canRoute, setCanRoute, t("admin.roleRoute"), hint("roleRoute"), "role-route")}
             {check(canHost, setCanHost, t("admin.roleHost"), hint("roleHost"), "role-host")}
+            {check(canSpeak, setCanSpeak, t("admin.roleSpeak"), hint("roleSpeak"), "role-speak")}
             {check(canManageScreens, setCanManageScreens, t("admin.roleManageScreens"), hint("roleManageScreens"), "role-manage-screens")}
             {server ? check(canUseOwnStorage, setCanUseOwnStorage, t("admin.roleOwnStorage"), hint("roleOwnStorage"), "role-own-storage") : null}
             {server ? check(teamAssignable, setTeamAssignable, t("admin.roleTeamAssignable"), hint("roleTeamAssignable"), "role-team-assignable") : null}

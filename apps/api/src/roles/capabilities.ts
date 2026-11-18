@@ -23,6 +23,8 @@ export interface Capabilities {
   canRoute: boolean;
   /** Hosts a team's dates (issue #520): may be on a date's line-up as its Host, who edits the date's set. */
   canHost: boolean;
+  /** Speaks at a team's dates (issue #523): may be on a date's line-up as its Speaker. */
+  canSpeak: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations (issue #322), without being their admin. */
   canManageScreens: boolean;
   /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
@@ -49,6 +51,7 @@ type RoleRow = {
   canCue: boolean;
   canRoute: boolean;
   canHost: boolean;
+  canSpeak: boolean;
   canManageScreens: boolean;
   canUseOwnStorage: boolean;
   canStoreFiles: boolean;
@@ -67,6 +70,7 @@ const ROLE_FIELDS = {
   canCue: true,
   canRoute: true,
   canHost: true,
+  canSpeak: true,
   canManageScreens: true,
   canUseOwnStorage: true,
   canStoreFiles: true,
@@ -92,6 +96,7 @@ export function combineRoles(roles: RoleRow[]): Capabilities {
     canCue: roles.some((role) => role.canCue),
     canRoute: roles.some((role) => role.canRoute),
     canHost: roles.some((role) => role.canHost),
+    canSpeak: roles.some((role) => role.canSpeak),
     canManageScreens: roles.some((role) => role.canManageScreens),
     canUseOwnStorage: roles.some((role) => role.canUseOwnStorage),
     canStoreFiles: roles.some((role) => role.canStoreFiles),
@@ -152,7 +157,7 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
         },
       },
     },
-    select: { id: true, canOperateScreens: true, canCue: true, canRoute: true, canHost: true },
+    select: { id: true, canOperateScreens: true, canCue: true, canRoute: true, canHost: true, canSpeak: true },
   });
   return {
     ...everywhere,
@@ -160,6 +165,7 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
     canCue: everywhere.canCue || scoped.some((role) => role.canCue),
     canRoute: everywhere.canRoute || scoped.some((role) => role.canRoute),
     canHost: everywhere.canHost || scoped.some((role) => role.canHost),
+    canSpeak: everywhere.canSpeak || scoped.some((role) => role.canSpeak),
   };
 }
 

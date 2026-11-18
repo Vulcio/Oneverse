@@ -1,4 +1,4 @@
-import { coversPart, HOST, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
+import { coversPart, isGivenPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
 import { AlertTriangle, ArrowLeftRight, Check, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,7 @@ export function usePartLabel(customInstruments: readonly CustomInstrument[]): (p
   return (part) => {
     if (!part.part) return part.name ?? "";
     // Hosting (issue #520) is named with the roles, though a role's right gives it.
-    return part.part === HOST || (TECH_ROLES as readonly string[]).includes(part.part) ? t(`roles.techRole.${part.part}`) : instrumentLabel(part.part);
+    return isGivenPart(part.part) || (TECH_ROLES as readonly string[]).includes(part.part) ? t(`roles.techRole.${part.part}`) : instrumentLabel(part.part);
   };
 }
 

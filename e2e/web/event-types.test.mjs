@@ -1,5 +1,5 @@
 // Event types on a team's calendar (issue #523): the admin adds the
-// suggested Service (Host, Music leader) and Meeting (no set), then
+// suggested Service (Host, Speaker, Music leader) and Meeting (no set), then
 // a new event picked from Meeting is filled from it - its title, time and
 // "Make a set for each date" off - and its date gets no set, nor a "Plan set".
 import { chromium } from "playwright";
@@ -22,7 +22,7 @@ try {
     await calendar.getByTestId("calendar-event-types").click();
     const dialog = page.getByTestId("event-types-dialog");
     await dialog.getByTestId("event-type-suggest-service").click();
-    await dialog.locator('[data-event-type="Service"]').getByText("Host, Music leader").waitFor();
+    await dialog.locator('[data-event-type="Service"]').getByText("Host, Speaker, Music leader").waitFor();
     await dialog.getByTestId("event-type-suggest-meeting").click();
     await dialog.locator('[data-event-type="Meeting"]').getByTestId("event-type-no-set").waitFor();
     if (shots) await dialog.screenshot({ path: `${shots}/event-types.png` });
@@ -34,7 +34,7 @@ try {
     const editor = page.getByTestId("event-type-dialog");
     await editor.getByTestId("event-part-add").selectOption("DRUMS");
     await editor.getByTestId("event-type-save").click();
-    await page.getByTestId("event-types-dialog").locator('[data-event-type="Service"]').getByText("Host, Music leader, Drums").waitFor();
+    await page.getByTestId("event-types-dialog").locator('[data-event-type="Service"]').getByText("Host, Speaker, Music leader, Drums").waitFor();
     await page.keyboard.press("Escape");
     await page.getByTestId("event-types-dialog").waitFor({ state: "hidden" });
   });
@@ -57,11 +57,12 @@ try {
     if (await row.getByTestId("calendar-plan-set").count()) throw new Error("the meeting's date offers to plan a set");
   });
 
-  await step("a Service event asks for its host and music leader", async () => {
+  await step("a Service event asks for its host, speaker and music leader", async () => {
     await calendar.getByTestId("calendar-new-event").click();
     const dialog = page.getByTestId("event-dialog");
     await dialog.getByTestId("event-type").selectOption({ label: "Service" });
     await dialog.locator('[data-part="HOST"]').waitFor();
+    await dialog.locator('[data-part="SPEAKER"]').waitFor();
     await dialog.locator('[data-part="MUSIC_LEADER"]').waitFor();
     if (!(await dialog.getByTestId("event-with-set").isChecked())) throw new Error("a service makes no set");
     await dialog.getByRole("button", { name: "Save event" }).click();
