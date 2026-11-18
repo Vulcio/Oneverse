@@ -269,6 +269,16 @@ export async function chooseView(p, view) {
   const tab = p.getByTestId(`chart-view-${view}`);
   const picker = p.locator('button[data-testid="chart-view"]');
   await tab.or(picker).first().waitFor();
-  if (!(await tab.isVisible())) await picker.click();
-  await tab.click();
+  // The buttons say which is on: clicked again until it is, as a click before the page has hydrated is lost.
+  // Once hydrated, a narrow page may show the picker instead: the view is picked from its menu.
+  const on = p.locator(`button[data-testid="chart-view-${view}"][aria-pressed="true"]`);
+  for (let i = 0; i < 20 && !(await on.isVisible()); i++) {
+    if (!(await tab.isVisible())) {
+      await picker.click();
+      await tab.click();
+      return;
+    }
+    await tab.click();
+    await on.waitFor({ timeout: 1000 }).catch(() => {});
+  }
 }
