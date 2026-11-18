@@ -224,8 +224,15 @@ try {
 
   await step("Live: a key changed at the last minute moves the transition with it", async () => {
     const keyOf = (item) => page.locator(`[data-testid="live-song"][data-item="${item}"]`).locator("button[aria-expanded]").first();
+    // Opened once the page has hydrated: a click before that is lost (the page was just opened, and Live keeps a socket open, so no networkidle).
+    const openKey = async (item) => {
+      for (let i = 0; i < 20 && !(await page.getByTestId("live-transpose").isVisible()); i++) {
+        await keyOf(item).click();
+        await page.getByTestId("live-transpose").waitFor({ timeout: 1000 }).catch(() => {});
+      }
+    };
     // The next song up a semitone more (E to F): its first chord, and the chords into it, follow.
-    await keyOf(secondItem).click();
+    await openKey(secondItem);
     await page.getByTestId("live-transpose").getByRole("button", { name: "Up a semitone" }).click();
     const block = page.locator('[data-testid="live-transition-block"][data-between]');
     await block.locator('[data-step="first"][data-chord="F"]').waitFor();
@@ -234,7 +241,8 @@ try {
     // This song down a semitone (G to F#): where it starts follows.
     // (The open transpose box closes with a tap elsewhere.)
     await page.locator(`[data-testid="live-song"][data-item="${firstItem}"] h1`).click();
-    await keyOf(firstItem).click();
+    await page.getByTestId("live-transpose").waitFor({ state: "hidden" });
+    await openKey(firstItem);
     await page.getByTestId("live-transpose").getByRole("button", { name: "Down a semitone" }).click();
     await block.locator('[data-step="last"][data-chord="F#"], [data-step="last"][data-chord="Gb"]').first().waitFor();
     // Only here, tonight: the set keeps its chords as they were.
