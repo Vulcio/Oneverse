@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { BibleSearch } from "#/components/bible-search";
 import { PassagePicker } from "#/components/passage-picker";
 import { PassageTemplateSelect, templateRef } from "#/components/passage-template-select";
 import { apiClient } from "#/lib/api-client";
@@ -53,6 +54,18 @@ export function PassageItemDialog({
     }
   }
 
+  /** Reads a reference into the preview (one request); Save keeps it. */
+  function readPreview(text: string) {
+    if (!version) return;
+    void act(async () =>
+      setPreview(
+        version.kind === "youversion"
+          ? { kind: "youversion", passage: await apiClient.getYouVersionPassage(Number(version.id), text) }
+          : { kind: "imported", passage: await apiClient.getBiblePassage(version.id, text) },
+      ),
+    );
+  }
+
   const ready = !!version && !!reference.trim();
   const shownError = error ?? bible.error;
   return (
@@ -72,15 +85,7 @@ export function PassageItemDialog({
             <form
               onSubmit={(event) => {
                 event.preventDefault();
-                if (!version) return;
-                const text = reference.trim();
-                void act(async () =>
-                  setPreview(
-                    version.kind === "youversion"
-                      ? { kind: "youversion", passage: await apiClient.getYouVersionPassage(Number(version.id), text) }
-                      : { kind: "imported", passage: await apiClient.getBiblePassage(version.id, text) },
-                  ),
-                );
+                readPreview(reference.trim());
               }}
             >
               <PassagePicker
@@ -95,6 +100,16 @@ export function PassageItemDialog({
                 busy={busy}
               />
             </form>
+            {/* The Bible page's search (issue #507): a verse picked is written in the reference and previewed. */}
+            <BibleSearch
+              version={version}
+              language={version?.language ?? bible.language}
+              picked={preview ? reference.trim() : null}
+              onPick={(text) => {
+                setReference(text);
+                readPreview(text);
+              }}
+            />
             <PassageTemplateSelect id="set-passage-template" value={template} onChange={setTemplate} />
             {preview ? (
               <div className="max-h-60 overflow-y-auto rounded-md border p-3" data-testid="set-passage-preview">
