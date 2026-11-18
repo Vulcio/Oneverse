@@ -96,7 +96,8 @@ await step("Display > Notes: beside what they're on, in the margin with numbered
   await sure("chart().locator('[data-note-connector]').first().waitFor()", chart().locator("[data-note-connector]").first().waitFor({ state: "attached" }));
   await sure("chart().getByTestId('note-number-1').waitFor()", chart().getByTestId("note-number-1").waitFor());
   await sure("chart().getByTestId('note-number-target-1').waitFor()", chart().getByTestId("note-number-target-1").waitFor());
-  // No room for the margin (the Display panel open beside the song on a 1280px screen): beside what they're on, and the panel says so (issue #266).
+  // No room for the margin (the Display panel open beside the song on a 1180px screen): beside what they're on, and the panel says so (issue #266).
+  await page.setViewportSize({ width: 1180, height: 900 });
   await sure("opening the panel", page.getByTestId("display-open").first().click());
   const panel = page.getByTestId("display-panel");
   await sure("crowded: beside", chart().locator('[data-notes-overlay="beside"] [data-note-placed]').first().waitFor());
@@ -104,6 +105,7 @@ await step("Display > Notes: beside what they're on, in the margin with numbered
   await sure("the panel says so", panel.getByTestId("display-notes-margin-crowded").waitFor());
   await sure("closing the panel", panel.getByTestId("display-close").click());
   await sure("the panel closed", panel.waitFor({ state: "detached" }));
+  await page.setViewportSize({ width: 1280, height: 900 });
   await sure("room again: the margin", chart().locator('[data-notes-overlay="margin"] [data-note-placed]').first().waitFor());
   // Beside: under the word or chord, no lines; the line under it has room for them.
   await sure("display-notesPreset-stage", displaySetting(page, "notes", "display-notesPreset-stage"));
