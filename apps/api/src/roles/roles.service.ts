@@ -21,6 +21,7 @@ const OWN_ROLE_SELECT = {
   canOperateScreens: true,
   canCue: true,
   canRoute: true,
+  canHost: true,
   canManageScreens: true,
   canStoreFiles: true,
   stemSeparationMonthlyLimit: true,
@@ -46,6 +47,7 @@ const ROLE_SELECT = {
   canOperateScreens: true,
   canCue: true,
   canRoute: true,
+  canHost: true,
   canManageScreens: true,
   canUseOwnStorage: true,
   teamAssignable: true,
@@ -173,7 +175,7 @@ export class RolesService {
     const key = ownerKeyOf(scope);
     const where = "teamId" in scope ? { scopeTeamId: scope.teamId } : { scopeOrganizationId: scope.organizationId };
     const [given, own, assignments, members, teams] = await Promise.all([
-      this.prisma.client.role.findMany({ where: { teamAssignable: true, ownerKey: "" }, select: { id: true, name: true, description: true, canOperateScreens: true, canCue: true, canRoute: true, canManageScreens: true }, orderBy: { name: "asc" } }),
+      this.prisma.client.role.findMany({ where: { teamAssignable: true, ownerKey: "" }, select: { id: true, name: true, description: true, canOperateScreens: true, canCue: true, canRoute: true, canHost: true, canManageScreens: true }, orderBy: { name: "asc" } }),
       this.prisma.client.role.findMany({ where: { ownerKey: key }, select: OWN_ROLE_SELECT, orderBy: { name: "asc" } }),
       this.prisma.client.roleAssignment.findMany({ where: { ...where, scopeKey: key }, select: { userId: true, teamId: true, roleId: true } }),
       this.memberIds(scope),

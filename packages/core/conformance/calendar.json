@@ -1189,6 +1189,39 @@
           "expected": true
         },
         {
+          "name": "hosting: only with a role that lets them (issue #520)",
+          "args": [
+            {
+              "instruments": [],
+              "techRoles": [],
+              "canHost": true
+            },
+            {
+              "part": "HOST",
+              "count": 1
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "hosting, without it",
+          "args": [
+            {
+              "instruments": [
+                "PIANO"
+              ],
+              "techRoles": [
+                "MUSIC_LEADER"
+              ]
+            },
+            {
+              "part": "HOST",
+              "count": 1
+            }
+          ],
+          "expected": false
+        },
+        {
           "name": "a group's position they didn't",
           "args": [
             {
@@ -1217,7 +1250,7 @@
       ],
       "cases": [
         {
-          "name": "the date's parts",
+          "name": "the date's parts; hosting only for those a role lets host",
           "args": [
             [
               {
@@ -1246,12 +1279,38 @@
               "count": 1
             },
             {
-              "part": "HOST",
+              "name": "Greeter",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "the date's parts, as a host",
+          "args": [
+            [
+              {
+                "part": "DRUMS",
+                "count": 1
+              },
+              {
+                "part": "HOST",
+                "count": 1
+              }
+            ],
+            {
+              "instruments": [],
+              "techRoles": [],
+              "canHost": true
+            }
+          ],
+          "expected": [
+            {
+              "part": "DRUMS",
               "count": 1
             },
             {
-              "name": "Greeter",
-              "count": 2
+              "part": "HOST",
+              "count": 1
             }
           ]
         },
@@ -1280,6 +1339,29 @@
             },
             {
               "part": "MUSIC_LEADER",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "no parts: hosting too, with the role",
+          "args": [
+            [],
+            {
+              "instruments": [
+                "PIANO"
+              ],
+              "techRoles": [],
+              "canHost": true
+            }
+          ],
+          "expected": [
+            {
+              "part": "HOST",
+              "count": 1
+            },
+            {
+              "part": "PIANO",
               "count": 1
             }
           ]

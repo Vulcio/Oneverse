@@ -1,8 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, coversPart, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
+import { addDays, coversPart, HOST, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { hostsAmong } from "../roles/capabilities.js";
 import { changesOf, dateText, day, partsOf, TeamEventsService, timingOf, withDates, type EventRow } from "./team-events.service.js";
 
 type Client = PrismaService["client"];
@@ -105,6 +106,10 @@ export class LineupService {
     const event = await this.comingDate(teamId, eventId, date);
     if (!partsOf(event).some((part) => partKey(part) === dto.part)) throw new BadRequestException(["part isn't one this event needs"]);
     let guest = false;
+    // Hosting is for those a role lets host (issue #520): never someone without an account.
+    if (dto.part === HOST && (!dto.userId || !(await hostsAmong(this.prisma.client, teamId, [dto.userId])).has(dto.userId))) {
+      throw new BadRequestException(["Only someone a role lets host the team's dates can be its Host"]);
+    }
     if (dto.userId) {
       const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: dto.userId } } });
       guest = !member;
@@ -203,10 +208,12 @@ export class LineupService {
       this.prisma.client.userAway.findMany({ where: { user: { teamMemberships: { some: { teamId } } }, from: { lte: day(date) }, to: { gte: day(date) } }, select: { userId: true, from: true, to: true } }),
       this.prisma.client.teamEventAssignment.findMany({ where: { eventId, date: day(date), userId: { not: null } }, select: { userId: true, partKey: true, status: true } }),
     ]);
+    // Hosting is a role's (issue #520).
+    const hosts = part.part === HOST ? await hostsAmong(this.prisma.client, teamId, members.map((one) => one.userId)) : new Set<string>();
     const answered = members.map(({ userId: member, user, positionIds }) => {
       const own = answers.find((answer) => answer.userId === member)?.answer ?? null;
       const ranges = away.filter((range) => range.userId === member).map((range) => ({ from: dateText(range.from), to: dateText(range.to) }));
-      return { userId: member, ...user, positionIds, answer: effectiveAnswer(own, ranges, date).answer };
+      return { userId: member, ...user, positionIds, canHost: hosts.has(member), answer: effectiveAnswer(own, ranges, date).answer };
     });
     const offered = swapCandidates(part, answered, lineup.map((one) => ({ ...one, userId: one.userId! })), userId);
     return offered.map((candidate) => ({ userId: candidate, answer: answered.find((one) => one.userId === candidate)!.answer }));
@@ -282,7 +289,8 @@ export class LineupService {
     if (row.userId === userId) throw new BadRequestException(["It's your own place"]);
     const part = partsOf(event).find((one) => partKey(one) === row.partKey);
     const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { positionIds: true, user: { select: { instruments: true, techRoles: true, displayName: true } } } });
-    if (!member || !part || !coversPart({ ...member.user, positionIds: member.positionIds }, part)) throw new BadRequestException(["You don't play that part"]);
+    const canHost = part?.part === HOST && (await hostsAmong(this.prisma.client, teamId, [userId])).has(userId);
+    if (!member || !part || !coversPart({ ...member.user, positionIds: member.positionIds, canHost }, part)) throw new BadRequestException(["You don't play that part"]);
     // Until it's offered to everyone, only those who answered If needed (issue #240).
     if (!row.swapWidenedAt && !(await this.swapCandidatesFor(teamId, eventId, date, part, row.userId!)).some((one) => one.userId === userId && one.answer === "IF_NEEDED")) {
       throw new BadRequestException(["It's offered to those who answered If needed first"]);

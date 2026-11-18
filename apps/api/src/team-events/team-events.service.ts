@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, callAt, daysBetween, eventDates, eventFallsOn, INSTRUMENTS, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@oneverse/core";
+import { addDays, callAt, daysBetween, eventDates, eventFallsOn, HOST, INSTRUMENTS, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@oneverse/core";
 import type { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { eventLocation } from "../locations/locations.service.js";
@@ -143,7 +143,7 @@ export class TeamEventsService {
     const strangers = positionIds.filter((id) => !positions.has(id));
     if (strangers.length > 0) throw new BadRequestException(strangers.map((id) => `parts: "${id}" isn't one of the team's positions`));
     const keys = parts.map((part) => part.part).filter((key): key is string => !!key);
-    const known = new Set<string>([...INSTRUMENTS, ...TECH_ROLES]);
+    const known = new Set<string>([...INSTRUMENTS, ...TECH_ROLES, HOST]);
     const custom = new Set((await this.prisma.client.customInstrument.findMany({ where: { id: { in: keys.filter((key) => !known.has(key)) } }, select: { id: true } })).map((row) => row.id));
     const unknown = keys.filter((key) => !known.has(key) && !custom.has(key));
     if (unknown.length > 0) throw new BadRequestException(unknown.map((key) => `parts: "${key}" isn't an instrument or a role`));

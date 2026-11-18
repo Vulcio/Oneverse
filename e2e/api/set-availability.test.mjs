@@ -1,6 +1,7 @@
 // Who can play, on the set's page (issue #520): answering Available or If
 // needed also says which parts one would like to play - the date's parts,
-// or one's own instruments and roles when it lists none. Those who edit the
+// or one's own instruments and roles when it lists none. Hosting is a
+// role's right (canHost), not something one lists: only they host. Those who edit the
 // set made for the date see everyone's answers and wishes there, the
 // admins' notes only for admins. The host and the music leader on the
 // date's line-up edit its set (not delete it or give it away).
@@ -32,6 +33,18 @@ const event = (await call(admin, "POST", `/teams/${team.id}/events`, {
   ],
 })).body;
 const base = `/teams/${team.id}/events/${event.id}/dates/${date}`;
+// Who may host: a team's own role (issue #520).
+const hosting = (await call(admin, "POST", `/teams/${team.id}/roles`, { name: "Hosts", canHost: true })).body;
+check("a team's own role that hosts", hosting.canHost === true, JSON.stringify(hosting));
+for (const who of [host, drummer]) await call(admin, "PUT", `/teams/${team.id}/members/${who.id}/roles`, { roleIds: [hosting.id] });
+let r0 = await call(leader, "PUT", `${base}/answer`, { answer: "AVAILABLE", wishes: ["HOST"] });
+check("hosting, without the role: not offered", r0.status === 400, JSON.stringify(r0.body));
+const leaderDate = (await call(leader, "GET", `/teams/${team.id}/event-dates?from=${date}&to=${date}`)).body.find((one) => one.eventId === event.id);
+check("…nor among what one may wish for", !leaderDate.wishOptions.some((part) => part.part === "HOST"), JSON.stringify(leaderDate.wishOptions));
+r0 = await call(admin, "POST", `${base}/lineup`, { userId: quiet.id, part: "HOST" });
+check("…nor put on the line-up as Host", r0.status === 400, JSON.stringify(r0.body));
+r0 = await call(admin, "POST", `${base}/lineup`, { guestName: "Visitor", part: "HOST" });
+check("…nor someone without an account", r0.status === 400, JSON.stringify(r0.body));
 
 // --- wishes
 let r = await call(drummer, "PUT", `${base}/answer`, { answer: "AVAILABLE", wishes: ["DRUMS", "MUSIC_LEADER"] });
@@ -52,10 +65,12 @@ const rehearsal = (await call(admin, "POST", `/teams/${team.id}/events`, { title
 const loose = `/teams/${team.id}/events/${rehearsal.id}/dates/${plus(5)}`;
 r = await call(drummer, "PUT", `${loose}/answer`, { answer: "AVAILABLE", wishes: ["PIANO"] });
 check("no parts: what one plays", r.status === 200 && r.body.wishes.join() === "PIANO", JSON.stringify(r.body));
+r = await call(drummer, "PUT", `${loose}/answer`, { answer: "AVAILABLE", wishes: ["HOST", "PIANO"] });
+check("…and hosting, with the role", r.status === 200 && r.body.wishes.join() === "HOST,PIANO", JSON.stringify(r.body));
 r = await call(drummer, "PUT", `${loose}/answer`, { answer: "AVAILABLE", wishes: ["BASS_GUITAR"] });
 check("…not what one doesn't", r.status === 400, JSON.stringify(r.body));
 const mineThere = (await call(drummer, "GET", `/users/me/event-dates?from=${plus(5)}&to=${plus(5)}`)).body.find((one) => one.eventId === rehearsal.id);
-check("My calendar: what one may wish for", mineThere.wishOptions.map((part) => part.part).join() === "DRUMS,PIANO" && mineThere.myAnswer.wishes.join() === "PIANO", JSON.stringify(mineThere));
+check("My calendar: what one may wish for", mineThere.wishOptions.map((part) => part.part).join() === "HOST,DRUMS,PIANO" && mineThere.myAnswer.wishes.join() === "HOST,PIANO", JSON.stringify(mineThere));
 r = await call(admin, "GET", `${base}/answers`);
 check("the admins' answers: everyone's wishes", r.body.find((one) => one.userId === drummer.id).wishes.join() === "DRUMS,MUSIC_LEADER", JSON.stringify(r.body));
 

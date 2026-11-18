@@ -1120,7 +1120,7 @@ export interface ScreenCurrent {
  */
 export interface ScopedRolesView {
   /** The server's roles teams may give. */
-  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean; canRoute: boolean; canManageScreens: boolean }[];
+  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean; canRoute: boolean; canHost?: boolean; canManageScreens: boolean }[];
   /** The team's or organisation's own (issue #206). */
   own: OwnRole[];
   members: { userId: string; roleIds: string[] }[];
@@ -1139,6 +1139,8 @@ export interface OwnRole {
   canOperateScreens: boolean;
   canCue: boolean;
   canRoute: boolean;
+  /** Hosts the dates there (issue #520). */
+  canHost?: boolean;
   canManageScreens: boolean;
   /** An organisation's: keeps files in its own bucket. */
   canStoreFiles: boolean;
@@ -1165,6 +1167,8 @@ export interface AdminRole {
   canCue: boolean;
   /** Changes what the screens of the sets they can open draw - their layers and overlays - without presenting (issue #322). */
   canRoute: boolean;
+  /** Hosts a team's dates (issue #520): may be on a date's line-up as its Host, who edits the date's set. */
+  canHost?: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations, without being their admin (issue #322). */
   canManageScreens: boolean;
   /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
@@ -1721,6 +1725,8 @@ export interface MemberEventAnswer {
   note: string | null;
   /** The admin who answered for them. */
   answeredBy: string | null;
+  /** Hosts the team's dates, by a role (issue #520). */
+  canHost?: boolean;
   /** The parts they'd like to play (issue #520), by partKey(). */
   wishes?: string[];
 }

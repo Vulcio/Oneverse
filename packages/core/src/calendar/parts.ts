@@ -26,12 +26,15 @@ export interface PartMember {
   techRoles: string[];
   /** The group's own positions they cover (issue #241). */
   positionIds?: string[];
+  /** Hosts the team's dates, by a role (issue #520): the only ones who cover the part HOST. */
+  canHost?: boolean;
 }
 
 /** Whether a member covers a part: they listed its instrument or role, or ticked the group's position. A named part, anyone. */
 export function coversPart(member: PartMember, part: EventPart): boolean {
   if (part.position) return (member.positionIds ?? []).includes(part.position);
   if (!part.part) return true;
+  if (part.part === HOST) return !!member.canHost;
   return member.instruments.includes(part.part) || member.techRoles.includes(part.part);
 }
 
@@ -44,11 +47,12 @@ export function partKey(part: EventPart): string {
 /**
  * The parts someone may say they'd like to play on a date (issue #520): the
  * date's own parts, when its event lists any; else what they play - their
- * instruments and roles. Wishes are kept by partKey().
+ * instruments and roles. Hosting only for those a role lets host. Wishes are
+ * kept by partKey().
  */
 export function wishOptions(parts: readonly EventPart[], member: PartMember): EventPart[] {
-  if (parts.length > 0) return [...parts];
-  return [...member.instruments, ...member.techRoles].map((part) => ({ part, count: 1 }));
+  if (parts.length > 0) return parts.filter((part) => part.part !== HOST || member.canHost);
+  return [...(member.canHost ? [HOST] : []), ...member.instruments, ...member.techRoles].map((part) => ({ part, count: 1 }));
 }
 
 /** The longest list of wishes kept with an answer. */
@@ -56,7 +60,11 @@ export const WISHES_LIMIT = 30;
 
 /** Who takes charge of the music (issue #520): the role, and the part an event asks for. */
 export const MUSIC_LEADER = "MUSIC_LEADER";
-/** Who hosts it ("Présidence", issue #520): picks its songs, passages and announcements. */
+/**
+ * Who hosts it ("Présidence", issue #520): picks its songs, passages and
+ * announcements. A part events ask for, covered only by those a role lets
+ * host (Role.canHost) - not something one lists oneself.
+ */
 export const HOST = "HOST";
 /** The parts whose people edit the date's set (issue #520), in the order they're shown. */
 export const SET_LEADING_PARTS: readonly string[] = [HOST, MUSIC_LEADER];

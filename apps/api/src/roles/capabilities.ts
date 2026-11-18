@@ -20,6 +20,8 @@ export interface Capabilities {
   canCue: boolean;
   /** Changes what the screens of the sets they can open draw - their layers and overlays (issue #322), without presenting. */
   canRoute: boolean;
+  /** Hosts a team's dates (issue #520): may be on a date's line-up as its Host, who edits the date's set. */
+  canHost: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations (issue #322), without being their admin. */
   canManageScreens: boolean;
   /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
@@ -45,6 +47,7 @@ type RoleRow = {
   canOperateScreens: boolean;
   canCue: boolean;
   canRoute: boolean;
+  canHost: boolean;
   canManageScreens: boolean;
   canUseOwnStorage: boolean;
   canStoreFiles: boolean;
@@ -62,6 +65,7 @@ const ROLE_FIELDS = {
   canOperateScreens: true,
   canCue: true,
   canRoute: true,
+  canHost: true,
   canManageScreens: true,
   canUseOwnStorage: true,
   canStoreFiles: true,
@@ -86,6 +90,7 @@ export function combineRoles(roles: RoleRow[]): Capabilities {
     canOperateScreens: roles.some((role) => role.canOperateScreens),
     canCue: roles.some((role) => role.canCue),
     canRoute: roles.some((role) => role.canRoute),
+    canHost: roles.some((role) => role.canHost),
     canManageScreens: roles.some((role) => role.canManageScreens),
     canUseOwnStorage: roles.some((role) => role.canUseOwnStorage),
     canStoreFiles: roles.some((role) => role.canStoreFiles),
@@ -124,7 +129,7 @@ export async function capabilitiesOf(prisma: PrismaClient, userId: string): Prom
  * What a user may do on one team's things - its sets, its screens (issue
  * #270): their roles everywhere, and those given them on that team or its
  * organisation. A role given there counts for what makes sense there only:
- * running screens, cueing and routing them (managing them: see `screenManagerScope`). Storage, uploads, review and stem separation stay the
+ * running screens, cueing and routing them, hosting its dates (managing them: see `screenManagerScope`). Storage, uploads, review and stem separation stay the
  * roles given everywhere.
  */
 export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamId: string | null): Promise<Capabilities> {
@@ -135,14 +140,22 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
   const scoped = await prisma.role.findMany({
     // The server's roles teams may give, and the team's or its organisation's own (only ever given there).
     where: { OR: [{ teamAssignable: true }, { ownerKey: { not: "" } }], assignments: { some: { userId, OR: [{ scopeTeamId: teamId }, ...(team.organizationId ? [{ scopeOrganizationId: team.organizationId }] : [])] } } },
-    select: { id: true, canOperateScreens: true, canCue: true, canRoute: true },
+    select: { id: true, canOperateScreens: true, canCue: true, canRoute: true, canHost: true },
   });
   return {
     ...everywhere,
     canOperateScreens: everywhere.canOperateScreens || scoped.some((role) => role.canOperateScreens),
     canCue: everywhere.canCue || scoped.some((role) => role.canCue),
     canRoute: everywhere.canRoute || scoped.some((role) => role.canRoute),
+    canHost: everywhere.canHost || scoped.some((role) => role.canHost),
   };
+}
+
+/** Who among `userIds` hosts a team's dates (issue #520): a role giving canHost, everywhere or on that team or its organisation. */
+export async function hostsAmong(prisma: PrismaClient, teamId: string, userIds: readonly string[]): Promise<Set<string>> {
+  const hosts = new Set<string>();
+  for (const userId of new Set(userIds)) if ((await capabilitiesIn(prisma, userId, teamId)).canHost) hosts.add(userId);
+  return hosts;
 }
 
 /**
