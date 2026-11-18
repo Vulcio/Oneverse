@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { BIO_LANGUAGES, foldForSearch } from "@oneverse/core";
-import type { Prisma } from "@oneverse/db";
+import { Prisma } from "@oneverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { artistImageUrl } from "../artwork/song-image-url.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -28,6 +28,8 @@ export interface ArtistDetail {
   imageSourceUrl: string | null;
   /** One per language (en, fr): the reader picks theirs. */
   bios: { text: string; language: string; sourceUrl: string | null; custom: boolean }[];
+  /** The other names they're credited under (issue #512); `name` is the main one. */
+  otherNames: string[];
   /** Whether the providers have been asked yet. */
   lookedUp: boolean;
   lookupsEnabled: boolean;
@@ -82,6 +84,65 @@ export class ArtistsService {
     return this.settings();
   }
 
+  /**
+   * The artist each name is one of (issue #512), by the name's key, for the
+   * names that belong to an artist with other names: its main name and key.
+   * A name not in the map is an artist of its own.
+   */
+  async mainNames(keys: string[]): Promise<Map<string, { key: string; name: string }>> {
+    const wanted = [...new Set(keys.filter(Boolean))];
+    if (wanted.length === 0) return new Map();
+    const [aliases, mains] = await Promise.all([
+      this.prisma.client.artistName.findMany({ where: { key: { in: wanted } }, select: { key: true, artist: { select: { key: true, name: true } } } }),
+      this.prisma.client.artist.findMany({ where: { key: { in: wanted }, names: { some: {} } }, select: { key: true, name: true } }),
+    ]);
+    const found = new Map<string, { key: string; name: string }>();
+    for (const main of mains) found.set(main.key, { key: main.key, name: main.name });
+    for (const alias of aliases) found.set(alias.key, { key: alias.artist.key, name: alias.artist.name });
+    return found;
+  }
+
+  /** Every name of the artist `name` is one of (issue #512): the main one first; just `name` when it has no others. */
+  async allNames(name: string): Promise<string[]> {
+    const artist = await this.resolve(name);
+    return artist ? [artist.name, ...artist.names.map((other) => other.name)] : [name.trim()];
+  }
+
+  /**
+   * The other names of the artists credited as `credited` (issue #512),
+   * by each credit's key: those the song isn't credited under already.
+   */
+  async otherNamesOf(credited: string[]): Promise<Map<string, string[]>> {
+    const keys = [...new Set(credited.map(artistKey).filter(Boolean))];
+    const mains = await this.mainNames(keys);
+    if (mains.size === 0) return new Map();
+    const artists = await this.prisma.client.artist.findMany({
+      where: { key: { in: [...new Set([...mains.values()].map((main) => main.key))] } },
+      select: { key: true, name: true, names: { select: { name: true, key: true }, orderBy: { name: "asc" } } },
+    });
+    const byKey = new Map(artists.map((artist) => [artist.key, [{ name: artist.name, key: artist.key }, ...artist.names]]));
+    const result = new Map<string, string[]>();
+    for (const key of keys) {
+      const main = mains.get(key);
+      const names = main && byKey.get(main.key);
+      if (names) result.set(key, names.filter((other) => other.key !== key).map((other) => other.name));
+    }
+    return result;
+  }
+
+  /** The artists' names that contain `query` (folded), each artist's every name (issue #512: the artists list found by a name nobody's credited under). */
+  async namesMatching(query: string): Promise<string[]> {
+    const q = artistKey(query);
+    if (!q) return [];
+    const aliases = await this.prisma.client.artistName.findMany({ select: { key: true, artistId: true } });
+    const ids = new Set(aliases.filter((alias) => alias.key.includes(q)).map((alias) => alias.artistId));
+    const artists = await this.prisma.client.artist.findMany({
+      where: { OR: [{ id: { in: [...ids] } }, { key: { contains: q }, names: { some: {} } }] },
+      select: { name: true, names: { select: { name: true } } },
+    });
+    return artists.flatMap((artist) => [artist.name, ...artist.names.map((other) => other.name)]);
+  }
+
   /** The artists' pictures by key, for the list of artists. */
   async picturesByKey(keys: string[]): Promise<Map<string, string>> {
     const artists = await this.prisma.client.artist.findMany({
@@ -95,7 +156,8 @@ export class ArtistsService {
   /** An artist, as the viewer sees them; not found when they can see no song by them. */
   async detail(user: AuthenticatedUser, name: string): Promise<ArtistDetail> {
     const { songCount, creditedAs } = await this.visibleSongs(user, name);
-    const artist = await this.prisma.client.artist.findUnique({ where: { key: artistKey(name) }, include: { bios: { orderBy: { language: "asc" } } } });
+    const found = await this.resolve(name);
+    const artist = found && (await this.prisma.client.artist.findUnique({ where: { id: found.id }, include: { bios: { orderBy: { language: "asc" } } } }));
     return {
       id: artist?.id ?? null,
       name: artist?.name ?? creditedAs,
@@ -104,6 +166,7 @@ export class ArtistsService {
       imageSource: artist?.imageStorageKey ? artist.imageSource : null,
       imageSourceUrl: artist?.imageStorageKey ? artist.imageSourceUrl : null,
       bios: (artist?.bios ?? []).map((bio) => ({ text: bio.text, language: bio.language, sourceUrl: bio.sourceUrl, custom: bio.custom })),
+      otherNames: (found?.names ?? []).map((other) => other.name),
       lookedUp: !!artist?.lookedUpAt,
       lookupsEnabled: (await this.settings()).enabled,
       canEdit: user.isGlobalAdmin,
@@ -131,7 +194,8 @@ export class ArtistsService {
   async lookUpNamed(name: string): Promise<{ picture: boolean; bios: number; failed: boolean } | null> {
     const key = artistKey(name);
     if (!key || !(await this.settings()).enabled) return null;
-    const existing = await this.prisma.client.artist.findUnique({ where: { key }, select: { lookedUpAt: true } });
+    // Another name of an artist (issue #512): theirs.
+    const existing = await this.resolve(name);
     if (existing?.lookedUpAt) return null;
     const artist = await this.ensure(name.trim());
     return this.lookUpArtist(artist.id, false);
@@ -150,6 +214,12 @@ export class ArtistsService {
     for (const { source } of credited) {
       const key = artistKey(source!);
       if (key && !byKey.has(key)) byKey.set(key, source!.trim());
+    }
+    // Another name of an artist (issue #512) is that artist, asked about once.
+    const mains = await this.mainNames([...byKey.keys()]);
+    for (const [key, main] of mains) {
+      byKey.delete(key);
+      byKey.set(main.key, main.name);
     }
     const asked = new Set(
       (await this.prisma.client.artist.findMany({ where: { key: { in: [...byKey.keys()] }, lookedUpAt: { not: null } }, select: { key: true } })).map((a) => a.key),
@@ -175,7 +245,7 @@ export class ArtistsService {
 
   async removePicture(user: AuthenticatedUser, name: string): Promise<void> {
     await this.visibleSongs(user, name);
-    const artist = await this.prisma.client.artist.findUnique({ where: { key: artistKey(name) } });
+    const artist = await this.resolve(name);
     if (!artist?.imageStorageKey) return;
     // "none": a new lookup doesn't bring Deezer's back unless asked to.
     await this.prisma.client.artist.update({ where: { id: artist.id }, data: { imageStorageKey: null, imageSource: "none", imageSourceUrl: null } });
@@ -199,6 +269,85 @@ export class ArtistsService {
     });
   }
 
+  /**
+   * An artist's names (issue #512): the main one - shown, and the one the
+   * providers are asked about - and the others they're credited under. A
+   * name that was an artist of its own joins this one: its other names
+   * too, its picture and bios where this one has none. A name that's
+   * another artist's other name is refused. Songs keep their credits; their
+   * search text gets the names.
+   */
+  async saveNames(user: AuthenticatedUser, name: string, main: string, otherNames: string[]): Promise<ArtistDetail> {
+    const { creditedAs } = await this.visibleSongs(user, name);
+    const artist = await this.ensure(creditedAs);
+    const before = [artist.name, ...(await this.prisma.client.artistName.findMany({ where: { artistId: artist.id }, select: { name: true } })).map((other) => other.name)];
+    // Each name once, by key; the main one isn't one of the others. A name left out of the list is no longer theirs.
+    const mainName = main.trim();
+    const mainKey = artistKey(mainName);
+    if (!mainKey) throw new BadRequestException("main must be a name");
+    const others = new Map<string, string>();
+    for (const other of otherNames) {
+      const key = artistKey(other);
+      if (key && key !== mainKey && !others.has(key)) others.set(key, other.trim());
+    }
+    const keys = [...others.keys()];
+    const [taken, separate] = await Promise.all([
+      this.prisma.client.artistName.findMany({ where: { key: { in: [...keys, mainKey] }, artistId: { not: artist.id } }, select: { name: true, artist: { select: { name: true } } } }),
+      this.prisma.client.artist.findMany({ where: { key: { in: [...keys, mainKey] }, id: { not: artist.id } }, include: { bios: true, names: true } }),
+    ]);
+    if (taken.length > 0) throw new ConflictException(`${taken[0]!.name} is already another name of ${taken[0]!.artist.name}`);
+    const merged = await this.prisma.client.$transaction(async (tx) => {
+      const unreferenced: string[] = [];
+      let current = await tx.artist.findUniqueOrThrow({ where: { id: artist.id }, include: { bios: true } });
+      for (const other of separate) {
+        // Its other names become this artist's.
+        for (const alias of other.names) if (alias.key !== mainKey && !others.has(alias.key)) others.set(alias.key, alias.name);
+        await tx.artistName.deleteMany({ where: { artistId: other.id } });
+        if (!current.imageStorageKey && other.imageStorageKey) {
+          current = await tx.artist.update({ where: { id: artist.id }, data: { imageStorageKey: other.imageStorageKey, imageSource: other.imageSource, imageSourceUrl: other.imageSourceUrl }, include: { bios: true } });
+        } else if (other.imageStorageKey) unreferenced.push(other.imageStorageKey);
+        for (const bio of other.bios) {
+          if (current.bios.some((mine) => mine.language === bio.language)) continue;
+          await tx.artistBio.create({ data: { artistId: artist.id, language: bio.language, text: bio.text, sourceUrl: bio.sourceUrl, custom: bio.custom } });
+        }
+        if (!current.musicbrainzId && other.musicbrainzId) await tx.artist.update({ where: { id: artist.id }, data: { musicbrainzId: other.musicbrainzId, wikidataId: other.wikidataId } });
+        await tx.artist.delete({ where: { id: other.id } });
+      }
+      await tx.artistName.deleteMany({ where: { artistId: artist.id } });
+      // A new main name: asked about again under it, as the providers know them by it.
+      const renamed = artistKey(current.name) !== mainKey;
+      await tx.artist.update({ where: { id: artist.id }, data: { key: mainKey, name: mainName, ...(renamed && { lookedUpAt: null }) } });
+      if (others.size > 0) await tx.artistName.createMany({ data: [...others].map(([key, other]) => ({ artistId: artist.id, key, name: other })) });
+      return unreferenced;
+    });
+    if (merged.length > 0) await this.storage.deleteUnreferenced(merged);
+    await this.refreshSongSearch([...before, mainName, ...others.values(), ...separate.map((other) => other.name)]);
+    return this.detail(user, mainName);
+  }
+
+  /** The search text of the songs credited under any of `names` again (issue #512): it holds their artists' other names. */
+  private async refreshSongSearch(names: string[]): Promise<void> {
+    const unique = [...new Set(names.map((name) => name.trim()).filter(Boolean))];
+    if (unique.length === 0) return;
+    await this.prisma.client.$executeRaw`
+      UPDATE "SongVersion" sv
+         SET "searchText" = song_version_search_text(sv.id, sv.title, sv."alternateTitle", sv."versionName")
+       WHERE sv.id IN (
+         SELECT vc."songVersionId" FROM "VersionContributor" vc
+          WHERE vc.roles @> ARRAY['PERFORMER']::"ContributorRole"[]
+            AND vc.source IS NOT NULL
+            AND lower(search_fold(vc.source)) IN (SELECT lower(search_fold(n)) FROM unnest(${unique}::text[]) AS n))`;
+  }
+
+  /** The artist `name` is (by their main name or another), with their other names; null when there's no such artist yet. */
+  private async resolve(name: string) {
+    const key = artistKey(name);
+    if (!key) return null;
+    const include = { names: { orderBy: { name: "asc" as const } } };
+    const alias = await this.prisma.client.artistName.findUnique({ where: { key }, select: { artist: { include } } });
+    return alias?.artist ?? (await this.prisma.client.artist.findUnique({ where: { key }, include }));
+  }
+
   /** An artist's picture, resized: only with its current key (the caller checks the signature). */
   async image(artistId: string, storageKey: string, width: number): Promise<ProcessedImage> {
     const artist = await this.prisma.client.artist.findUnique({ where: { id: artistId }, select: { imageStorageKey: true } });
@@ -210,8 +359,7 @@ export class ArtistsService {
   private async visibleSongs(user: AuthenticatedUser, name: string): Promise<{ songCount: number; creditedAs: string }> {
     const clean = name.trim();
     if (!clean) throw new NotFoundException("No such artist");
-    const [row] = await this.prisma.client.$queryRaw<{ folded: string }[]>`SELECT unaccent(${clean}) AS folded`;
-    const credit: Prisma.VersionContributorWhereInput = { roles: { has: "PERFORMER" }, sourceSearch: { equals: row?.folded ?? clean, mode: "insensitive" } };
+    const credit = await this.creditedAs(await this.allNames(clean));
     const where: Prisma.SongVersionWhereInput = { AND: [await this.access.songsVisibleTo(user), { contributors: { some: credit } }] };
     const [songCount, first] = await Promise.all([
       this.prisma.client.songVersion.count({ where }),
@@ -221,7 +369,21 @@ export class ArtistsService {
     return { songCount, creditedAs: first.source.trim() };
   }
 
+  /**
+   * Credits as a performer under any of `names` - ignoring case and accents
+   * as the database folds them (sourceSearch) - for the artist's songs and
+   * the library's artist filter (issue #512: every name of theirs).
+   */
+  async creditedAs(names: string[]): Promise<Prisma.VersionContributorWhereInput> {
+    const rows = await this.prisma.client.$queryRaw<{ folded: string }[]>`SELECT unaccent(n) AS folded FROM unnest(${names}::text[]) AS n`;
+    const folded = [...new Set(rows.map((row) => row.folded))];
+    return { roles: { has: "PERFORMER" }, OR: folded.map((name) => ({ sourceSearch: { equals: name, mode: "insensitive" as const } })) };
+  }
+
+  /** The artist row for `name`: the artist it's another name of (issue #512), else its own, made when there's none. */
   private async ensure(name: string) {
+    const existing = await this.resolve(name);
+    if (existing) return existing;
     const key = artistKey(name);
     return this.prisma.client.artist.upsert({ where: { key }, create: { key, name }, update: {} });
   }

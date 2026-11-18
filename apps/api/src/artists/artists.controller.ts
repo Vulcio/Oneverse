@@ -17,7 +17,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
-import { ArtistBioSchema, ArtistQuerySchema, ArtistSettingsSchema, LookUpArtistSchema } from "@oneverse/core";
+import { ArtistBioSchema, ArtistNamesSchema, ArtistQuerySchema, ArtistSettingsSchema, LookUpArtistSchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";
@@ -41,6 +41,8 @@ export class ArtistQueryDto extends zodDto(ArtistQuerySchema) {}
 export class LookUpArtistDto extends zodDto(LookUpArtistSchema) {}
 
 export class ArtistBioDto extends zodDto(ArtistBioSchema) {}
+
+export class ArtistNamesDto extends zodDto(ArtistNamesSchema) {}
 
 export class ArtistSettingsDto extends zodDto(ArtistSettingsSchema) {}
 
@@ -93,6 +95,13 @@ export class ArtistsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async saveBio(@CurrentUser() user: AuthenticatedUser, @Body() dto: ArtistBioDto): Promise<void> {
     await this.artists.saveBio(user, dto.name, dto.language, dto.text);
+  }
+
+  /** Their names (issue #512): the main one and the others they're credited under. */
+  @Put("artists/names")
+  @UseGuards(GlobalAdminGuard)
+  saveNames(@CurrentUser() user: AuthenticatedUser, @Body() dto: ArtistNamesDto) {
+    return this.artists.saveNames(user, dto.name, dto.main, dto.otherNames);
   }
 
   /** The picture, at a signed address handed out with the artist (see song-image-url.ts). */

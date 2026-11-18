@@ -2289,6 +2289,8 @@ export interface ArtistDetail {
   imageSourceUrl: string | null;
   /** One per language (en, fr): show the reader's. */
   bios: { text: string; language: string; sourceUrl: string | null; custom: boolean }[];
+  /** The other names they're credited under (issue #512): a former name, another spelling. `name` is the main one. */
+  otherNames: string[];
   /** Whether the providers have been asked yet. */
   lookedUp: boolean;
   lookupsEnabled: boolean;
@@ -2714,6 +2716,8 @@ export interface SongVersionLink {
 }
 
 export interface SongVersionDetail extends SongVersionSummary {
+  /** The other names its artists are credited under (issue #512), so a search by any of them finds it offline too. */
+  artistOtherNames?: string[];
   sortTitle: string | null;
   album: string | null;
   /** Written or published; separate from copyrightYear. */
@@ -3321,6 +3325,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** An empty text removes the bio written here. */
     saveArtistBio: (name: string, language: string, text: string) =>
       request<void>("/artists/bio", { method: "PUT", body: JSON.stringify({ name, language, text }) }),
+    /** An artist's names (issue #512): the one shown and the others; admins only. */
+    saveArtistNames: (name: string, main: string, otherNames: string[]) =>
+      request<ArtistDetail>("/artists/names", { method: "PUT", body: JSON.stringify({ name, main, otherNames }) }),
     getArtistSettings: () => request<ArtistSettings>("/admin/artists"),
     saveArtistSettings: (enabled: boolean) => request<ArtistSettings>("/admin/artists", { method: "PUT", body: JSON.stringify({ enabled }) }),
     resetArtistSettings: () => request<ArtistSettings>("/admin/artists", { method: "DELETE" }),

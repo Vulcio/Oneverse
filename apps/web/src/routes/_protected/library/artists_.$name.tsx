@@ -1,6 +1,6 @@
 import { METADATA_PROVIDER_NAMES, type ArtistDetail, type MetadataProviderKey } from "@oneverse/core";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ChevronLeft, ExternalLink, ImageUp, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { ChevronLeft, ExternalLink, ImageUp, Pencil, Plus, RefreshCw, Tags, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArtistPicture } from "#/components/artist-picture";
@@ -8,6 +8,7 @@ import { ImageCropDialog } from "@oneverse/ui/components/image-crop-dialog";
 import { SongCover } from "#/components/library-home";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 import { FieldError } from "@oneverse/ui/components/field";
@@ -15,7 +16,8 @@ import { FieldError } from "@oneverse/ui/components/field";
 /**
  * An artist's page (issue #86): their picture and a short bio (from Deezer
  * and Wikipedia, or uploaded and written by an admin), and their songs you
- * can see. The first visit asks the providers about them.
+ * can see. The first visit asks the providers about them. An artist with
+ * several names (issue #512) is one page, whichever name it's opened by.
  */
 export const Route = createFileRoute("/_protected/library/artists_/$name")({
   loader: async ({ params }) => {
@@ -37,6 +39,8 @@ function ArtistPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [editingNames, setEditingNames] = useState(false);
+  const navigate = useNavigate();
   const [draft, setDraft] = useState("");
   const [cropping, setCropping] = useState<File | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -86,12 +90,30 @@ function ArtistPage() {
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div>
               <h1 className="text-2xl font-semibold break-words">{artist.name}</h1>
+              {artist.otherNames.length > 0 ? (
+                <p className="text-sm text-muted-foreground" data-testid="artist-other-names">
+                  {t("artistPage.alsoKnownAs", { count: artist.otherNames.length, names: artist.otherNames.join(", ") })}
+                </p>
+              ) : null}
               <Link to="/library/songs" search={{ artist: artist.name }} className="text-sm text-muted-foreground hover:text-primary">
                 {t("library.songCount", { count: artist.songCount })}
               </Link>
             </div>
 
-            {editing ? (
+            {editingNames ? (
+              <ArtistNamesEditor
+                artist={artist}
+                busy={busy}
+                onCancel={() => setEditingNames(false)}
+                onSave={(main, otherNames) =>
+                  void run(async () => {
+                    const saved = await apiClient.saveArtistNames(artist.name, main, otherNames);
+                    setArtist(saved);
+                    if (saved.name !== artist.name) await navigate({ to: "/library/artists/$name", params: { name: saved.name }, replace: true });
+                  }).then((done) => done && setEditingNames(false))
+                }
+              />
+            ) : editing ? (
               <div className="flex flex-col gap-2">
                 <label htmlFor="artist-bio" className="text-sm font-medium">
                   {t("artistPage.bioIn", { language: t(`artistPage.language_${language === "fr" ? "fr" : "en"}`) })}
@@ -142,7 +164,7 @@ function ArtistPage() {
               </p>
             ) : null}
 
-            {artist.canEdit && !editing ? (
+            {artist.canEdit && !editing && !editingNames ? (
               <div className="flex flex-wrap gap-2 border-t pt-3">
                 <Button size="sm" variant="outline" disabled={busy} onClick={() => fileInput.current?.click()}>
                   <ImageUp />
@@ -165,6 +187,10 @@ function ArtistPage() {
                 >
                   <Pencil />
                   {t("artistPage.editBio")}
+                </Button>
+                <Button size="sm" variant="outline" disabled={busy} onClick={() => setEditingNames(true)}>
+                  <Tags />
+                  {t("artistPage.editNames")}
                 </Button>
                 {artist.lookupsEnabled ? (
                   <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run(async () => setArtist(await apiClient.lookUpArtist(artist.name, true)))}>
@@ -234,5 +260,76 @@ function ArtistPage() {
         />
       ) : null}
     </div>
+  );
+}
+
+/**
+ * An admin's list of an artist's names (issue #512): every name, the one
+ * shown picked, others removed or added. Saved together.
+ */
+function ArtistNamesEditor({
+  artist,
+  busy,
+  onCancel,
+  onSave,
+}: {
+  artist: ArtistDetail;
+  busy: boolean;
+  onCancel: () => void;
+  onSave: (main: string, otherNames: string[]) => void;
+}) {
+  const { t } = useTranslation();
+  const [names, setNames] = useState([artist.name, ...artist.otherNames]);
+  const [main, setMain] = useState(artist.name);
+  const [adding, setAdding] = useState("");
+  const same = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" }) === 0;
+
+  function add() {
+    const name = adding.trim();
+    if (name && !names.some((other) => same(other, name))) setNames([...names, name]);
+    setAdding("");
+  }
+
+  return (
+    <fieldset className="flex flex-col gap-2" data-testid="artist-names-editor">
+      <legend className="mb-2 text-sm font-medium">{t("artistPage.names")}</legend>
+      <ul className="flex flex-col gap-1">
+        {names.map((name) => (
+          <li key={name} className="flex items-center gap-2">
+            <label className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+              <input type="radio" name="artist-main-name" checked={main === name} onChange={() => setMain(name)} aria-label={t("artistPage.mainName", { name })} />
+              <span className="truncate">{name}</span>
+            </label>
+            {main === name ? null : (
+              <Button size="icon" variant="ghost" className="size-8" aria-label={t("artistPage.removeName", { name })} onClick={() => setNames(names.filter((other) => other !== name))}>
+                <X />
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <form
+        className="flex gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          add();
+        }}
+      >
+        <Input value={adding} onChange={(event) => setAdding(event.target.value)} placeholder={t("artistPage.newName")} aria-label={t("artistPage.newName")} maxLength={300} />
+        <Button type="submit" size="sm" variant="outline" disabled={!adding.trim()}>
+          <Plus />
+          {t("artistPage.addName")}
+        </Button>
+      </form>
+      <p className="text-xs text-muted-foreground">{t("artistPage.otherNamesHint")}</p>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={busy} onClick={() => onSave(main, names.filter((name) => name !== main))}>
+          {t("artistPage.saveNames")}
+        </Button>
+        <Button size="sm" variant="ghost" disabled={busy} onClick={onCancel}>
+          {t("library.cancel")}
+        </Button>
+      </div>
+    </fieldset>
   );
 }

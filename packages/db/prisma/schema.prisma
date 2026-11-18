@@ -2976,7 +2976,29 @@ model Artist {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  bios ArtistBio[]
+  bios  ArtistBio[]
+  names ArtistName[]
+}
+
+// An artist's other names (issue #512): a former name or another spelling
+// they've been credited under ("Hillsong en Français" for Parfaitement
+// Imparfait). Songs keep their credit as written; every name leads to this
+// artist - its page, the artists list, the library's filter and search.
+// `key` is the name folded as Artist.key is, unique across both tables (a
+// name belongs to one artist); `searchKey` is search_fold()'s, kept by a
+// database trigger (migration 20270131000000) for the songs' searchText.
+model ArtistName {
+  id        String   @id @default(cuid())
+  artistId  String
+  name      String
+  key       String   @unique
+  searchKey String?
+  createdAt DateTime @default(now())
+
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artistId])
+  @@index([searchKey])
 }
 
 // An artist's short bio in one language (issue #86): Wikipedia's summary

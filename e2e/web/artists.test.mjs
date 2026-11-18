@@ -2,7 +2,8 @@
 // artists; an artist's page with the bio from Wikipedia and the picture
 // from Deezer (stand-ins, lib/fake-providers.mjs), looked up on the first
 // visit when it wasn't yet; an admin writes the bio, uploads a picture
-// (cropped round) and removes it; the admin's settings.
+// (cropped round) and removes it; an admin gives them another name and
+// shows it (issue #512); the admin's settings.
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { png, startFakeProviders } from "../lib/fake-providers.mjs";
@@ -71,6 +72,21 @@ await step("an artist not looked up yet is, on the first visit", async () => {
   await page.goto(artistPath(quiet));
   await page.getByRole("heading", { name: quiet }).waitFor();
   await page.getByTestId("artist-header").getByText(`${quiet} is a band.`).waitFor({ timeout: 30000 });
+});
+
+await step("an admin gives them another name, shown instead: the page follows, the old name leads there", async () => {
+  const renamed = `Quiet Again ${stamp}`;
+  await page.getByRole("button", { name: "Edit the names" }).click();
+  const editor = page.getByTestId("artist-names-editor");
+  await editor.getByLabel("Another name").fill(renamed);
+  await editor.getByRole("button", { name: "Add" }).click();
+  await editor.getByLabel(`Show ${renamed} as the name`).check();
+  await editor.getByRole("button", { name: "Save the names" }).click();
+  await page.waitForURL(artistPath(renamed));
+  await page.getByRole("heading", { name: renamed }).waitFor();
+  await page.getByTestId("artist-other-names").getByText(`Also known as ${quiet}`).waitFor();
+  await page.goto(artistPath(quiet));
+  await page.getByRole("heading", { name: renamed }).waitFor();
 });
 
 await step("the admin's artist settings", async () => {

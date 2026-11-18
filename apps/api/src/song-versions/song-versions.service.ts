@@ -310,7 +310,8 @@ export class SongVersionsService {
         ...(query.tagId ? [{ versionTags: { some: { tagId: query.tagId } } }] : []),
         // An artist's songs (issue #58): the whole name, ignoring case and accents.
         ...(query.artist
-          ? [{ contributors: { some: { roles: { has: "PERFORMER" as const }, sourceSearch: { equals: await this.unaccent(query.artist), mode: "insensitive" as const } } } }]
+          ? // Every name of theirs (issue #512).
+            [{ contributors: { some: await this.artists.creditedAs(await this.artists.allNames(query.artist)) } }]
           : []),
       ],
     };
@@ -323,21 +324,29 @@ export class SongVersionsService {
    */
   async artistsForUser(user: AuthenticatedUser, query = ""): Promise<{ name: string; songCount: number; imageUrl: string | null }[]> {
     const q = query.trim();
+    // Found by any of their names (issue #512), even one nobody's credited under.
+    const named = q ? await this.artists.namesMatching(q) : [];
     const groups = await this.prisma.client.versionContributor.groupBy({
       by: ["source"],
       where: {
         source: { not: null },
         roles: { has: "PERFORMER" },
         songVersion: await this.access.songsVisibleTo(user),
-        ...(q && { sourceSearch: { contains: await this.unaccent(q), mode: "insensitive" } }),
+        ...(q && {
+          OR: [{ sourceSearch: { contains: await this.unaccent(q), mode: "insensitive" } }, ...(named.length ? [await this.artists.creditedAs(named)] : [])],
+        }),
       },
       _count: { _all: true },
     });
+    // Each artist once, under their main name, whatever names their songs credit (issue #512).
+    const mains = await this.artists.mainNames(groups.map((group) => artistKey(group.source!)));
     const byName = new Map<string, { name: string; songCount: number; imageUrl: string | null }>();
     for (const group of groups) {
-      const name = group.source!.trim();
-      if (!name) continue;
-      const key = artistKey(name);
+      const credited = group.source!.trim();
+      if (!credited) continue;
+      const main = mains.get(artistKey(credited));
+      const key = main?.key ?? artistKey(credited);
+      const name = main?.name ?? credited;
       const entry = byName.get(key) ?? { name, songCount: 0, imageUrl: null };
       entry.songCount += group._count._all;
       byName.set(key, entry);
@@ -361,7 +370,10 @@ export class SongVersionsService {
         where: { roles: { has: "PERFORMER" }, source: { not: null }, songVersion: where },
       }),
     ]);
-    return { songCount, ownSongCount, artistCount: new Set(artists.map((a) => a.source!.trim().toLowerCase())).size };
+    // An artist with several names counts once (issue #512).
+    const keys = artists.map((a) => artistKey(a.source!)).filter(Boolean);
+    const mains = await this.artists.mainNames(keys);
+    return { songCount, ownSongCount, artistCount: new Set(keys.map((key) => mains.get(key)?.key ?? key)).size };
   }
 
   /**
@@ -383,7 +395,13 @@ export class SongVersionsService {
     if (!(await this.access.canSeeSong(user, version))) throw new ForbiddenException("Not visible to you");
     const isFavorite = (await this.prisma.client.favoriteSong.count({ where: { userId: user.id, songVersionId: id } })) > 0;
     const privateIds = await this.privateAmong(user, [version]);
-    return { ...toDetailItem(version, await this.rightsOn(user, version), await this.seesTag(user)), private: privateIds.has(version.id), isFavorite };
+    const otherNames = await this.artistOtherNames([version]);
+    return {
+      ...toDetailItem(version, await this.rightsOn(user, version), await this.seesTag(user)),
+      private: privateIds.has(version.id),
+      isFavorite,
+      ...otherNames(version),
+    };
   }
 
   /**
@@ -403,14 +421,25 @@ export class SongVersionsService {
     const versions = await this.prisma.client.songVersion.findMany({ where: { AND: [visible, { id: { in: ids } }] }, select: DETAIL_SELECT });
     const favorite = new Set(favorites.map((row) => row.songVersionId));
     const privateIds = await this.privateAmong(user, versions);
+    const otherNames = await this.artistOtherNames(versions);
     return new Map(
       versions.map((version) => {
         const canManage = canEdit(version);
         const sharedBy = canManage ? null : (shared.get(version.id) ?? null);
         const rights: Rights = { canManage, canEdit: canManage || !!sharedBy?.canEdit, sharedBy };
-        return [version.id, { ...toDetailItem(version, rights, seesTag), private: privateIds.has(version.id), isFavorite: favorite.has(version.id) }];
+        return [version.id, { ...toDetailItem(version, rights, seesTag), private: privateIds.has(version.id), isFavorite: favorite.has(version.id), ...otherNames(version) }];
       }),
     );
+  }
+
+  /** The other names of each song's artists (issue #512), `artistOtherNames` when there are some: kept offline, a search by any of them finds it. */
+  private async artistOtherNames(versions: { contributors: { source: string | null; roles: string[] }[] }[]) {
+    const performers = (version: (typeof versions)[number]) => version.contributors.filter((c) => c.roles.includes("PERFORMER") && c.source).map((c) => c.source!);
+    const byKey = await this.artists.otherNamesOf(versions.flatMap(performers));
+    return (version: (typeof versions)[number]): { artistOtherNames?: string[] } => {
+      const names = [...new Set(performers(version).flatMap((name) => byKey.get(artistKey(name)) ?? []))];
+      return names.length > 0 ? { artistOtherNames: names } : {};
+    };
   }
 
   /** The songs `ids` the user can see, as the library lists them, in that order (issue #81). */
