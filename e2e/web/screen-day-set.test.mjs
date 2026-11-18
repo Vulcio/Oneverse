@@ -47,7 +47,12 @@ try {
   });
 
   await step("OK opens the team's sets: today and upcoming, then undated; the arrows and OK pick tomorrow's", async () => {
-    await tv.keyboard.press("Enter");
+    // A press before the screen listens is lost: pressed again until the list shows, more than the gap
+    // between presses apart (two quick ones are a count towards the menu, not the list).
+    for (let i = 0; i < 10 && !(await picker().isVisible()); i++) {
+      await tv.keyboard.press("Enter");
+      await picker().waitFor({ timeout: 3000 }).catch(() => {});
+    }
     await picker().waitFor();
     const names = await picker().getByTestId("screen-pick-set").allInnerTexts();
     const order = names.map((one) => one.split("\n")[0]);

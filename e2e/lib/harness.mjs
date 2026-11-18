@@ -54,6 +54,16 @@ export function stepper(getPage) {
     } catch (err) {
       results.push(false);
       console.log(`FAIL ${name} -> ${err.message.split("\n")[0]}`);
+      // Where in the suite, and what Playwright was waiting for (issue #515): enough to fix a flaky step from
+      // CI's log alone. Indented, so run.mjs's summary keeps only the FAIL line.
+      const at = err.stack?.split("\n").find((line) => line.includes(".test.mjs:"))?.trim();
+      const log = err.message
+        .split("\n")
+        .slice(1)
+        .map((line) => line.replace(/\x1b\[[0-9;]*m/g, "").trim())
+        .filter((line) => line && !/^=+|^- (retrying|waiting \d+ms)/.test(line));
+      const waited = log.length > 6 ? [...log.slice(0, 2), "…", ...log.slice(-3)] : log;
+      for (const line of [at, ...waited].filter(Boolean)) console.log(`       ${line.slice(0, 300)}`);
       await getPage()
         ?.screenshot({ path: `${SP}/${suite}-fail-${results.length}.png`, fullPage: true })
         .catch(() => {});
