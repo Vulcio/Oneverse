@@ -2021,7 +2021,7 @@ const en = {
     roleManageScreensHint: "Pair, change and disconnect the screens and Pulses of their teams and organisations, without being their admin. It gives no say over the sets on them, or who owns them.",
     roleCueHint: "Move the screens of any set they can open to the next or previous song or section, from Live, without presenting any slide.",
     roleHost: "Host the dates",
-    roleHostHint: "Be put on a date's line-up as its Host (\"Présidence\"), who changes that date's set - its songs, passages and texts - beside the team's admins. Given on a team or organisation, only there.",
+    roleHostHint: "Be put on an organisation event's line-up as its Host (\"Présidence\"), who changes that date's set - its songs, passages and texts - beside the team's admins. A team's own events don't need it: their admins pick their host.",
     roleRoute: "Route the screens",
     roleRouteHint: "Change what the screens of any set they can open draw - hide, show or clear their layers and the title card, for all of them or one - from the operator's view, without presenting. While someone runs the screens alone, only they do.",
     roleLossless: "Keep lossless originals",

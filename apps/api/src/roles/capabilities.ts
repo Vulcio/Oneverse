@@ -165,7 +165,7 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
 
 /**
  * The given parts (GIVEN_PARTS: hosting) each of `userIds` may fill on a
- * team's dates (issue #520): from their roles everywhere, or given on that
+ * team's organisation events (issue #520; givenOn() for a date): from their roles everywhere, or given on that
  * team or its organisation - to them, or to a group of the organisation
  * they're in.
  */
@@ -176,6 +176,16 @@ export async function givenPartsAmong(prisma: PrismaClient, teamId: string, user
     out.set(userId, Object.entries(GIVEN_PARTS).filter(([, field]) => capabilities[field]).map(([part]) => part));
   }
   return out;
+}
+
+/**
+ * The given parts someone may fill on an event's dates (issue #520): on an
+ * organisation's event, those their roles give them (`byRole`, from
+ * givenPartsAmong); on a team's own event, every one - its admins name
+ * whoever they like.
+ */
+export function givenOn(organizationEventId: string | null | undefined, byRole: readonly string[] | undefined): string[] {
+  return organizationEventId ? [...(byRole ?? [])] : Object.keys(GIVEN_PARTS);
 }
 
 /** Whether someone may fill a given part on a team's dates. */

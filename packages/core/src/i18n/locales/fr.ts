@@ -2024,7 +2024,7 @@ const fr: typeof en = {
     roleManageScreensHint: "Associer, modifier et déconnecter les écrans et les Pulse de ses équipes et organisations, sans en être administrateur. Cela ne donne aucun droit sur les listes qu'ils affichent, ni sur qui les possède.",
     roleCueHint: "Passer les écrans de toute liste que l'on peut ouvrir au chant ou à la partie suivante ou précédente, depuis Live, sans présenter n'importe quelle diapositive.",
     roleHost: "Assurer la présidence",
-    roleHostHint: "Être placé dans l'équipe du jour d'une date comme Présidence, qui modifie la liste de cette date - ses chants, passages et textes - à côté des administrateurs de l'équipe. Donné sur une équipe ou une organisation, seulement là.",
+    roleHostHint: "Être placé dans l'équipe du jour d'un événement de l'organisation comme Présidence, qui modifie la liste de cette date - ses chants, passages et textes - à côté des administrateurs de l'équipe. Les événements propres d'une équipe n'en ont pas besoin : ses administrateurs choisissent leur présidence.",
     roleRoute: "Orienter les écrans",
     roleRouteHint: "Changer ce que dessinent les écrans de toute liste que l'on peut ouvrir - masquer, afficher ou effacer leurs calques et la carte de titre, pour tous ou pour l'un d'eux - depuis la vue de l'opérateur, sans présenter. Quand quelqu'un pilote les écrans seul, lui seul le fait.",
     roleLossless: "Garder les originaux sans perte",

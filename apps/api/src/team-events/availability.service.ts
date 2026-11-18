@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { AVAILABILITY_ANSWERS, callAt, wishOptions, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@oneverse/core";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { givenPartsAmong } from "../roles/capabilities.js";
+import { givenOn, givenPartsAmong } from "../roles/capabilities.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
 import { placesElsewhere, type LineupConflict } from "./lineup.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
@@ -54,9 +54,10 @@ export class AvailabilityService {
     const viewerUser = await this.prisma.client.user.findUnique({ where: { id: viewerId }, select: { instruments: true, techRoles: true } });
     // …and the group's positions they cover (issue #241).
     const viewerMembership = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: viewerId } }, select: { positionIds: true } });
-    // Who hosts the team's dates, by a role (issue #520).
+    // Who hosts the organisation's events, by a role (issue #520); anyone the team's own.
     const partsGiven = await givenPartsAmong(this.prisma.client, teamId, [viewerId, ...memberRows.map((m) => m.userId)]);
-    const viewer = viewerUser ? { ...viewerUser, positionIds: viewerMembership?.positionIds ?? [], givenParts: partsGiven.get(viewerId) ?? [] } : null;
+    const organizationEventOf = new Map((await this.prisma.client.teamEvent.findMany({ where: { id: { in: [...new Set(dates.map((d) => d.eventId))] } }, select: { id: true, organizationEventId: true } })).map((e) => [e.id, e.organizationEventId]));
+    const viewerAt = (eventId: string) => (viewerUser ? { ...viewerUser, positionIds: viewerMembership?.positionIds ?? [], givenParts: givenOn(organizationEventOf.get(eventId), partsGiven.get(viewerId)) } : null);
     const members = isAdmin ? memberRows.map((m) => m.userId) : [viewerId];
     const userIds = members.includes(viewerId) ? members : [...members, viewerId];
     const [answers, away, lineupRows] = await Promise.all([
@@ -87,6 +88,7 @@ export class AvailabilityService {
       byDate.set(k, [...(byDate.get(k) ?? []), answer]);
     }
     return dates.map((date) => {
+      const viewer = viewerAt(date.eventId);
       const given = byDate.get(key(date.eventId, date.date)) ?? [];
       const mine = given.find((answer) => answer.userId === viewerId);
       const myAnswer = { ...effectiveAnswer(mine?.answer ?? null, away.get(viewerId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId, wishes: mine?.wishes ?? [] };
@@ -101,7 +103,7 @@ export class AvailabilityService {
           const own = given.find((answer) => answer.userId === userId)?.answer ?? null;
           const shown = effectiveAnswer(own, away.get(userId) ?? [], date.date);
           shownOf.set(userId, shown);
-          return { ...user, positionIds, givenParts: partsGiven.get(userId) ?? [], answer: shown.answer };
+          return { ...user, positionIds, givenParts: givenOn(organizationEventOf.get(date.eventId), partsGiven.get(userId)), answer: shown.answer };
         });
         for (const member of answered) counts[member.answer ?? "NONE"]++;
         if (date.parts?.length) coverage = partCoverage(date.parts, answered, placed);
@@ -172,16 +174,16 @@ export class AvailabilityService {
   }
 
   /** What someone may wish to play on an event's date (issue #520): its parts, else their instruments and roles. */
-  private async wishOptionsOf(teamId: string, event: { parts: EventRow["parts"] }, userId: string): Promise<EventPart[]> {
+  private async wishOptionsOf(teamId: string, event: { parts: EventRow["parts"]; organizationEventId: string | null }, userId: string): Promise<EventPart[]> {
     const [user, membership] = await Promise.all([
       this.prisma.client.user.findUnique({ where: { id: userId }, select: { instruments: true, techRoles: true } }),
       this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { positionIds: true } }),
     ]);
-    const givenParts = (await givenPartsAmong(this.prisma.client, teamId, [userId])).get(userId) ?? [];
+    const givenParts = givenOn(event.organizationEventId, event.organizationEventId ? (await givenPartsAmong(this.prisma.client, teamId, [userId])).get(userId) : []);
     return wishOptions(partsOf(event), { instruments: user?.instruments ?? [], techRoles: user?.techRoles ?? [], positionIds: membership?.positionIds ?? [], givenParts });
   }
 
-  private async checkedWishes(teamId: string, event: { parts: EventRow["parts"] }, userId: string, wishes: string[]): Promise<string[]> {
+  private async checkedWishes(teamId: string, event: { parts: EventRow["parts"]; organizationEventId: string | null }, userId: string, wishes: string[]): Promise<string[]> {
     const allowed = new Set((await this.wishOptionsOf(teamId, event, userId)).map(partKey));
     const unknown = wishes.filter((wish) => !allowed.has(wish));
     if (unknown.length > 0) throw new BadRequestException([`wishes must be among the date's parts, or what they play when it lists none: ${unknown.join(", ")}`]);
@@ -226,7 +228,7 @@ export class AvailabilityService {
           note: own?.note ?? (shown.away ? (ranges[0]?.note ?? null) : null),
           answeredBy: own?.answeredBy?.displayName ?? null,
           wishes: own?.wishes ?? [],
-          givenParts: given.get(user.id) ?? [],
+          givenParts: givenOn(event.organizationEventId, given.get(user.id)),
         };
       })
       .sort((a, b) => order.indexOf(a.answer) - order.indexOf(b.answer) || a.displayName.localeCompare(b.displayName));
@@ -351,7 +353,7 @@ export class AvailabilityService {
             myAnswer: { ...effectiveAnswer(mine?.answer ?? null, away.get(userId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId, wishes: mine?.wishes ?? [] },
             parts: partsOf(event),
             // What they may say they'd like to play (issue #520).
-            wishOptions: wishOptions(partsOf(event), { instruments: me?.instruments ?? [], techRoles: me?.techRoles ?? [], positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenIn.get(event.teamId) ?? [] }),
+            wishOptions: wishOptions(partsOf(event), { instruments: me?.instruments ?? [], techRoles: me?.techRoles ?? [], positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenOn(event.organizationEventId, givenIn.get(event.teamId)) }),
             rehearsalFor: null as RehearsalOf | null,
             // Who's on which part; one's own place to accept or decline.
             lineup: lineupRows
@@ -377,7 +379,7 @@ export class AvailabilityService {
                     !onIt &&
                     !!part &&
                     !!me &&
-                    coversPart({ ...me, positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenIn.get(event.teamId) ?? [] }, part) &&
+                    coversPart({ ...me, positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenOn(event.organizationEventId, givenIn.get(event.teamId)) }, part) &&
                     (!!row.swapWidenedAt || effectiveAnswer(answerOf.get(key(event.id, date.date))?.answer ?? null, away.get(userId) ?? [], date.date).answer === "IF_NEEDED"),
                 };
               }),
