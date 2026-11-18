@@ -60,6 +60,25 @@ await step("slower and faster while it runs; paused, it stays", async () => {
   if ((await scrollY()) !== paused) throw new Error("still scrolling after pausing");
 });
 
+await step("scrolled by hand, it lets go, then carries on from there (#508)", async () => {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await control().getByRole("button", { name: "Start scrolling" }).click();
+  await page.waitForTimeout(1000);
+  await page.mouse.move(640, 400);
+  // A trackpad's or wheel's scroll, a few moves in a row: autoscroll doesn't touch the page meanwhile.
+  for (let i = 0; i < 5; i++) {
+    await page.mouse.wheel(0, 120);
+    await page.waitForTimeout(60);
+  }
+  const left = await scrollY();
+  await page.waitForTimeout(100);
+  if (Math.abs((await scrollY()) - left) > 1) throw new Error(`moved while the hand was on it: ${left} -> ${await scrollY()}`);
+  // Then it carries on from where it was left, forwards, never back to where it was.
+  await page.waitForFunction((from) => window.scrollY > from + 1, left, { timeout: 5000 });
+  if ((await scrollY()) < left) throw new Error("went back");
+  await control().getByRole("button", { name: "Pause scrolling" }).click();
+});
+
 await step("no duration: the length worked out from the tempo, marked as a guess", async () => {
   await page.goto(`${WEB}/library/${untimed.id}`);
   await page.waitForLoadState("networkidle");
@@ -77,6 +96,15 @@ await step("with the metronome playing, it follows the music", async () => {
   if (await control().getByRole("button", { name: "Faster" }).count()) throw new Error("a speed while following");
   // The metronome counts in, then the page goes on with its beats.
   await page.waitForFunction(() => window.scrollY > 0, null, { timeout: 15000 });
+  // Read ahead by hand: the page stays there a moment, then comes back to the music (#508).
+  const following = await scrollY();
+  await page.mouse.move(640, 400);
+  await page.mouse.wheel(0, 2000);
+  await page.waitForFunction((from) => window.scrollY > from + 1000, following);
+  const ahead = await scrollY();
+  await page.waitForTimeout(1500);
+  if ((await scrollY()) < ahead - 2) throw new Error(`back to the music too soon: ${ahead} -> ${await scrollY()}`);
+  await page.waitForFunction((from) => window.scrollY < from - 500, ahead, { timeout: 8000 });
   // Stopped: its own clock again.
   await page.getByTestId("practice-metronome").click();
   await control().getByText("100%").waitFor();

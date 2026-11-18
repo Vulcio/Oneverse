@@ -9,8 +9,14 @@ import { passSelector } from "@oneverse/screen/components/song-chart";
  * line due now about a third of the way down the screen. An intro or an
  * instrumental holds its place as long as it lasts; a short line goes by
  * quickly. While the song's stems, its recording or its metronome play, it
- * follows them instead of its own clock. Scrolled by hand, it carries on
- * from there.
+ * follows them instead of its own clock.
+ *
+ * Scrolled by hand (issue #508), it lets go: while a finger, a trackpad, a
+ * wheel, the keys or the scrollbar move the page, and while it glides on
+ * after a flick, autoscroll doesn't touch it. Then it eases back in from where
+ * the page was left. Following the music, the nudge moves where the line
+ * played sits on the screen, for the rest of that song; scrolled away from
+ * it (reading ahead), the page comes back to the music a little later.
  */
 
 /** One song on the page, as autoscroll goes through it. */
@@ -52,8 +58,16 @@ interface Anchor {
 
 /** How long a jump (a page laid out again, the music jumping) takes to catch up, in ms. */
 const EASE_MS = 200;
-/** How long after a hand scroll the music isn't followed. */
-const HAND_PAUSE_MS = 4000;
+/** How long the page must be still, after a hand scroll and its glide, before autoscroll takes it back, in ms. */
+const SETTLE_MS = 250;
+/** How long autoscroll takes to get back to its speed after a hand scroll, in ms. */
+const RAMP_MS = 1500;
+/** Read ahead by hand while the music plays: how long before the page comes back to the music, in ms. */
+const LOOK_AHEAD_MS = 3000;
+/** How long coming back to the music takes, in ms. */
+const RETURN_MS = 600;
+/** How much of the screen's height, at its top and bottom, doesn't count as the line played being seen. */
+const SEEN_MARGIN = 0.05;
 /** How often the lines are measured again, in ms (text size, columns, a window resized). */
 const MEASURE_MS = 500;
 
@@ -79,8 +93,46 @@ export function useAutoscroll(options: AutoscrollOptions): void {
     measure();
     let position = scroller.scrollTop;
     let clock = clockAt(anchors, position + latest.current.readingLine(scroller));
-    let handUntil = 0;
     let last = performance.now();
+    // A hand on the page: a finger moving it, the scrollbar held, or the page moved by something
+    // other than autoscroll (a wheel, a trackpad, the keys, a glide after a flick) not long ago.
+    let dragging = false;
+    let handAt = -Infinity;
+    let handled = false;
+    // Back from a hand scroll: when, for the ease back to speed.
+    let backAt = -Infinity;
+    // Following the music: where the line played sits, moved by a hand (pixels below the reading line), for that song.
+    let nudge = { song: -1, by: 0 };
+    // Read ahead while the music plays: when the page goes back to it (0: not reading ahead).
+    let returnAt = 0;
+    let returning = false;
+    const target = page(scroller) ? window : scroller;
+    const onScroll = () => {
+      if (Math.abs(scroller.scrollTop - Math.round(position)) > 2) handAt = performance.now();
+    };
+    const onTouchMove = () => {
+      dragging = true;
+      handAt = performance.now();
+    };
+    const onRelease = () => {
+      if (!dragging) return;
+      dragging = false;
+      handAt = performance.now();
+    };
+    // The scrollbar held: a press on the scroller itself, not on what's in it.
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target === scroller || (page(scroller) && event.target === document.documentElement)) dragging = true;
+    };
+    const onWheel = () => {
+      handAt = performance.now();
+    };
+    target.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onRelease, { passive: true });
+    window.addEventListener("touchcancel", onRelease, { passive: true });
+    window.addEventListener("pointerdown", onPointerDown, { passive: true });
+    window.addEventListener("pointerup", onRelease, { passive: true });
     let frame = requestAnimationFrame(function step(now) {
       const { songs: songsOf, speed, music, readingLine, onEnd } = latest.current;
       const songs = songsOf();
@@ -91,33 +143,77 @@ export function useAutoscroll(options: AutoscrollOptions): void {
         measuredAt = now;
       }
       const line = readingLine(scroller);
-      // Scrolled by hand meanwhile: carry on from there.
-      if (Math.abs(scroller.scrollTop - Math.round(position)) > 2) {
-        position = scroller.scrollTop;
-        clock = clockAt(anchors, position + line);
-        handUntil = now + HAND_PAUSE_MS;
-      }
       const following = music && songs[music.song] ? music : null;
-      if (following) {
-        if (now >= handUntil) {
-          const beat = following.position();
-          if (Number.isFinite(beat)) clock = { song: following.song, beat: Math.max(0, beat) };
+      const beat = following ? following.position() : NaN;
+      const played: Clock | null = following && Number.isFinite(beat) ? { song: following.song, beat: Math.max(0, beat) } : null;
+      // A hand on the page: leave it be.
+      if (dragging || now - handAt < SETTLE_MS) {
+        position = scroller.scrollTop;
+        handled = true;
+        frame = requestAnimationFrame(step);
+        return;
+      }
+      if (handled) {
+        // Let go: carry on from here.
+        handled = false;
+        position = scroller.scrollTop;
+        backAt = now;
+        if (played) {
+          const y = yAt(anchors, played) - position;
+          const seen = y >= scroller.clientHeight * SEEN_MARGIN && y <= scroller.clientHeight * (1 - SEEN_MARGIN);
+          if (seen) {
+            nudge = { song: played.song, by: y - line };
+            returnAt = 0;
+          } else returnAt = now + LOOK_AHEAD_MS;
+        } else clock = clockAt(anchors, position + line);
+      }
+      if (played) {
+        if (now < returnAt) {
+          // Reading ahead: the page stays where it was left until it's time to go back.
+          frame = requestAnimationFrame(step);
+          return;
         }
-      } else clock = advance(clock, songs, (elapsed * speed) / 1000);
+        if (returnAt) {
+          returnAt = 0;
+          returning = true;
+        }
+        clock = played;
+      } else if (!following) {
+        // Back to speed gently after a hand scroll.
+        const ramp = Math.min(1, (now - backAt) / RAMP_MS);
+        clock = advance(clock, songs, (elapsed * speed * ramp) / 1000);
+      }
+      if (played && nudge.song !== played.song) nudge = { song: played.song, by: 0 };
+      const at = line + (played ? nudge.by : 0);
       const distance = scroller.scrollHeight - scroller.clientHeight;
-      const target = Math.max(0, Math.min(distance, yAt(anchors, clock) - line));
-      position += (target - position) * Math.min(1, elapsed / EASE_MS);
-      if (Math.abs(target - position) < 0.5) position = target;
+      const goal = Math.max(0, Math.min(distance, yAt(anchors, clock) - at));
+      position += (goal - position) * Math.min(1, elapsed / (returning ? RETURN_MS : EASE_MS));
+      if (Math.abs(goal - position) < 0.5) {
+        position = goal;
+        returning = false;
+      }
       scroller.scrollTop = position;
-      const ended = !following && clock.song >= songs.length - 1 && clock.beat >= barsLength(songs[clock.song]?.bars ?? []) && position === target;
+      const ended = !following && clock.song >= songs.length - 1 && clock.beat >= barsLength(songs[clock.song]?.bars ?? []) && position === goal;
       if (ended) onEnd();
       else frame = requestAnimationFrame(step);
     });
     return () => {
       cancelAnimationFrame(frame);
+      target.removeEventListener("scroll", onScroll);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onRelease);
+      window.removeEventListener("touchcancel", onRelease);
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerup", onRelease);
       stops = new WeakMap();
     };
   }, [playing]);
+}
+
+/** Whether what scrolls is the page itself. */
+function page(scroller: HTMLElement): boolean {
+  return scroller === document.scrollingElement;
 }
 
 /** The clock moved on by `seconds` of the song: on into the next past its end. */
@@ -144,8 +240,7 @@ function advance(clock: Clock, songs: readonly AutoscrollSong[], seconds: number
  * so starting at a song's top starts at its first beat.
  */
 function measureAnchors(scroller: HTMLElement, songs: readonly AutoscrollSong[], line: number, stopsOf: (bars: readonly ChartBar[]) => ScrollStop[]): Anchor[] {
-  const page = scroller === document.scrollingElement;
-  const viewTop = page ? 0 : scroller.getBoundingClientRect().top;
+  const viewTop = page(scroller) ? 0 : scroller.getBoundingClientRect().top;
   const yOf = (box: DOMRect) => box.top - viewTop + scroller.scrollTop;
   const anchors: Anchor[] = [];
   let floor = -Infinity;
