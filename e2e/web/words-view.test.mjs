@@ -18,6 +18,11 @@ const sections = [intro, verse1, chorus, verse2];
 const flow = [intro, verse1, chorus, chorus, verse2, chorus].map((section, i) => ({ id: `f${i}${stamp}`, sectionId: section.id }));
 const song = await api(me, "POST", "/song-versions", { title: `Words ${stamp}`, language: "en", artists: ["Someone"], key: "G", tempo: 160, timeSignature: "4/4" });
 await api(me, "PATCH", `/song-versions/${song.id}`, { sections, flow });
+// An intro played three times straight: one badge, "Intro ×3", counting 1/3, 2/3, 3/3 as the music plays.
+const looped = await api(me, "POST", "/song-versions", { title: `Words looped ${stamp}`, language: "en", artists: ["Someone"], key: "G", tempo: 240, timeSignature: "4/4" });
+const loopIntro = { ...intro, id: `li${stamp}`, lines: [line(`li${stamp}a`, "", [[0, "G"]])] };
+const loopVerse = { ...verse1, id: `lv${stamp}`, lines: [line(`lv${stamp}a`, "Amazing grace how sweet the sound", [[0, "G"]])] };
+await api(me, "PATCH", `/song-versions/${looped.id}`, { sections: [loopIntro, loopVerse], flow: [loopIntro, loopIntro, loopIntro, loopVerse].map((section, i) => ({ id: `lf${i}${stamp}`, sectionId: section.id })) });
 const other = await api(me, "POST", "/song-versions", { title: `Words default ${stamp}`, language: "en", artists: ["Someone"], content: "[G]Hello [C]world\n", contentFormat: "CHORDPRO" });
 
 const browser = await chromium.launch();
@@ -115,6 +120,34 @@ try {
     await page.screenshot({ path: `${SP}/words-following.png` });
     await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="words-view"]:not([data-following])').waitFor();
+  });
+
+  await step("the sections bar: no box and no scrollbar; a part sung again straight after is one badge, ×2", async () => {
+    const bar = page.getByTestId("live-structure");
+    const chips = await bar.getByRole("button").allInnerTexts();
+    if (chips.map((one) => one.replace(/\s+/g, " ").trim()).join("|") !== "Intro|Verse 1|Chorus ×2|Verse 2|Chorus") throw new Error(chips.join("|"));
+    const look = await bar.evaluate((el) => ({ border: getComputedStyle(el).borderTopWidth, scrollbar: el.offsetHeight - el.clientHeight }));
+    if (look.border !== "0px" || look.scrollbar !== 0) throw new Error(JSON.stringify(look));
+    // No box around the words either: the page's beat shows behind them.
+    if (await page.locator('[data-slot="card"]:has([data-testid="words-view"])').count()) throw new Error("the words are in a card");
+  });
+
+  await step("playing: the folded badge counts the times through, 1/3, 2/3, 3/3", async () => {
+    await page.goto(`${WEB}/library/${looped.id}`);
+    await page.getByTestId("song-chart").waitFor();
+    await chooseView(page, "words");
+    await words().waitFor();
+    const bar = page.getByTestId("live-structure");
+    await bar.getByRole("button", { name: "Go to Intro" }).getByTestId("structure-times").getByText("×3").waitFor();
+    if ((await bar.getByRole("button").count()) !== 2) throw new Error(await bar.innerText());
+    await page.getByTestId("practice-metronome").click();
+    for (const time of ["1/3", "2/3", "3/3"]) await bar.getByTestId("structure-count").getByText(time).waitFor({ timeout: 20000 });
+    await page.screenshot({ path: `${SP}/words-structure-count.png` });
+    await bar.locator('[aria-current="step"]').getByText("Verse").waitFor({ timeout: 20000 });
+    await page.getByTestId("practice-metronome").click();
+    await bar.getByTestId("structure-count").waitFor({ state: "detached" });
+    await page.goto(`${WEB}/library/${song.id}`);
+    await words().waitFor();
   });
 
   await step("kept for the song: Words again after a reload, and in Live, where A+ makes the words bigger", async () => {

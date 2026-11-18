@@ -533,6 +533,44 @@ body.sv-dragging {
   scroll-padding-inline: var(--bleed);
 }
 
+/* The structure bar (issue #68): no box and no scrollbar; past an edge, its badges fade out (a swipe still moves it). */
+.structure-bar {
+  scrollbar-width: none;
+  --fade-start: 0px;
+  --fade-end: 0px;
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
+}
+.structure-bar::-webkit-scrollbar {
+  display: none;
+}
+.structure-bar[data-more-start] {
+  --fade-start: 2.5rem;
+}
+.structure-bar[data-more-end] {
+  --fade-end: 2.5rem;
+}
+
+/* The structure bar counting the times through a part (1/4, 2/4…): each new count rises in. */
+@keyframes structure-count-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.structure-count {
+  display: inline-block;
+  animation: structure-count-in 260ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .structure-count {
+    animation: none;
+  }
+}
+
 /* A screen's slide coming in (issue #186): a short crossfade, none when motion is reduced. */
 @keyframes screen-slide-in {
   from {

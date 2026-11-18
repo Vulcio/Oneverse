@@ -28,7 +28,6 @@ import { SongBeatDisplay } from "#/components/metronome-display";
 import { SongGroove } from "#/lib/song-groove";
 import { Button } from "@oneverse/ui/components/button";
 import { AddToSetButton, AddToSetPopover } from "#/components/add-to-set";
-import { Card, CardContent } from "@oneverse/ui/components/card";
 import { useSongPlayback } from "#/components/song-playback";
 import { songPlaybackStore } from "#/lib/playback";
 import { apiClient } from "#/lib/api-client";
@@ -300,13 +299,9 @@ export function PracticeSongPage({
         attachments={attachments}
         defaultView={liveView}
         store={songViewStore(version.id)}
-        structure={display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} className="sticky top-14 z-20 -mx-4 rounded-none bg-background sm:mx-0 sm:rounded-lg sm:border" /> : undefined}
+        structure={display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} music={{ bars, position: music.position }} className="sticky top-14 z-20 -mx-4 px-4 sm:px-4" /> : undefined}
         words={
-          <Card>
-            <CardContent>
-              <WordsView songId={version.id} chart={chart} document={version.documentJson} settings={display.words} currentPass={currentPass} emptyText={t("sets.noChart")} />
-            </CardContent>
-          </Card>
+          <WordsView songId={version.id} chart={chart} document={version.documentJson} settings={display.words} currentPass={currentPass} emptyText={t("sets.noChart")} />
         }
         drums={<DrumsView songId={version.id} chart={chart} document={version.documentJson} settings={display} />}
         // Autoscroll, over the chart, the grid or the PDF; the tracks have their own playhead.
@@ -324,9 +319,9 @@ export function PracticeSongPage({
         // Its parts as lanes, as in a DAW (issue #374), when it has stems.
         tracks={hasTracks ? <TracksView songVersionId={version.id} chart={chart} document={version.documentJson} attachments={attachments} cueSections={cueSections.sections} /> : undefined}
         grid={
-          <Card>
+          <>
             {/* What the grid keeps in view as it scrolls goes under the page's header (h-14) and over the docked player, in the zoomed grid's own pixels. */}
-            <CardContent style={{ zoom: display.textSize, ["--grid-sticky-top" as string]: `calc(3.5rem / ${display.textSize})`, ["--grid-sticky-bottom" as string]: `calc(var(--stem-dock-height, 0px) / ${display.textSize})` }}>
+            <div style={{ zoom: display.textSize, ["--grid-sticky-top" as string]: `calc(3.5rem / ${display.textSize})`, ["--grid-sticky-bottom" as string]: `calc(var(--stem-dock-height, 0px) / ${display.textSize})` }}>
               <ChordGrid
                 songId={version.id}
                 chart={chart}
@@ -344,19 +339,18 @@ export function PracticeSongPage({
                     : undefined
                 }
               />
-            </CardContent>
-          </Card>
+            </div>
+          </>
         }
       >
-        <Card>
-          <CardContent className="flex flex-col gap-3">
+        {/* No box around it (the page's beat shows through behind it). */}
+        <div className="flex flex-col gap-3">
             {/* Zoom, not font size: the chart's own sizes keep their proportions. */}
             {notes.top}
             <div ref={chartArea} style={{ zoom: display.textSize }} data-testid="practice-chart">
               <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} currentPass={currentPass} player={player} songVersionId={version.id} notes={notes.layer} />
             </div>
-          </CardContent>
-        </Card>
+        </div>
       </ChartOrPdf>
       </div>
 
