@@ -16,7 +16,7 @@ import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setMode, useMode } from "#/lib/mode";
 import { clearSetProgress, resumeItemOf, setProgressOf } from "#/lib/set-progress";
 import { useShownSetProgress } from "#/lib/sync-client";
-import { formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
+import { announceSetChanged, formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
 import { AddPassage, AddSongs, AddText } from "./-add-songs";
 import { SetSongList } from "./-set-song-list";
 import { ShareCard } from "./-share-card";
@@ -90,9 +90,14 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
   async function apply(change: Promise<SetlistDetail>, rollback?: SetlistDetail) {
     setError(null);
     try {
-      setSet(await change);
+      const changed = await change;
+      setSet(changed);
+      announceSetChanged(changed);
     } catch (err) {
-      if (rollback) setSet(rollback);
+      if (rollback) {
+        setSet(rollback);
+        announceSetChanged(rollback);
+      }
       setError(err instanceof Error ? err.message : String(err));
     }
   }
@@ -100,6 +105,7 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
   function reorder(items: SetlistItem[]) {
     const previous = set;
     setSet({ ...set, items });
+    announceSetChanged({ ...set, items });
     void apply(
       apiClient.reorderSetlistItems(
         set.id,

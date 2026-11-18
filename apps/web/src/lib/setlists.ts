@@ -1,4 +1,5 @@
-import { setListing, transposeKey, type SetlistSummary } from "@oneverse/core";
+import { setListing, transposeKey, type SetlistDetail, type SetlistSummary } from "@oneverse/core";
+import { useEffect } from "react";
 import type { TFunction } from "i18next";
 
 
@@ -41,4 +42,26 @@ export function currentSet<T extends Pick<SetlistSummary, "eventDate" | "fromEve
     if (!found || set.eventDate < found.eventDate!) found = set;
   }
   return found;
+}
+
+/**
+ * A set changed on its page (a song moved, its key, its transition…): the
+ * sidebar's list of its songs takes the set the API answered with, rather than
+ * waiting for the page to be reloaded.
+ */
+const setChanges = new EventTarget();
+
+export function announceSetChanged(set: SetlistDetail): void {
+  setChanges.dispatchEvent(new CustomEvent<SetlistDetail>("change", { detail: set }));
+}
+
+export function useSetChanged(setId: string, onChange: (set: SetlistDetail) => void): void {
+  useEffect(() => {
+    const listener = (event: Event) => {
+      const set = (event as CustomEvent<SetlistDetail>).detail;
+      if (set.id === setId) onChange(set);
+    };
+    setChanges.addEventListener("change", listener);
+    return () => setChanges.removeEventListener("change", listener);
+  }, [setId, onChange]);
 }

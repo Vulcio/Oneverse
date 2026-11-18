@@ -64,7 +64,7 @@ import { setStackSegues, useStackSegues } from "#/lib/live-stack";
 import { useShownSetProgress, useSync } from "#/lib/sync-client";
 import type { AppSession } from "@oneverse/app/server-auth";
 import { deviceStorage } from "#/lib/offline-data";
-import { setItemTitle, setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
+import { setItemTitle, setlistTitle, setOwnerLabel, transposeLabel, useSetChanged } from "#/lib/setlists";
 import { useSmartLists } from "#/lib/smart-lists";
 import { filtersOf, parseLibrarySearch } from "#/routes/_protected/library/-library-search";
 import { useMyOrganizations } from "@oneverse/planning/organizations";
@@ -605,6 +605,8 @@ function SetSongsPanel({ setId, pathname, sets, onBack }: { setId: string; pathn
     }
   }
   const [failed, setFailed] = useState(false);
+  // Changed on the set's page: shown as the API answered it, without fetching it again.
+  useSetChanged(setId, setSet);
   // Fetched again when the set's page reloads its own (a song added, moved, removed…).
   const reloaded = useRouterState({ select: (s) => s.matches.find((match) => match.routeId.includes("$setlistId"))?.updatedAt });
   useEffect(() => {
@@ -783,7 +785,7 @@ function SetSongEntry({
         movable
           ? {
               ref: setNodeRef,
-              style: { transform: CSS.Transform.toString(transform), transition },
+              style: { transform: CSS.Translate.toString(transform), transition },
               dragging: isDragging,
               handle: (
                 <button

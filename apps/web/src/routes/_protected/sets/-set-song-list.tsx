@@ -526,7 +526,8 @@ function SongRow({
       <X />
     </Button>
   ) : null;
-  const style = { transform: CSS.Transform.toString(transform), transition };
+  // Moved, never stretched: rows of different heights would otherwise be scaled to the one they pass over.
+  const style = { transform: CSS.Translate.toString(transform), transition };
 
   if (wide) {
     return (

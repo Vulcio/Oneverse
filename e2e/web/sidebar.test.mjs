@@ -101,6 +101,15 @@ await step("in a set, the panel lists its songs; one opens, and is marked; back 
   await panel().getByTestId("sidebar-panel-list").getByRole("link", { name: `1. Aardvark hymn ${stamp}` }).waitFor();
 });
 
+await step("a change on the set's page shows in the panel's songs at once, without reloading", async () => {
+  const songs = panel().getByTestId("sidebar-panel-list");
+  await songs.getByRole("link", { name: `2. Aardvark psalm ${stamp}` }).waitFor();
+  await page.getByRole("button", { name: `Remove Aardvark psalm ${stamp}` }).click();
+  await songs.getByRole("link", { name: `2. Aardvark psalm ${stamp}` }).waitFor({ state: "detached" });
+  await songs.getByRole("link", { name: `1. Aardvark hymn ${stamp}` }).waitFor();
+  await api(me, "POST", `/setlists/${set.id}/items`, { songVersionId: second.id }); // as it was, for what follows
+});
+
 await step("in a songbook, the panel lists its songs by number; a song opened from it stays in it", async () => {
   await page.goto(`${WEB}/songbooks/${book.id}`);
   await page.waitForLoadState("networkidle");
