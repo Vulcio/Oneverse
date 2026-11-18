@@ -104,6 +104,8 @@ export interface FoundSong {
   versionName: string | null;
   /** One line; null when only known from a set. */
   artists: string | null;
+  /** The other names its artists are credited under (issue #512): found by them too. */
+  artistOtherNames?: string[];
   document: SongDocumentV2;
   /** The song's own capo: a suggestion. */
   capo: number | null;
@@ -124,6 +126,7 @@ export async function allFoundSongs(storage: OfflineStorage): Promise<FoundSong[
       title: song.title,
       versionName: song.versionName,
       artists: artistLine(song),
+      ...(song.artistOtherNames?.length && { artistOtherNames: song.artistOtherNames }),
       document: song.documentJson,
       capo: song.capo,
     });
@@ -142,7 +145,7 @@ export async function allFoundSongs(storage: OfflineStorage): Promise<FoundSong[
 export async function searchKeptSongs(storage: OfflineStorage, query: string, limit = 8): Promise<FoundSong[]> {
   const q = foldSearchWords(query);
   return (await allFoundSongs(storage))
-    .filter((song) => !q || [song.title, song.versionName, song.artists].some((text) => text && foldSearchWords(text).includes(q)))
+    .filter((song) => !q || [song.title, song.versionName, song.artists, ...(song.artistOtherNames ?? [])].some((text) => text && foldSearchWords(text).includes(q)))
     .sort((a, b) => a.title.localeCompare(b.title))
     .slice(0, limit);
 }

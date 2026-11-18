@@ -46,6 +46,8 @@ Choose one for their page: their picture, a short bio and their songs. The pictu
 
 A global admin can **Upload a picture** (dragged and zoomed into the circle), **Remove the picture**, **Edit the bio** - written here, it replaces Wikipedia's in that language; left empty, Wikipedia's comes back - and **Look them up again**. An artist is the same for everyone, so these show to everyone who can see a song by them.
 
+An artist can have several names, such as a former name or another spelling: songs by Parfaitement Imparfait may be credited to Hillsong en Français or YouthFR. A global admin chooses **Edit the names** on the artist's page, adds the other names with **Add**, picks the name shown, and chooses **Save the names**. The page then says **Also known as** with the other names. Songs keep the name they're credited with, but every name leads to the same page, the same count in **Artists** and the same **By** filter, and searching for any of the names finds their songs. A name that has an artist page of its own joins this one, along with its picture and bio when this artist has none.
+
 ![The artists](../../assets/screenshots/en/artists.jpg)
 
 ## Songs by chord progression

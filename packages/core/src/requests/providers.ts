@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { optional } from "./fields.js";
+import { nameList, optional } from "./fields.js";
 
 /** Metadata providers (issue #22): Auto detect's search. */
 export const MetadataSearchQuerySchema = z.strictObject({
@@ -64,6 +64,17 @@ export const ArtistBioSchema = z.strictObject({
   name: artistName,
   language: z.enum(BIO_LANGUAGES),
   text: z.string().max(5000),
+});
+
+/**
+ * An artist's names (issue #512), set by an admin from the page of any of
+ * them: the one shown (`main`, one of their names) and the others they're
+ * also credited under. A name that's an artist of its own joins this one.
+ */
+export const ArtistNamesSchema = z.strictObject({
+  name: artistName.describe("The artist, by any of their names"),
+  main: artistName.describe("The name shown: this one, or one of `otherNames`"),
+  otherNames: nameList({ max: 50, each: 300 }).describe("The other names they're credited under"),
 });
 
 export const ArtistSettingsSchema = z.strictObject({ enabled: z.boolean() });

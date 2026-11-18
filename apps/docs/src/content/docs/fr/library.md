@@ -46,6 +46,8 @@ Choisissez-en un pour sa page : sa photo, une courte biographie et ses chants. L
 
 Un administrateur global peut **Ajouter une photo** (glissée et zoomée dans le cercle), **Retirer la photo**, **Modifier la biographie** - écrite ici, elle remplace celle de Wikipédia dans cette langue ; laissée vide, celle de Wikipédia revient - et **Chercher à nouveau**. Un artiste est le même pour tous : ces changements apparaissent à tous ceux qui voient un de ses chants.
 
+Un artiste peut avoir plusieurs noms, comme un ancien nom ou une autre orthographe : des chants de Parfaitement Imparfait peuvent être crédités à Hillsong en Français ou à YouthFR. Un administrateur global choisit **Modifier les noms** sur la page de l'artiste, ajoute les autres noms avec **Ajouter**, choisit le nom affiché, puis **Enregistrer les noms**. La page indique alors **Aussi connu sous le nom** suivi des autres noms. Les chants gardent le nom sous lequel ils sont crédités, mais chaque nom mène à la même page, au même nombre dans **Artistes** et au même filtre **De**, et une recherche sur n'importe lequel de ces noms trouve ses chants. Un nom qui a sa propre page d'artiste rejoint celle-ci, avec sa photo et sa biographie si cet artiste n'en a pas.
+
 ![Les artistes](../../../assets/screenshots/fr/artists.jpg)
 
 ## Chants par progression d'accords

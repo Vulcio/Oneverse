@@ -158,6 +158,8 @@ export type DetailItem = Omit<DetailRow, "versionTags" | "documentJson" | "image
   sharedBy: SharedBy | null;
   /** Only the viewer can see it (issue #172), as in lists. */
   private?: boolean;
+  /** The other names its artists are credited under (issue #512), for searching kept songs offline. */
+  artistOtherNames?: string[];
 };
 
 export function toDetailItem(version: DetailRow, { canEdit, canManage, sharedBy }: Rights, seesTag: SeesTag = ALL_TAGS): DetailItem {
