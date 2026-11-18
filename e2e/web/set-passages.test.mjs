@@ -80,6 +80,13 @@ try {
     await desk.waitForLoadState("networkidle");
     await dialog.getByTestId("bible-version").click();
     await desk.getByRole("option", { name: /BSB/ }).click();
+    // The Bible page's search, here too: a verse found is written in and previewed.
+    const search = dialog.getByTestId("bible-search");
+    await search.getByTestId("bible-search-query").fill("love");
+    await search.getByTestId("bible-search-button").click();
+    await search.getByTestId("bible-search-verses").getByRole("button", { name: "John 3:17" }).click();
+    await dialog.getByTestId("set-passage-preview").getByText("BSB text of John 3:17.").waitFor();
+    if ((await dialog.locator("#bible-reference").inputValue()) !== "John 3:17") throw new Error(await dialog.locator("#bible-reference").inputValue());
     await dialog.locator("#bible-reference").fill("John 3:16");
     await dialog.getByTestId("bible-read").click();
     await dialog.getByTestId("set-passage-preview").getByText("BSB text of John 3:16.").waitFor();

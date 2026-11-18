@@ -225,11 +225,13 @@ try {
   await step("Live: a key changed at the last minute moves the transition with it", async () => {
     const keyOf = (item) => page.locator(`[data-testid="live-song"][data-item="${item}"]`).locator("button[aria-expanded]").first();
     // Opened once the page has hydrated: a click before that is lost (the page was just opened, and Live keeps a socket open, so no networkidle).
+    // Clicked again only while it says it's closed: a second click on a slow runner would close it again.
     const openKey = async (item) => {
       for (let i = 0; i < 20 && !(await page.getByTestId("live-transpose").isVisible()); i++) {
-        await keyOf(item).click();
+        if ((await keyOf(item).getAttribute("aria-expanded")) !== "true") await keyOf(item).click();
         await page.getByTestId("live-transpose").waitFor({ timeout: 1000 }).catch(() => {});
       }
+      await page.getByTestId("live-transpose").waitFor();
     };
     // The next song up a semitone more (E to F): its first chord, and the chords into it, follow.
     await openKey(secondItem);

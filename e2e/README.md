@@ -78,9 +78,18 @@ CI runs the suites in six jobs at once (issue #308): `node e2e/run.mjs
 parts are balanced by each suite's duration in `durations.json`, taken from
 CI's summary (`PASS  web/sets (42s)`); a new suite counts as an average one
 until the file is refreshed: paste every part's summary from a green run
-into `node e2e/run.mjs --durations`. Every suite still runs alone against
-its own stack and database, so a suite never needs to know which part it's
-in, nor count on what another suite left behind.
+into `node e2e/run.mjs --durations`. Add a new suite's duration with it (a
+part lists the suites without one in a warning on the run, issue #515), or
+the parts drift apart and the slowest one holds up CI. Every suite still runs
+alone against its own stack and database, so a suite never needs to know
+which part it's in, nor count on what another suite left behind.
+
+A suite that fails runs once more (issue #515). If it passes then, it's
+`FLAKY` in the summary and a warning on the run, and its part stays green:
+fix it all the same, since the second try is only there so that a step that
+timed out on a busy runner doesn't cost a whole new run. A suite that runs
+twice can meet what its first try left behind, so name what it creates
+uniquely (as `user()` does), never with a fixed name.
 
 On a pull request, CI runs only the suites its changes need (issue #315):
 `--changed <file>` (the changed paths, one a line) picks them with
