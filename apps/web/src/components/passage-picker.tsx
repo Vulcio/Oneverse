@@ -1,4 +1,4 @@
-import { BIBLE_BOOKS, bibleBook, bibleBookChapters, bibleBookName, bibleTestament, type BibleBookLocale, type ImportedBible, type YouVersionBible } from "@oneverse/core";
+import { BIBLE_BOOKS, bibleBook, bibleBookChapters, bibleBookName, bibleBookVerses, bibleTestament, type BibleBookLocale, type BibleVersionBook, type ImportedBible, type YouVersionBible } from "@oneverse/core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -16,8 +16,19 @@ export interface PickerVersion {
   id: string;
   name: string;
   abbreviation: string | null;
+  /** Its language's tag ("es"), when it says: its books are named and sorted in it. */
+  language: string | null;
   /** Its books, numbered as BIBLE_BOOKS, with their chapters. */
-  books: { number: number; name: string; chapters: number }[];
+  books: PickerBook[];
+}
+
+/** A book as the picker offers it: named as the version names it (issue #507), once its list has come. */
+export interface PickerBook {
+  number: number;
+  name: string;
+  chapters: number;
+  /** Each chapter's verses (index 0: chapter 1); empty when not known. */
+  verses: number[];
 }
 
 /** A language: its tag ("fr") and its name in the reader's language ("French"). */
@@ -63,9 +74,9 @@ export function importedVersion(bible: ImportedBible, locale: BibleBookLocale): 
     id: bible.id,
     name: bible.name,
     abbreviation: bible.abbreviation,
-    // Only books a reference can name.
-    // Named in the reader's language, whatever the Bible's: the picker is theirs.
-    books: bible.books.filter((book) => bibleBook(book.number)).map((book) => ({ number: book.number, name: bibleBookName(book.number, locale, book.name), chapters: book.chapters })),
+    language: languageTag(bible.language),
+    // Only books a reference can name, named as the Bible names them (issue #507); verses as most Bibles count them until its own count comes.
+    books: bible.books.filter((book) => bibleBook(book.number)).map((book) => ({ number: book.number, name: book.name.trim() || bibleBookName(book.number, locale), chapters: book.chapters, verses: bibleBookVerses(book.number) ?? [] })),
   };
 }
 export function youVersionVersion(bible: YouVersionBible, locale: BibleBookLocale): PickerVersion {
@@ -75,8 +86,27 @@ export function youVersionVersion(bible: YouVersionBible, locale: BibleBookLocal
     id: String(bible.id),
     name: bible.title,
     abbreviation: bible.abbreviation,
-    books: BIBLE_BOOKS.filter((book) => book.number <= 66).map((book) => ({ number: book.number, name: book.names[locale], chapters: bibleBookChapters(book.number) ?? 1 })),
+    language: languageTag(bible.languageTag),
+    // In the reader's language until the version's own list comes (issue #507).
+    books: BIBLE_BOOKS.filter((book) => book.number <= 66).map((book) => ({ number: book.number, name: book.names[locale], chapters: bibleBookChapters(book.number) ?? 1, verses: bibleBookVerses(book.number) ?? [] })),
   };
+}
+
+/**
+ * A version with its own list of books (issue #507): named as it names them,
+ * with its chapters and verses - for YouVersion's, only the books it has.
+ */
+export function withVersionBooks(version: PickerVersion, own: BibleVersionBook[] | undefined): PickerVersion {
+  if (!own?.length) return version;
+  const byNumber = new Map(own.map((book) => [book.number, book]));
+  const books = (version.kind === "youversion" ? own.filter((book) => bibleBook(book.number)).sort((a, b) => a.number - b.number) : version.books).flatMap((book): PickerBook[] => {
+    const mine = byNumber.get(book.number);
+    if (!mine) return version.kind === "youversion" ? [] : [book as PickerBook];
+    const known = mine.verses.length > 0 && mine.verses.some((count) => count > 0);
+    const before = version.books.find((one) => one.number === book.number);
+    return [{ number: book.number, name: mine.name || before?.name || bibleBookName(book.number, "en"), chapters: known ? mine.verses.length : (before?.chapters ?? bibleBookChapters(book.number) ?? 1), verses: known ? mine.verses : (before?.verses ?? []) }];
+  });
+  return { ...version, books };
 }
 
 type BookOrder = "bible" | "alphabetical";
@@ -119,22 +149,26 @@ export function PassagePicker({
   busy: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const locale: BibleBookLocale = i18n.language.startsWith("fr") ? "fr" : "en";
+  // The version's language names and sorts the books (issue #507); the reader's when it doesn't say.
+  const sortLanguage = version?.language ?? i18n.language;
   const [order, setOrder] = useState<BookOrder>(storedOrder);
   const [bookNumber, setBookNumber] = useState<number | null>(null);
   const [chapter, setChapter] = useState<number | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [chaptersOpen, setChaptersOpen] = useState(false);
+  const [versesOpen, setVersesOpen] = useState(false);
 
   const book = version?.books.find((one) => one.number === bookNumber) ?? null;
+  /** The chapter's verses, as the version counts them; 0 when not known (typed then). */
+  const verseCount = (chapter && book?.verses[chapter - 1]) || 0;
   const bookGroups = useMemo(() => {
     const books = version?.books ?? [];
-    if (order === "alphabetical") return [{ value: "all", label: "", items: [...books].sort((a, b) => a.name.localeCompare(b.name, i18n.language)) }];
+    if (order === "alphabetical") return [{ value: "all", label: "", items: [...books].sort((a, b) => a.name.localeCompare(b.name, sortLanguage)) }];
     return (["old", "new", "deuterocanon"] as const)
       .map((testament) => ({ value: testament, label: t(`biblePage.testament_${testament}`), items: books.filter((one) => bibleTestament(one.number) === testament) }))
       .filter((group) => group.items.length > 0);
-  }, [version, order, i18n.language, t]);
+  }, [version, order, sortLanguage, t]);
   const versionGroups = useMemo(
     () =>
       (["imported", "youversion"] as const)
@@ -143,17 +177,43 @@ export function PassagePicker({
     [versions, t],
   );
 
-  /** The reference for what's picked, in the reader's language - the names the server reads. */
+  /** The reference for what's picked, with the version's names for its books (issue #507): the server reads them for that version. */
   function write(next: { book?: number | null; chapter?: number | null; from?: string; to?: string }) {
     const b = next.book !== undefined ? next.book : bookNumber;
     const c = next.chapter !== undefined ? next.chapter : chapter;
     const f = (next.from ?? from).trim();
     const l = (next.to ?? to).trim();
     if (!b) return;
-    let text = bibleBookName(b, locale);
+    let text = version?.books.find((one) => one.number === b)?.name ?? bibleBookName(b, "en");
     if (c) text += ` ${c}`;
-    if (c && f) text += `${locale === "fr" ? "," : ":"}${f}${l && l !== f ? `-${l}` : ""}`;
+    if (c && f) text += `${(version?.language ?? i18n.language).startsWith("fr") ? "," : ":"}${f}${l && l !== f ? `-${l}` : ""}`;
     onReference(text);
+  }
+
+  /** A verse tapped in the grid: the first, then the last of the range (a verse before the first starts again). */
+  function pickVerse(verse: number) {
+    const first = Number(from);
+    if (!from || to || verse < first) {
+      setFrom(String(verse));
+      setTo("");
+      write({ from: String(verse), to: "" });
+      return;
+    }
+    if (verse > first) {
+      setTo(String(verse));
+      write({ to: String(verse) });
+    }
+    setVersesOpen(false);
+  }
+
+  function pickChapter(number: number) {
+    setChapter(number);
+    setFrom("");
+    setTo("");
+    write({ chapter: number, from: "", to: "" });
+    setChaptersOpen(false);
+    // Then its verses, when the version counts them; closing the grid keeps the whole chapter.
+    if (book?.verses[number - 1]) setVersesOpen(true);
   }
 
   function pickOrder(next: BookOrder) {
@@ -254,10 +314,11 @@ export function PassagePicker({
                 setTo("");
                 if (picked) {
                   write({ book: picked.number, chapter: null, from: "", to: "" });
-                  // One chapter only (Jude, Philemon): nothing to pick.
+                  // One chapter only (Jude, Philemon): on to its verses.
                   if (picked.chapters === 1) {
                     setChapter(1);
                     write({ book: picked.number, chapter: 1, from: "", to: "" });
+                    if (picked.verses[0]) setVersesOpen(true);
                   } else setChaptersOpen(true);
                 }
               }}
@@ -300,13 +361,7 @@ export function PassagePicker({
                       size="sm"
                       variant={number === chapter ? "default" : "ghost"}
                       className={cn("h-8 px-0 tabular-nums")}
-                      onClick={() => {
-                        setChapter(number);
-                        setFrom("");
-                        setTo("");
-                        write({ chapter: number, from: "", to: "" });
-                        setChaptersOpen(false);
-                      }}
+                      onClick={() => pickChapter(number)}
                     >
                       {number}
                     </Button>
@@ -315,41 +370,95 @@ export function PassagePicker({
               </PopoverContent>
             </Popover>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="bible-verse-from" className="h-6">
-              {t("biblePage.verses")}
-            </Label>
-            <div className="flex items-center gap-1">
-              <Input
-                id="bible-verse-from"
-                inputMode="numeric"
-                className="h-8 w-16"
-                value={from}
-                disabled={!chapter}
-                placeholder="1"
-                onChange={(event) => {
-                  const value = event.target.value.replace(/\D/g, "");
-                  setFrom(value);
-                  write({ from: value });
-                }}
-                data-testid="bible-verse-from"
-              />
-              <span className="text-muted-foreground">-</span>
-              <Input
-                inputMode="numeric"
-                aria-label={t("biblePage.versesTo")}
-                className="h-8 w-16"
-                value={to}
-                disabled={!chapter || !from}
-                onChange={(event) => {
-                  const value = event.target.value.replace(/\D/g, "");
-                  setTo(value);
-                  write({ to: value });
-                }}
-                data-testid="bible-verse-to"
-              />
+          {verseCount > 0 ? (
+            <div className="flex flex-col gap-2">
+              <Label className="h-6">{t("biblePage.verses")}</Label>
+              <Popover open={versesOpen} onOpenChange={setVersesOpen}>
+                <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 min-w-28 justify-between tabular-nums" data-testid="bible-verses" />}>
+                  {from ? (to && to !== from ? `${from}-${to}` : from) : t("biblePage.wholeChapter")}
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto max-w-[min(92vw,24rem)] p-2">
+                  <div className="mb-2 flex items-center justify-between gap-3 px-1">
+                    <p className="text-xs text-muted-foreground" data-testid="bible-verses-hint">
+                      {from && !to ? t("biblePage.pickLastVerse", { verse: from }) : t("biblePage.pickFirstVerse")}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={from ? "ghost" : "secondary"}
+                      className="h-7 px-2"
+                      onClick={() => {
+                        setFrom("");
+                        setTo("");
+                        write({ from: "", to: "" });
+                        setVersesOpen(false);
+                      }}
+                      data-testid="bible-whole-chapter"
+                    >
+                      {t("biblePage.wholeChapter")}
+                    </Button>
+                  </div>
+                  <div className="grid max-h-72 grid-cols-8 gap-1 overflow-y-auto" data-testid="bible-verse-grid">
+                    {Array.from({ length: verseCount }, (_, i) => i + 1).map((number) => {
+                      const first = Number(from);
+                      const last = Number(to || from);
+                      const inRange = !!from && number >= first && number <= last;
+                      const ends = number === first || number === last;
+                      return (
+                        <Button
+                          key={number}
+                          type="button"
+                          size="sm"
+                          variant={inRange && ends ? "default" : inRange ? "secondary" : "ghost"}
+                          className="h-8 px-0 tabular-nums"
+                          aria-pressed={inRange}
+                          onClick={() => pickVerse(number)}
+                        >
+                          {number}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="bible-verse-from" className="h-6">
+                {t("biblePage.verses")}
+              </Label>
+              <div className="flex items-center gap-1">
+                <Input
+                  id="bible-verse-from"
+                  inputMode="numeric"
+                  className="h-8 w-16"
+                  value={from}
+                  disabled={!chapter}
+                  placeholder="1"
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/\D/g, "");
+                    setFrom(value);
+                    write({ from: value });
+                  }}
+                  data-testid="bible-verse-from"
+                />
+                <span className="text-muted-foreground">-</span>
+                <Input
+                  inputMode="numeric"
+                  aria-label={t("biblePage.versesTo")}
+                  className="h-8 w-16"
+                  value={to}
+                  disabled={!chapter || !from}
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/\D/g, "");
+                    setTo(value);
+                    write({ to: value });
+                  }}
+                  data-testid="bible-verse-to"
+                />
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
 

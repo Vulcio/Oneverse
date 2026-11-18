@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
-import { bibleBookName, formatBibleReference, parseBibleReference, passageVerses, readItemPassage, type BibleReference, type BibleSourceFormat, type PassageChapter, type SetItemPassage } from "@oneverse/core";
+import { bibleBook, bibleBookName, formatBibleReference, parseBibleReference, passageVerses, readItemPassage, type BibleReference, type BookNames, type BibleSourceFormat, type PassageChapter, type SetItemPassage } from "@oneverse/core";
 import type { Bible as BibleRow, BibleStatus } from "@oneverse/db";
 import type { Queue } from "bullmq";
 import { YouVersionService } from "./youversion.service.js";
@@ -60,6 +60,9 @@ export type PassageUse = "list" | "read" | "offline" | "screen";
 
 /** Imported Bible files are their own size: a whole Bible in OSIS XML is tens of megabytes. */
 export const MAX_BIBLE_FILE_BYTES = 64 * 1024 * 1024;
+
+/** A Bible's own names for its books (issue #507), to read a reference written with them. */
+const ownNames = (bible: ImportedBible): BookNames => bible.books.map((book) => ({ number: book.number, names: [book.name] }));
 
 const rightsOf = (row: BibleRow): BibleRights => ({ projection: row.canProject, offline: row.canOffline, export: row.canExport });
 
@@ -130,10 +133,11 @@ export class BiblesService {
   async passage(id: string, text: string): Promise<BiblePassage> {
     const row = await this.prisma.client.bible.findFirst({ where: { id, status: "READY" } });
     if (!row) throw new NotFoundException("Bible not found");
-    const reference = parseBibleReference(text);
+    const bible = shown(row);
+    // In English, French or the Bible's own names for its books (issue #507).
+    const reference = parseBibleReference(text, { books: ownNames(bible) });
     if (!reference) throw new BadRequestException(["reference must be a passage of one book, like John 3:16-18"]);
     if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
-    const bible = shown(row);
     const book = bible.books.find((candidate) => candidate.number === reference.book);
     if (!book) throw new NotFoundException(`${bible.name} has no ${formatBibleReference({ book: reference.book, ranges: [] })}`);
     const found = await this.chaptersOf(bible, book, reference);
@@ -158,8 +162,8 @@ export class BiblesService {
     if (ref.youversionId !== undefined) return this.youversion.itemPassage(ref.youversionId, ref.reference, use, held);
     if (!ref.bibleId) return null;
     const row = await this.prisma.client.bible.findFirst({ where: { id: ref.bibleId, status: "READY" } });
-    const reference = parseBibleReference(ref.reference);
     const bible = row ? shown(row) : null;
+    const reference = parseBibleReference(ref.reference, bible ? { books: ownNames(bible) } : {});
     const book = reference ? bible?.books.find((candidate) => candidate.number === reference.book) : undefined;
     const passage: SetItemPassage = {
       bibleId: ref.bibleId,
@@ -172,6 +176,27 @@ export class BiblesService {
     const allowed = use === "read" || (use === "offline" && bible?.rights.offline) || (use === "screen" && bible?.rights.projection);
     if (!bible || !reference || !book || !allowed) return passage;
     return { ...passage, chapters: await this.chaptersOf(bible, book, reference) };
+  }
+
+  /**
+   * A Bible's books as its file names them, with each chapter's last verse
+   * (issue #507): for picking verses that are there.
+   */
+  async books(id: string): Promise<{ number: number; name: string; abbreviation: string | null; verses: number[] }[]> {
+    const row = await this.prisma.client.bible.findFirst({ where: { id, status: "READY" } });
+    if (!row) throw new NotFoundException("Bible not found");
+    const bible = shown(row);
+    const counts = await this.prisma.client.bibleVerse.groupBy({ by: ["book", "chapter"], where: { bibleId: id }, _max: { verse: true, endVerse: true } });
+    return bible.books
+      .filter((book) => bibleBook(book.number))
+      .map((book) => {
+        const verses = Array.from({ length: book.chapters }, () => 0);
+        for (const count of counts) {
+          if (count.book !== book.number || count.chapter < 1 || count.chapter > book.chapters) continue;
+          verses[count.chapter - 1] = Math.max(count._max.verse ?? 0, count._max.endVerse ?? 0);
+        }
+        return { number: book.number, name: book.name, abbreviation: null, verses };
+      });
   }
 
   /** A reference's verses in a Bible, chapter by chapter: the book's chapters it names, read, and cut by core. */

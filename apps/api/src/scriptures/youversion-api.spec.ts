@@ -1,6 +1,6 @@
 import { parseBibleReference } from "@oneverse/core";
 import { describe, expect, it } from "vite-plus/test";
-import { cacheFreshness, youVersionBibleById, youVersionBibles, youVersionHtmlVerses, youVersionPassage, YouVersionApiError, type Fetcher } from "./youversion-api.js";
+import { cacheFreshness, youVersionBibleById, youVersionBibles, youVersionBooks, youVersionHtmlVerses, youVersionPassage, youVersionSearch, YouVersionApiError, type Fetcher } from "./youversion-api.js";
 
 // Answers shaped as developers.youversion.com/api documents them (no App
 // Key was registered yet to record real ones): version 3034 is the Berean
@@ -173,5 +173,51 @@ describe("YouVersion's Platform API", () => {
     expect(wrongKey).toMatchObject({ status: 401, message: "YouVersion refused the App Key: Invalid ApiKey" });
     expect(await failure(youVersionBibles("en", "spent", api.fetcher))).toMatchObject({ status: 429 });
     expect(await failure(youVersionBibleById(9999, "test-key", api.fetcher))).toMatchObject({ status: 404 });
+  });
+});
+
+describe("a version's books and its search (issue #507)", () => {
+  /** Answers as developers.youversion.com/api and /search-apis document them. */
+  function stand(answers: Record<string, unknown>) {
+    const asked: URL[] = [];
+    const fetcher: Fetcher = async (input) => {
+      const url = new URL(String(input));
+      asked.push(url);
+      const body = answers[url.pathname];
+      return body === undefined ? new Response("", { status: 404 }) : new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json", "cache-control": "public, max-age=600" } });
+    };
+    return { asked, fetcher };
+  }
+
+  it("names the books as the version does, with each chapter's last verse, intros and unknown books left out", async () => {
+    const { fetcher, asked } = stand({
+      "/v1/bibles/128/books": {
+        data: [
+          { id: "JHN", title: "Juan", abbreviation: "Jn.", canon: "new_testament", intro: { id: "INTRO" }, chapters: [{ id: "INTRO", verses: [] }, { id: "1", verses: [{ id: "1" }, { id: "2" }, { id: "51" }] }, { id: "2", verses: [{ id: "1" }, { id: "24-25" }] }] },
+          { id: "XYZ", title: "Unknown", chapters: [{ id: "1", verses: [{ id: "1" }] }] },
+        ],
+      },
+    });
+    const { books, fresh } = await youVersionBooks(128, "key", fetcher);
+    expect(books).toEqual([{ number: 43, name: "Juan", abbreviation: "Jn", verses: [51, 25] }]);
+    expect(fresh.shared).toBe(600);
+    expect(asked).toHaveLength(1);
+  });
+
+  it("searches verses and topics in one request, never images, and pages verses on", async () => {
+    const { fetcher, asked } = stand({
+      "/v1/search-unified": { verses: [{ reference: "JHN.3.16" }, { reference: "1CO.13.4" }, { reference: "JHN.3.16" }], topics: [{ id: 42, text: "love", subtopics: ["trust"] }], images: [{ id: "x", passage_id: "1CO.13.4-8" }], user_intent: "topical", did_you_mean: [], search_instead_for: null },
+      "/v1/search-verses": { verses: [{ reference: "1JN.4.8" }], user_intent: "text", did_you_mean: ["love"], search_instead_for: "love", next_page_token: "p2" },
+    });
+    const first = await youVersionSearch({ bibleId: 3034, query: "love", language: "en", intent: "unknown" }, "key", fetcher);
+    expect(first.answer).toEqual({ verses: ["JHN.3.16", "1CO.13.4"], topics: [{ id: 42, text: "love", subtopics: ["trust"] }], userIntent: "topical", didYouMean: [], searchInsteadFor: null, nextPageToken: null });
+    expect(asked[0]!.searchParams.getAll("fields[]")).toEqual(["verses", "topics"]);
+    expect(asked[0]!.searchParams.getAll("language_ranges[]")).toEqual(["en"]);
+    expect(asked[0]!.searchParams.get("user_intent")).toBeNull();
+    const more = await youVersionSearch({ bibleId: 3034, query: "lvoe", language: "en", intent: "text", pageToken: "p1" }, "key", fetcher);
+    expect(more.answer).toMatchObject({ verses: ["1JN.4.8"], didYouMean: ["love"], searchInsteadFor: "love", nextPageToken: "p2" });
+    expect(asked[1]!.pathname).toBe("/v1/search-verses");
+    expect(asked[1]!.searchParams.get("page_token")).toBe("p1");
+    expect(asked[1]!.searchParams.get("user_intent")).toBe("text");
   });
 });

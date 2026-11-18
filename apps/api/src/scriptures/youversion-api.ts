@@ -4,7 +4,7 @@
  * against the documentation before a key existed; the e2e suites stand in
  * for it (YOUVERSION_API_URL).
  */
-import { usfmChapterParts, usfmPassageId, type BibleReference } from "@oneverse/core";
+import { bibleBookByUsfm, YOUVERSION_SEARCH_INTENTS, usfmChapterParts, usfmPassageId, type BibleReference } from "@oneverse/core";
 import { PROVIDER_TIMEOUT_MS } from "../metadata/provider-timeout.js";
 
 /** Where the API is; pointed elsewhere only by the e2e suites. */
@@ -361,4 +361,129 @@ export async function youVersionPassage(
     }
   }
   return { parts: found, keepSeconds: Number.isFinite(keepSeconds) ? keepSeconds : 0 };
+}
+
+/** A version's book, as its language names it (issue #507): `GET /v1/bibles/{id}/books`. */
+export interface YouVersionBook {
+  /** As books.ts numbers them. */
+  number: number;
+  name: string;
+  abbreviation: string | null;
+  /** Each chapter's last verse (index 0: chapter 1); intros left out. */
+  verses: number[];
+}
+
+interface BookJson {
+  id?: string | null;
+  title?: string | null;
+  abbreviation?: string | null;
+  chapters?: { id?: string | null; verses?: { id?: string | null }[] | null }[] | null;
+}
+
+/** A chapter's or verse's id as its number: "3" is 3, "4-5" 5 (the last), "INTRO" none. */
+function lastNumber(id: string | null | undefined): number | null {
+  const found = /^(\d+)(?:-(\d+))?$/.exec(id?.trim() ?? "");
+  return found ? Number(found[2] ?? found[1]) : null;
+}
+
+/**
+ * A version's books, named in its language, with each chapter's verses -
+ * one request for the whole version - and how long the answer may be kept.
+ * Books Oneverse can't number are left out.
+ */
+export async function youVersionBooks(bibleId: number, appKey: string, fetcher: Fetcher = fetch): Promise<{ books: YouVersionBook[]; fresh: Freshness }> {
+  const { body, fresh } = await getFresh<{ data?: BookJson[] } | null>(`/v1/bibles/${bibleId}/books`, appKey, fetcher);
+  const books: YouVersionBook[] = [];
+  for (const one of body?.data ?? []) {
+    const number = bibleBookByUsfm(one.id ?? "");
+    if (!number || books.some((other) => other.number === number)) continue;
+    const verses: number[] = [];
+    for (const chapter of one.chapters ?? []) {
+      const at = lastNumber(chapter.id);
+      if (!at || at > 200) continue;
+      const last = Math.max(0, ...(chapter.verses ?? []).map((verse) => lastNumber(verse.id) ?? 0));
+      verses[at - 1] = Math.max(verses[at - 1] ?? 0, last);
+    }
+    books.push({
+      number,
+      name: plainText(one.title) || one.id!,
+      abbreviation: plainText(one.abbreviation).replace(/\.$/, "") || null,
+      verses: Array.from(verses, (count) => count ?? 0),
+    });
+  }
+  return { books, fresh };
+}
+
+/** What YouVersion's search was asked to look for (developers.youversion.com/search-apis): words, a theme, a reference, or it works it out. */
+export type YouVersionSearchIntent = (typeof YOUVERSION_SEARCH_INTENTS)[number];
+
+/** A topic YouVersion relates to a search: a theme to search for in turn. */
+export interface YouVersionSearchTopic {
+  id: number | null;
+  text: string;
+  subtopics: string[];
+}
+
+/** What a search answered (issue #507): verses as USFM ids only - never their text - and what it made of the query. */
+export interface YouVersionSearchAnswer {
+  verses: string[];
+  topics: YouVersionSearchTopic[];
+  userIntent: YouVersionSearchIntent | null;
+  didYouMean: string[];
+  searchInsteadFor: string | null;
+  /** More verses (search-verses' page token); null: none, or not asked. */
+  nextPageToken: string | null;
+}
+
+interface SearchJson {
+  verses?: { reference?: string | null }[] | null;
+  topics?: { id?: number | null; text?: string | null; subtopics?: string[] | null }[] | null;
+  user_intent?: string | null;
+  did_you_mean?: string[] | null;
+  search_instead_for?: string | null;
+  next_page_token?: string | null;
+}
+
+function searchAnswer(body: SearchJson | null): YouVersionSearchAnswer {
+  const intent = body?.user_intent?.toLowerCase();
+  return {
+    verses: [...new Set((body?.verses ?? []).map((one) => one.reference?.trim() ?? "").filter(Boolean))],
+    topics: (body?.topics ?? []).filter((one) => one.text?.trim()).map((one) => ({ id: one.id ?? null, text: one.text!.trim(), subtopics: (one.subtopics ?? []).filter((sub) => typeof sub === "string" && sub.trim()) })),
+    userIntent: YOUVERSION_SEARCH_INTENTS.find((one) => one === intent) ?? null,
+    didYouMean: (body?.did_you_mean ?? []).filter((one) => typeof one === "string" && one.trim()),
+    searchInsteadFor: body?.search_instead_for?.trim() || null,
+    nextPageToken: body?.next_page_token || null,
+  };
+}
+
+export interface YouVersionSearchAsk {
+  bibleId: number;
+  query: string;
+  /** For topics: the language to answer in (a BCP 47 tag). */
+  language: string;
+  intent?: YouVersionSearchIntent;
+  /** Set: the next page of verses (search-verses), topics not asked again. */
+  pageToken?: string;
+  pageSize?: number;
+}
+
+/**
+ * A search (issue #507): the top verses and topics in one request
+ * (search-unified, images left out), or - with a page token, or asked for
+ * more - a page of verses (search-verses). One request either way.
+ */
+export async function youVersionSearch(ask: YouVersionSearchAsk, appKey: string, fetcher: Fetcher = fetch): Promise<{ answer: YouVersionSearchAnswer; fresh: Freshness }> {
+  const params = new URLSearchParams({ query: ask.query, bible_id: String(ask.bibleId) });
+  if (ask.intent && ask.intent !== "unknown") params.set("user_intent", ask.intent);
+  if (ask.pageToken !== undefined || ask.pageSize !== undefined) {
+    params.set("page_size", String(ask.pageSize ?? 25));
+    if (ask.pageToken) params.set("page_token", ask.pageToken);
+    const { body, fresh } = await getFresh<SearchJson | null>(`/v1/search-verses?${params}`, appKey, fetcher);
+    return { answer: searchAnswer(body), fresh };
+  }
+  params.append("language_ranges[]", ask.language);
+  params.append("fields[]", "verses");
+  params.append("fields[]", "topics");
+  const { body, fresh } = await getFresh<SearchJson | null>(`/v1/search-unified?${params}`, appKey, fetcher);
+  return { answer: { ...searchAnswer(body), nextPageToken: null }, fresh };
 }

@@ -174,7 +174,7 @@ export const youtubeKey = { key: null, searches: 0 };
  * a suite sets it - and the Cache-Control its passages come with (issue
  * #485), none unless a suite says.
  */
-export const youversionKey = { key: null, passages: 0, cacheControl: null };
+export const youversionKey = { key: null, passages: 0, cacheControl: null, books: 0, searches: [] };
 
 const youversionBibles = {
   3034: {
@@ -193,7 +193,12 @@ const youversionBibles = {
     organization_id: null,
   },
   9001: { id: 9001, abbreviation: "NOC", title: "No Copyright Version", language_tag: "en", copyright: "", info: "<p>Public domain.</p>", books: ["JHN"] },
+  // A version in Spanish (issue #507): its books named in Spanish.
+  128: { id: 128, abbreviation: "VPE", title: "Versión de prueba", language_tag: "es", copyright: "Versión de prueba, dominio público.", info: null, youversion_deep_link: "https://www.bible.com/versions/128", books: ["JHN"] },
 };
+
+/** John's chapters' verses, as most Bibles count them; the stand-in's versions have that book only. */
+const JOHN_VERSES = [51, 25, 36, 54, 47, 71, 53, 59, 41, 42, 57, 50, 38, 31, 27, 33, 26, 40, 42, 31, 25];
 
 function youversionAnswer(req, url, res) {
   const key = req.headers["x-yvp-app-key"];
@@ -204,15 +209,43 @@ function youversionAnswer(req, url, res) {
   }
   if (key !== youversionKey.key) return json(res, { fault: { faultstring: "Invalid ApiKey", detail: { errorcode: "oauth.v2.InvalidApiKey" } } }, 401);
   const path = url.pathname.replace(/^\/youversion/, "");
+  // Search (issue #507, developers.youversion.com/search-apis): references only, never text; "lvoe" corrected to "love".
+  if (path === "/v1/search-unified" || path === "/v1/search-verses") {
+    const bibleId = url.searchParams.get("bible_id");
+    if (!youversionBibles[bibleId]) return json(res, { message: `Bible version ${bibleId} not found` }, 404);
+    const query = (url.searchParams.get("query") ?? "").trim().toLowerCase();
+    if (!query || query.length > 100) return json(res, { message: "Request validation failed" }, 422);
+    youversionKey.searches.push(`${path.slice(4)}?${url.searchParams}`);
+    const love = query === "love" || query === "lvoe";
+    const meta = { user_intent: love ? "topical" : query.startsWith("john") ? "reference" : "text", did_you_mean: query === "lvoe" ? ["love"] : [], search_instead_for: query === "lvoe" ? "love" : null };
+    if (youversionKey.cacheControl) res.setHeader("Cache-Control", youversionKey.cacheControl);
+    if (path === "/v1/search-verses") {
+      // Its first page: the top verses again, and one more.
+      return json(res, { verses: love ? [{ reference: "JHN.3.16" }, { reference: "JHN.3.18" }] : [], ...meta, next_page_token: null });
+    }
+    if (url.searchParams.getAll("fields[]").includes("images")) throw new Error("images asked for");
+    return json(res, {
+      verses: love ? [{ reference: "JHN.3.16" }, { reference: "JHN.3.17" }] : [],
+      topics: love ? [{ id: 42, text: "love", subtopics: ["faith"] }] : [],
+      ...meta,
+    });
+  }
   if (path === "/v1/bibles") {
-    const english = url.searchParams.getAll("language_ranges[]").some((range) => /^en\b/.test(range));
-    return json(res, { data: english ? Object.values(youversionBibles) : [], next_page_token: null, total_size: english ? 2 : 0 });
+    const ranges = url.searchParams.getAll("language_ranges[]");
+    const data = Object.values(youversionBibles).filter((one) => ranges.some((range) => one.language_tag === range.split("-")[0]));
+    return json(res, { data, next_page_token: null, total_size: data.length });
   }
   const bible = /^\/v1\/bibles\/(\d+)(\/.*)?$/.exec(path);
   const found = bible && youversionBibles[bible[1]];
   if (!found) return json(res, { message: "Bible not found" }, 404);
   const rest = bible[2] ?? "";
   if (rest === "") return json(res, found);
+  if (rest === "/books") {
+    youversionKey.books++;
+    const spanish = found.language_tag === "es";
+    const chapters = JOHN_VERSES.map((count, i) => ({ id: String(i + 1), passage_id: `JHN.${i + 1}`, title: String(i + 1), verses: Array.from({ length: count }, (_, v) => ({ id: String(v + 1), passage_id: `JHN.${i + 1}.${v + 1}`, title: String(v + 1) })) }));
+    return json(res, { data: [{ id: "JHN", title: spanish ? "Juan" : "John", full_title: spanish ? "El Evangelio según San Juan" : "The Gospel of John", abbreviation: spanish ? "Jn." : "Jhn.", canon: "new_testament", chapters: [{ id: "INTRO", passage_id: "JHN.INTRO", title: "Intro", verses: [] }, ...chapters] }] });
+  }
   if (rest === "/books/JHN/chapters/3/verses") return json(res, { data: Array.from({ length: 36 }, (_, i) => ({ id: String(i + 1), passage_id: `JHN.3.${i + 1}`, title: String(i + 1) })) });
   // A verse, verses of the chapter (JHN.3.16-18) or the whole chapter; as HTML, each verse after its marker (issue #485).
   const passage = /^\/passages\/(JHN\.3(?:\.(\d+)(?:-(\d+))?)?)$/.exec(decodeURIComponent(rest));

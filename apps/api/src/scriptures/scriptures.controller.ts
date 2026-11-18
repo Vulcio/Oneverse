@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Put, Query, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { BiblePassageQuerySchema, BibleUpdateSchema, YouVersionBiblesQuerySchema, YouVersionKeySchema, YouVersionPassageQuerySchema } from "@oneverse/core";
+import { BiblePassageQuerySchema, BibleUpdateSchema, YouVersionBiblesQuerySchema, YouVersionKeySchema, YouVersionPassageQuerySchema, YouVersionSearchQuerySchema } from "@oneverse/core";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { zodDto } from "../common/zod-validation.js";
@@ -14,6 +14,8 @@ export class YouVersionKeyDto extends zodDto(YouVersionKeySchema) {}
 export class YouVersionBiblesQueryDto extends zodDto(YouVersionBiblesQuerySchema) {}
 
 export class YouVersionPassageQueryDto extends zodDto(YouVersionPassageQuerySchema) {}
+
+export class YouVersionSearchQueryDto extends zodDto(YouVersionSearchQuerySchema) {}
 
 export class BibleUpdateDto extends zodDto(BibleUpdateSchema) {}
 
@@ -44,6 +46,12 @@ export class ScripturesController {
   @Get("scriptures/bibles/:id/passage")
   importedPassage(@Param("id") id: string, @Query() query: BiblePassageQueryDto) {
     return this.imported.passage(id, query.reference);
+  }
+
+  /** Its books as its file names them, with each chapter's verses (issue #507). */
+  @Get("scriptures/bibles/:id/books")
+  importedBooks(@Param("id") id: string) {
+    return this.imported.books(id);
   }
 
   @Get("admin/scriptures/bibles")
@@ -94,6 +102,22 @@ export class ScripturesController {
     if (id < 1) throw new BadRequestException(["id must be a YouVersion version's number"]);
     res.set("Cache-Control", "no-store");
     return this.youversion.passage(id, query.reference);
+  }
+
+  /** A version's books as it names them, with each chapter's verses (issue #507). */
+  @Get("scriptures/youversion/bibles/:id/books")
+  @RateLimit("heavy")
+  books(@Param("id", ParseIntPipe) id: number) {
+    if (id < 1) throw new BadRequestException(["id must be a YouVersion version's number"]);
+    return this.youversion.books(id);
+  }
+
+  /** A search in a version (issue #507): verses as references and related topics, never images. */
+  @Get("scriptures/youversion/bibles/:id/search")
+  @RateLimit("heavy")
+  search(@Param("id", ParseIntPipe) id: number, @Query() query: YouVersionSearchQueryDto) {
+    if (id < 1) throw new BadRequestException(["id must be a YouVersion version's number"]);
+    return this.youversion.search(id, query);
   }
 
   @Get("admin/scriptures/youversion")
