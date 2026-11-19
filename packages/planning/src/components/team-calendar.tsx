@@ -1,4 +1,4 @@
-import { addDays, coversPart, GIVEN_PARTS, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, coversPart, GIVEN_PARTS, INSTRUMENTS, isGivenPart, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -259,7 +259,7 @@ export function TeamCalendar({
                       </div>
                     ) : null}
                     {!date.cancelled && !rehearsal ? (
-                      <LineupLine teamId={teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} onChanged={() => act(async () => {})} />
+                      <LineupLine teamId={teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} missing={date.missing} volunteerOptions={date.volunteerOptions} onChanged={() => act(async () => {})} />
                     ) : null}
                   </div>
                   {!date.cancelled && date.setlistId && setHref ? (
@@ -591,6 +591,7 @@ function EventDialog({
   onSaved: () => Promise<void>;
 }) {
   const { api } = usePlanning();
+  const openToTeams = useOpenToTeams(teamId);
   const { t } = useTranslation();
   const [parts, setParts] = useState<EventPart[]>(event?.parts ?? []);
   const planned = event?.planned ?? null;
@@ -805,7 +806,7 @@ function EventDialog({
             <p className="text-xs text-muted-foreground">{t("teamCalendar.callMinutesHint")}</p>
           </div>
           {makesSets && !parentEvent ? <WithSetField id="event-with-set" checked={withSet} onChange={setWithSet} /> : null}
-          {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} />}
+          {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} ownTeamId={teamId} />}
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
@@ -851,7 +852,9 @@ export function firstDateAt(time: string): string {
 
 /** A part as the API takes it: a position (issue #241) by its ID, an instrument or role by its key, else its name. */
 export function partBody(part: EventPart): EventPart {
-  return part.position ? { position: part.position, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name!, count: part.count };
+  // Required, and open to teams (issue #528): only when set.
+  const extra = { ...(part.required && { required: true }), ...(part.openTo?.length && { openTo: part.openTo }) };
+  return { ...(part.position ? { position: part.position, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name!, count: part.count }), ...extra };
 }
 
 /** Answers asked for (issue #235): the dates, from today to eight weeks on, by a deadline a week away. */
@@ -925,6 +928,8 @@ export function PartsEditor({
   positions,
   customInstruments,
   partLabel,
+  openToTeams = [],
+  ownTeamId,
 }: {
   parts: EventPart[];
   onChange: (parts: EventPart[]) => void;
@@ -932,8 +937,13 @@ export function PartsEditor({
   positions: readonly TeamPosition[];
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
+  /** The teams a part's places may be open to (issue #528): the event's team and its organisation's groups. None: no open places. */
+  openToTeams?: readonly { id: string; name: string }[];
+  /** The event's team: a place opened goes to its members first. */
+  ownTeamId?: string;
 }) {
   const { t } = useTranslation();
+  const change = (index: number, changes: Partial<EventPart>) => onChange(parts.map((one, at) => (at === index ? { ...one, ...changes } : one)));
   const [naming, setNaming] = useState<string | null>(null);
   const taken = new Set(parts.map((part) => partKey(part)));
   const add = (part: EventPart) => {
@@ -950,7 +960,8 @@ export function PartsEditor({
       {parts.length > 0 ? (
         <ul className="flex flex-col gap-1.5">
           {parts.map((part, index) => (
-            <li key={partKey(part)} className="flex items-center gap-2" data-part={partKey(part)}>
+            <li key={partKey(part)} className="flex flex-col gap-1" data-part={partKey(part)}>
+              <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate text-sm">{partLabel(part)}</span>
               <Input
                 type="number"
@@ -959,7 +970,7 @@ export function PartsEditor({
                 value={part.count}
                 aria-label={`${partLabel(part)} - ${t("teamCalendar.partCount")}`}
                 className="h-8 w-16"
-                onChange={(e) => onChange(parts.map((one, at) => (at === index ? { ...one, count: Math.min(20, Math.max(1, Number(e.target.value) || 1)) } : one)))}
+                onChange={(e) => change(index, { count: Math.min(20, Math.max(1, Number(e.target.value) || 1)) })}
               />
               <button
                 type="button"
@@ -969,6 +980,46 @@ export function PartsEditor({
               >
                 <X className="size-4" />
               </button>
+              </div>
+              {/* Issue #528: a part that must be filled, and places members of chosen teams take themselves. */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pl-1 text-xs text-muted-foreground">
+                <label className="flex items-center gap-1.5">
+                  <input type="checkbox" className="size-3.5" checked={!!part.required} onChange={(e) => change(index, { required: e.target.checked || undefined })} data-testid="event-part-required" />
+                  {t("teamCalendar.partRequired")}
+                </label>
+                {openToTeams.length > 0 && !(part.part && isGivenPart(part.part)) ? (
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      className="size-3.5"
+                      checked={!!part.openTo?.length}
+                      onChange={(e) => change(index, { openTo: e.target.checked ? [ownTeamId ?? openToTeams[0]!.id] : undefined })}
+                      data-testid="event-part-open"
+                    />
+                    {t("teamCalendar.partOpen")}
+                  </label>
+                ) : null}
+                {part.openTo?.length && openToTeams.length > 1 ? (
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1" aria-label={t("teamCalendar.partOpenTo")}>
+                    <span>{t("teamCalendar.partOpenTo")}</span>
+                    {openToTeams.map((team) => (
+                      <label key={team.id} className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          className="size-3.5"
+                          checked={part.openTo!.includes(team.id)}
+                          onChange={(e) => {
+                            const openTo = e.target.checked ? [...part.openTo!, team.id] : part.openTo!.filter((id) => id !== team.id);
+                            change(index, { openTo: openTo.length > 0 ? openTo : undefined });
+                          }}
+                          data-testid="event-part-open-team"
+                        />
+                        {team.name}
+                      </label>
+                    ))}
+                  </span>
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>
@@ -1057,4 +1108,25 @@ export function PartsEditor({
       )}
     </div>
   );
+}
+
+/**
+ * The teams a part's places may be open to (issue #528): the team itself,
+ * then the other groups of its organisation.
+ */
+export function useOpenToTeams(teamId: string): { id: string; name: string }[] {
+  const { api } = usePlanning();
+  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const team = await api.getTeam(teamId);
+      const others = team.organization ? (await api.getOrganization(team.organization.id).catch(() => null))?.teams ?? [] : [];
+      if (live) setTeams([{ id: team.id, name: team.name }, ...others.filter((one) => one.id !== team.id).map((one) => ({ id: one.id, name: one.name }))]);
+    })().catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [teamId]);
+  return teams;
 }

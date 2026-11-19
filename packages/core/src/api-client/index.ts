@@ -67,7 +67,7 @@ import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { AddQuickSelectionSchema, AddSetlistItemSchema, OperatorPresetsRequest, OperatorTimerPreset, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
-import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
+import type { AnswerEventDateRequest, AssignPartRequest, VolunteerRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { AnalyseRecordingRequest, SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateOwnRoleRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateOwnRoleRequest, UpdateRoleRequest } from "../requests/roles.js";
@@ -1717,10 +1717,31 @@ export interface TeamEventDateSummary extends EventDate {
   parts: EventPart[];
   /** The parts the viewer may say they'd like to play (issue #520): wishOptions(). */
   wishOptions?: EventPart[];
+  /** The required parts (issue #528) its line-up doesn't fill yet, by key. */
+  missing?: string[];
+  /** The open places (issue #528) the viewer may take, by part key. */
+  volunteerOptions?: string[];
   /** Who's on which part (issue #235, phase 7). */
   lineup: LineupPlace[];
   /** A rehearsal's date: the event's date it's for. */
   rehearsalFor: RehearsalFor | null;
+}
+
+/** An open place someone may take (issue #528): a part open to one of their teams, with places left. */
+export interface OpenPlace {
+  teamId: string;
+  teamName: string;
+  teamColor: string | null;
+  eventId: string;
+  title: string;
+  date: string;
+  startsAt: string;
+  timeZone: string;
+  partKey: string;
+  part: EventPart;
+  placesLeft: number;
+  /** Another team's event: taking it makes one a guest of the date. */
+  guest: boolean;
 }
 
 /** Someone's answer for a date: their own, or Not available on a day they're away (`away`); null when not answered. */
@@ -1786,6 +1807,8 @@ export interface LineupPlace {
   /** A speaker without an account's email (issue #523): for the team's admins only, else null. */
   guestEmail?: string | null;
   mine: boolean;
+  /** A place they took themselves (issue #528): they may give it up. */
+  volunteered?: boolean;
   note: string | null;
   conflicts: ("AWAY" | "UNAVAILABLE" | "ELSEWHERE")[];
   /** A replacement looked for (a swap), and whether the viewer could take the place. */
@@ -1812,6 +1835,10 @@ export interface MyEventDate extends EventDate {
   parts: EventPart[];
   /** The parts they may say they'd like to play (issue #520): wishOptions(). */
   wishOptions?: EventPart[];
+  /** The required parts (issue #528) its line-up doesn't fill yet, by key. */
+  missing?: string[];
+  /** The open places (issue #528) the viewer may take, by part key. */
+  volunteerOptions?: string[];
   lineup: LineupPlace[];
   /** On another team's line-up, as a guest. */
   guest: boolean;
@@ -3181,6 +3208,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     clearTeamEventDateAnswerFor: (teamId: string, eventId: string, date: string, userId: string) =>
       request<void>(`/teams/${teamId}/events/${eventId}/dates/${date}/answers/${userId}`, { method: "DELETE" }),
     listMyEventDates: (from: string, to: string) => request<MyEventDate[]>(`/users/me/event-dates?${new URLSearchParams({ from, to })}`),
+    listOpenPlaces: (from: string, to: string) => request<OpenPlace[]>(`/users/me/open-places?${new URLSearchParams({ from, to })}`),
+    takeOpenPlace: (data: VolunteerRequest) => request<LineupPlace>("/users/me/open-places", { method: "POST", body: JSON.stringify(data) }),
+    giveUpOpenPlace: (assignmentId: string) => request<void>(`/users/me/open-places/${assignmentId}`, { method: "DELETE" }),
     getMyCalendarFeed: () => request<{ url: string | null }>("/users/me/calendar-feed"),
     resetMyCalendarFeed: () => request<{ url: string }>("/users/me/calendar-feed", { method: "POST" }),
     turnOffMyCalendarFeed: () => request<void>("/users/me/calendar-feed", { method: "DELETE" }),

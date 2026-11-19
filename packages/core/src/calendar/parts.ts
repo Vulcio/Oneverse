@@ -14,6 +14,40 @@ export interface EventPart {
   /** A part's own name, when it isn't one of those; a position's, as it's shown. */
   name?: string | null;
   count: number;
+  /** It must be filled (issue #528): a date whose line-up lacks it says so ("Missing: Host"). */
+  required?: boolean | null;
+  /**
+   * Teams whose members may put themselves on it while places are left
+   * (issue #528, "open places"): the event's own team or groups of its
+   * organisation, by ID. Never a given part (GIVEN_PARTS).
+   */
+  openTo?: string[] | null;
+}
+
+/** The most teams a part is open to. */
+export const OPEN_TO_LIMIT = 10;
+
+/** How many places of a part are left: its count less those on it, not declining. */
+export function placesLeft(part: EventPart, lineup: readonly { partKey: string; status: AssignmentStatus }[]): number {
+  const key = partKey(part);
+  return Math.max(0, part.count - lineup.filter((one) => one.partKey === key && one.status !== "DECLINED").length);
+}
+
+/**
+ * The open places (issue #528) someone may take on a date, by key: parts
+ * open to one of their teams, not given ones, with places left, that
+ * they aren't on already.
+ */
+export function volunteerOptions(parts: readonly EventPart[], lineup: readonly { userId: string | null; partKey: string; status: AssignmentStatus }[], userId: string, teamIds: ReadonlySet<string>): string[] {
+  return parts
+    .filter((part) => part.openTo?.some((id) => teamIds.has(id)) && !(part.part && isGivenPart(part.part)))
+    .filter((part) => placesLeft(part, lineup) > 0 && !lineup.some((one) => one.partKey === partKey(part) && one.userId === userId && one.status !== "DECLINED"))
+    .map((part) => partKey(part));
+}
+
+/** The required parts (issue #528) a line-up doesn't fill yet, by key. */
+export function missingRequired(parts: readonly EventPart[], lineup: readonly { partKey: string; status: AssignmentStatus }[]): string[] {
+  return parts.filter((part) => part.required && placesLeft(part, lineup) > 0).map((part) => partKey(part));
 }
 
 /** The most parts an event lists, and the most people one part needs. */
@@ -195,13 +229,36 @@ export interface EventTypeTemplate {
 /** The most types a team keeps. */
 export const EVENT_TYPES_LIMIT = 30;
 
+/** In a suggestion's openTo (issue #528): the team it's added to, swapped for its ID by suggestionFor(). */
+const OWN_TEAM = "own";
+
+/** The one who runs the screens (issue #528: "screen operator"). */
+const MEDIA_OPERATOR = "MEDIA_OPERATOR";
+
 /**
  * Types a team with none is offered (issue #523): a service with its host,
- * speaker and music leader; a worship night led by its music leader; a
- * meeting, with no set.
+ * speaker and music leader, all required, and a screen operator - the
+ * music leader and the operator open to the team's members (issue #528);
+ * a worship night led by its music leader; a meeting, with no set.
  */
 export const EVENT_TYPE_SUGGESTIONS: readonly EventTypeTemplate[] = [
-  { key: "service", startTime: "10:00", durationMinutes: 120, parts: [{ part: HOST, count: 1 }, { part: SPEAKER, count: 1 }, { part: MUSIC_LEADER, count: 1 }], withSet: true },
-  { key: "worshipNight", startTime: "19:30", durationMinutes: 120, parts: [{ part: MUSIC_LEADER, count: 1 }], withSet: true },
+  {
+    key: "service",
+    startTime: "10:00",
+    durationMinutes: 120,
+    parts: [
+      { part: HOST, count: 1, required: true },
+      { part: SPEAKER, count: 1, required: true },
+      { part: MUSIC_LEADER, count: 1, required: true, openTo: [OWN_TEAM] },
+      { part: MEDIA_OPERATOR, count: 1, required: true, openTo: [OWN_TEAM] },
+    ],
+    withSet: true,
+  },
+  { key: "worshipNight", startTime: "19:30", durationMinutes: 120, parts: [{ part: MUSIC_LEADER, count: 1, required: true, openTo: [OWN_TEAM] }], withSet: true },
   { key: "meeting", startTime: "19:00", durationMinutes: 60, parts: [], withSet: false },
 ];
+
+/** A suggestion's parts for a team (issue #528): its places open to "the team" open to that team. */
+export function suggestionParts(template: EventTypeTemplate, teamId: string): EventPart[] {
+  return template.parts.map((part) => (part.openTo ? { ...part, openTo: part.openTo.map((id) => (id === OWN_TEAM ? teamId : id)) } : part));
+}

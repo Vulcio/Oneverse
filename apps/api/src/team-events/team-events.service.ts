@@ -157,8 +157,21 @@ export class TeamEventsService {
     const custom = new Set((await this.prisma.client.customInstrument.findMany({ where: { id: { in: keys.filter((key) => !known.has(key)) } }, select: { id: true } })).map((row) => row.id));
     const unknown = keys.filter((key) => !known.has(key) && !custom.has(key));
     if (unknown.length > 0) throw new BadRequestException(unknown.map((key) => `parts: "${key}" isn't an instrument or a role`));
+    // Open places (issue #528): to the team itself or groups of its organisation, no other.
+    const openTo = [...new Set(parts.flatMap((part) => part.openTo ?? []))];
+    if (openTo.some((id) => id !== teamId)) {
+      const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { organizationId: true } });
+      const near = new Set(team?.organizationId ? (await this.prisma.client.team.findMany({ where: { organizationId: team.organizationId, id: { in: openTo } }, select: { id: true } })).map((row) => row.id) : []);
+      const far = openTo.filter((id) => id !== teamId && !near.has(id));
+      if (far.length > 0) throw new BadRequestException(far.map((id) => `parts: "${id}" isn't this team or a group of its organisation`));
+    }
+    // What a part asks beyond its count (issue #528): only when set.
+    const extra = (part: EventPart) => ({ ...(part.required && { required: true }), ...(part.openTo?.length && { openTo: [...new Set(part.openTo)] }) });
     // A position keeps its name beside it, as it's shown (renaming it renames it there too).
-    return parts.map((part) => (part.position ? { position: part.position, name: positions.get(part.position)!, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name, count: part.count }));
+    return parts.map((part) => ({
+      ...(part.position ? { position: part.position, name: positions.get(part.position)!, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name, count: part.count }),
+      ...extra(part),
+    }));
   }
 
   async list(teamId: string) {

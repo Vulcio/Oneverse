@@ -1,4 +1,4 @@
-import { EVENT_TYPE_SUGGESTIONS, type CustomInstrument, type EventPart, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { EVENT_TYPE_SUGGESTIONS, suggestionParts, type CustomInstrument, type EventPart, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import { FieldError } from "@oneverse/ui/components/field";
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { usePlanning } from "../host";
-import { DEFAULT_START, partBody, PartsEditor } from "./team-calendar";
+import { DEFAULT_START, partBody, PartsEditor, useOpenToTeams } from "./team-calendar";
 
 /**
  * A team's event types (issue #523), for its admins: what each asks for and
@@ -100,7 +100,7 @@ export function EventTypesDialog({
                         name,
                         startTime: suggestion.startTime,
                         durationMinutes: suggestion.durationMinutes,
-                        parts: suggestion.parts,
+                        parts: suggestionParts(suggestion, teamId),
                         withSet: suggestion.withSet,
                       }),
                     )
@@ -181,6 +181,7 @@ function EventTypeDialog({
 }) {
   const { api } = usePlanning();
   const { t } = useTranslation();
+  const openToTeams = useOpenToTeams(teamId);
   const [name, setName] = useState(type?.name ?? "");
   const [startTime, setStartTime] = useState(type?.startTime ?? DEFAULT_START);
   const [duration, setDuration] = useState(String(type?.durationMinutes ?? 90));
@@ -237,7 +238,7 @@ function EventTypeDialog({
             <Input id="event-type-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} />
           </div>
           {makesSets ? <WithSetField id="event-type-with-set" checked={withSet} onChange={setWithSet} /> : null}
-          <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} />
+          <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} ownTeamId={teamId} />
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">

@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, coversPart, GUEST_PARTS, isGivenPart, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
+import { addDays, coversPart, daysBetween, GUEST_PARTS, isGivenPart, placesLeft, type VolunteerRequest, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -329,5 +329,112 @@ export class LineupService {
       userId,
     );
     return { id: created.id, userId, partKey: created.partKey, status: created.status };
+  }
+
+  /** The teams someone is in, and those whose open places (issue #528) may be open to them: their teams and their organisations' other groups. */
+  private async teamsNear(userId: string): Promise<{ mine: Set<string>; near: string[] }> {
+    const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true, team: { select: { organizationId: true } } } });
+    const mine = new Set(memberships.map((m) => m.teamId));
+    const organizations = [...new Set(memberships.map((m) => m.team.organizationId).filter((id): id is string => !!id))];
+    const others = organizations.length > 0 ? (await this.prisma.client.team.findMany({ where: { organizationId: { in: organizations } }, select: { id: true } })).map((row) => row.id) : [];
+    return { mine, near: [...new Set([...mine, ...others])] };
+  }
+
+  /**
+   * The open places someone may take (issue #528), from `from` to `to`:
+   * parts open to one of their teams, with places left, on coming dates
+   * not cancelled, that they aren't on already.
+   */
+  async openPlaces(userId: string, from: string, to: string) {
+    if (to < from) throw new BadRequestException(["to must not be before from"]);
+    if (daysBetween(from, to) > 400) throw new BadRequestException(["to must be at most 400 days after from"]);
+    const { mine, near } = await this.teamsNear(userId);
+    if (mine.size === 0) return [];
+    const events = (await this.prisma.client.teamEvent.findMany({ where: { teamId: { in: near }, rehearsalForId: null }, include: { ...withDates, team: { select: { name: true, color: true } } } })).filter((event) =>
+      partsOf(event).some((part) => part.openTo?.some((id) => mine.has(id))),
+    );
+    if (events.length === 0) return [];
+    const lineup = await this.prisma.client.teamEventAssignment.findMany({ where: { eventId: { in: events.map((e) => e.id) }, date: { gte: day(from), lte: day(to) } }, select: { eventId: true, date: true, partKey: true, status: true, userId: true } });
+    const places = [];
+    for (const event of events) {
+      const today = localDate(new Date(), event.timeZone);
+      for (const when of eventDates(timingOf(event), from < today ? today : from, to, changesOf(event))) {
+        if (when.cancelled || when.date < today) continue;
+        const on = lineup.filter((row) => row.eventId === event.id && dateText(row.date) === when.date);
+        for (const part of partsOf(event)) {
+          if (!part.openTo?.some((id) => mine.has(id))) continue;
+          const left = placesLeft(part, on);
+          const key = partKey(part);
+          if (left === 0 || on.some((row) => row.partKey === key && row.userId === userId && row.status !== "DECLINED")) continue;
+          places.push({
+            teamId: event.teamId,
+            teamName: event.team.name,
+            teamColor: event.team.color,
+            eventId: event.id,
+            title: when.title || event.title,
+            date: when.date,
+            startsAt: when.startsAt,
+            timeZone: event.timeZone,
+            partKey: key,
+            part: { part: part.part ?? null, position: part.position ?? null, name: part.name ?? null, count: part.count, required: !!part.required },
+            placesLeft: left,
+            guest: !mine.has(event.teamId),
+          });
+        }
+      }
+    }
+    return places.sort((a, b) => a.startsAt.localeCompare(b.startsAt) || a.title.localeCompare(b.title));
+  }
+
+  /**
+   * Someone puts themselves on an open place (issue #528): a member of a
+   * team it's open to, while places are left. Accepted straight away; one
+   * from another team becomes a guest of the date (sees its set). The
+   * team's admins are told.
+   */
+  async volunteer(userId: string, dto: VolunteerRequest) {
+    const { teamId, eventId, date } = dto;
+    const event = await this.comingDate(teamId, eventId, date);
+    const part = partsOf(event).find((one) => partKey(one) === dto.part);
+    const { mine } = await this.teamsNear(userId);
+    if (!part || !part.openTo?.some((id) => mine.has(id)) || (part.part && isGivenPart(part.part))) throw new BadRequestException(["That place isn't open to you"]);
+    const member = mine.has(teamId);
+    let row;
+    try {
+      row = await this.prisma.client.$transaction(async (tx) => {
+        const on = await tx.teamEventAssignment.findMany({ where: { eventId, date: day(date), partKey: dto.part }, select: { partKey: true, status: true } });
+        if (placesLeft(part, on) === 0) throw new ConflictException("Its places are all taken");
+        return tx.teamEventAssignment.create({ data: { eventId, date: day(date), partKey: dto.part, userId, status: "ACCEPTED", respondedAt: new Date(), assignedByUserId: userId }, include: { user: { select: { displayName: true } } } });
+      }, { isolationLevel: "Serializable" });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new ConflictException("You're already on that part");
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") throw new ConflictException("Someone took it at the same time: try again");
+      throw error;
+    }
+    if (member) {
+      await this.prisma.client.teamEventAnswer.upsert({
+        where: { eventId_date_userId: { eventId, date: day(date), userId } },
+        create: { eventId, date: day(date), userId, answer: "AVAILABLE" },
+        update: { answer: "AVAILABLE", answeredByUserId: null },
+      });
+    } else if (event.withSet) await this.letSeeSet(teamId, eventId, date, userId);
+    await this.tellAdmins(teamId, event, date, dto.part, "VOLUNTEERED", row.user?.displayName ?? "", userId);
+    return { id: row.id, userId, displayName: row.user?.displayName ?? "", partKey: row.partKey, status: row.status, guest: member ? null : ("account" as const) };
+  }
+
+  /** Someone gives up an open place they took themselves (issue #528), on a coming date: the admins are told. */
+  async withdraw(userId: string, assignmentId: string): Promise<void> {
+    const row = await this.prisma.client.teamEventAssignment.findFirst({ where: { id: assignmentId, userId, assignedByUserId: userId }, include: { event: { select: { teamId: true } }, user: { select: { displayName: true } } } });
+    if (!row) throw new NotFoundException("Not a place you took");
+    const date = dateText(row.date);
+    const event = await this.comingDate(row.event.teamId, row.eventId, date);
+    await this.unassign(row.event.teamId, row.eventId, date, row.id, userId);
+    if (row.status !== "DECLINED") await this.tellAdmins(row.event.teamId, event, date, row.partKey, "VOLUNTEER_WITHDREW", row.user?.displayName ?? "", userId);
+  }
+
+  private async tellAdmins(teamId: string, event: EventRow & { team: { name: string } }, date: string, key: string, kind: "VOLUNTEERED" | "VOLUNTEER_WITHDREW", by: string, except: string) {
+    const admins = await this.prisma.client.teamMembership.findMany({ where: { teamId, role: "ADMIN" }, select: { userId: true } });
+    const data = { event: this.titleOn(event, date), date, team: event.team.name, by, ...(await this.partData(event, key)) };
+    await this.notifications.notify(admins.map(({ userId: admin }) => ({ userId: admin, kind, data, url: `/teams/${teamId}`, teamId })), except);
   }
 }

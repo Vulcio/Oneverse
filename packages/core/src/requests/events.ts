@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { ASSIGNMENT_STATUSES, GUEST_PARTS, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
+import { ASSIGNMENT_STATUSES, GUEST_PARTS, isGivenPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
@@ -24,8 +24,11 @@ const EventPartSchema = z
     position: optional(z.string().trim().min(1).max(64)).describe("One of the group's own positions (issue #241), by its ID"),
     name: optional(z.string().trim().min(1).max(60)),
     count: z.number().int().min(1).max(EVENT_PART_COUNT_MAX),
+    required: optional(z.boolean()).describe("It must be filled (issue #528): a date without it says it's missing"),
+    openTo: optional(z.array(z.string().trim().min(1).max(64)).max(OPEN_TO_LIMIT)).describe("Teams whose members may put themselves on it (issue #528): the event's team or groups of its organisation"),
   })
-  .refine((part) => !(part.part && (part.position || part.name)) && !!(part.part || part.position || part.name), "Each part needs either part, position or name");
+  .refine((part) => !(part.part && (part.position || part.name)) && !!(part.part || part.position || part.name), "Each part needs either part, position or name")
+  .refine((part) => !part.openTo?.length || !part.part || !isGivenPart(part.part), "openTo isn't for Host or Speaker: a role or the admins decide them");
 
 const eventParts = z
   .array(EventPartSchema)
@@ -178,6 +181,15 @@ export const AssignPartSchema = z
   .refine((place) => !place.guestEmail || (!!place.guestName && GUEST_PARTS.includes(place.part)), "guestEmail is only for a speaker without an account (guestName)")
   .refine((place) => !place.guestName || !GUEST_PARTS.includes(place.part) || !!place.guestEmail, "A speaker without an account needs guestEmail");
 export type AssignPartRequest = z.input<typeof AssignPartSchema>;
+
+/** Someone puts themselves on an open place (issue #528): the event, its date and the part's key. */
+export const VolunteerSchema = z.strictObject({
+  teamId: z.string().trim().min(1).max(64),
+  eventId: z.string().trim().min(1).max(64),
+  date: date("date"),
+  part: z.string().trim().min(1).max(80).describe("The part's key"),
+});
+export type VolunteerRequest = z.input<typeof VolunteerSchema>;
 
 /** The person scheduled answers: accepted or declined, with a note for the team's admins. */
 export const RespondAssignmentSchema = z.strictObject({

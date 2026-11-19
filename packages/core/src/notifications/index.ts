@@ -29,6 +29,9 @@ export const NOTIFICATION_KINDS = [
   "SCHEDULE_DECLINED",
   // A team admin took one off a part.
   "UNSCHEDULED",
+  // Someone put themselves on an open place, or withdrew (issue #528, to the team's admins).
+  "VOLUNTEERED",
+  "VOLUNTEER_WITHDREW",
   // Someone asks for a replacement on a part one plays: take it.
   "SWAP_OFFERED",
   // Someone took the place of the one who asked (to them, and the team's admins).

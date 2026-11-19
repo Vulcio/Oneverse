@@ -1,5 +1,5 @@
 import { coversPart, GUEST_PARTS, isGivenPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
-import { AlertTriangle, ArrowLeftRight, Check, Clock, X } from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, Check, Clock, HandHelping, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
@@ -42,6 +42,8 @@ export function LineupLine({
   lineup,
   partLabel,
   onChanged,
+  missing = [],
+  volunteerOptions = [],
 }: {
   teamId: string;
   eventId: string;
@@ -50,6 +52,10 @@ export function LineupLine({
   lineup: LineupPlace[];
   partLabel: (part: EventPart) => string;
   onChanged: () => Promise<void>;
+  /** The required parts its line-up doesn't fill yet (issue #528). */
+  missing?: readonly string[];
+  /** The open places one may take (issue #528), by part key. */
+  volunteerOptions?: readonly string[];
 }) {
   const { api } = usePlanning();
   const { t } = useTranslation();
@@ -59,7 +65,7 @@ export function LineupLine({
   const shown = lineup.filter((place) => place.status !== "DECLINED");
   const mine = lineup.filter((place) => place.mine);
   const takeable = lineup.filter((place) => place.canTake);
-  if (lineup.length === 0) return null;
+  if (lineup.length === 0 && missing.length === 0 && volunteerOptions.length === 0) return null;
   const run = (work: () => Promise<unknown>) => {
     setBusy(true);
     void work()
@@ -69,6 +75,25 @@ export function LineupLine({
   const answer = (place: LineupPlace, status: "ACCEPTED" | "DECLINED") => run(() => api.respondTeamEventPart(teamId, eventId, date, place.id, { status }));
   return (
     <div className="flex flex-col gap-1.5" data-testid="lineup-line">
+      {missing.length > 0 ? (
+        <div>
+          <Badge variant="warning" data-testid="lineup-missing">
+            <AlertTriangle />
+            {t("teamCalendar.missingParts", { parts: missing.map((key) => partLabel(partOf(parts, key))).join(", ") })}
+          </Badge>
+        </div>
+      ) : null}
+      {/* Open places (issue #528): one puts oneself on them. */}
+      {volunteerOptions.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {volunteerOptions.map((key) => (
+            <Button key={key} size="sm" variant="outline" className="h-7" disabled={busy} onClick={() => run(() => api.takeOpenPlace({ teamId, eventId, date, part: key }))} data-testid="lineup-volunteer" data-part={key}>
+              <HandHelping />
+              {t("teamCalendar.volunteer", { part: partLabel(partOf(parts, key)) })}
+            </Button>
+          ))}
+        </div>
+      ) : null}
       {mine.map((place) => (
         <div key={place.id} className="flex flex-wrap items-center gap-2 text-sm" data-my-place={place.status}>
           <span className="font-medium">{t("teamCalendar.youreOn", { part: partLabel(partOf(parts, place.partKey)) })}</span>
@@ -83,6 +108,11 @@ export function LineupLine({
                 {t("teamCalendar.decline")}
               </Button>
             </>
+          ) : place.volunteered && place.status === "ACCEPTED" ? (
+            // A place one took oneself (issue #528): given up, it's open again.
+            <button type="button" className="text-xs text-muted-foreground underline-offset-2 hover:underline" disabled={busy} onClick={() => run(() => api.giveUpOpenPlace(place.id))} data-testid="lineup-give-up">
+              {t("teamCalendar.giveUp")}
+            </button>
           ) : (
             <>
               <Badge variant={place.status === "ACCEPTED" ? "muted" : "outline"}>{place.status === "ACCEPTED" ? t("teamCalendar.accepted") : t("teamCalendar.declined")}</Badge>

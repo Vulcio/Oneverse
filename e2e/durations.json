@@ -37,6 +37,8 @@
 "api/lineup": 3,
 "api/set-availability": 2,
 "api/speakers": 3,
+"api/open-places": 3,
+"web/open-places": 8,
 "api/organization-hosts": 2,
 "api/link-search": 1,
 "api/linked-songs": 1,

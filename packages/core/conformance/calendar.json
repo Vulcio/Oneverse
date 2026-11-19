@@ -645,6 +645,14 @@
               "email": true,
               "push": true
             },
+            "VOLUNTEERED": {
+              "email": true,
+              "push": true
+            },
+            "VOLUNTEER_WITHDREW": {
+              "email": true,
+              "push": true
+            },
             "SWAP_OFFERED": {
               "email": true,
               "push": true
@@ -787,6 +795,14 @@
               "push": true
             },
             "UNSCHEDULED": {
+              "email": true,
+              "push": true
+            },
+            "VOLUNTEERED": {
+              "email": true,
+              "push": true
+            },
+            "VOLUNTEER_WITHDREW": {
               "email": true,
               "push": true
             },
@@ -940,6 +956,14 @@
                 "push": true
               },
               "UNSCHEDULED": {
+                "email": true,
+                "push": true
+              },
+              "VOLUNTEERED": {
+                "email": true,
+                "push": true
+              },
+              "VOLUNTEER_WITHDREW": {
                 "email": true,
                 "push": true
               },
@@ -1634,6 +1658,167 @@
           ],
           "expected": [
             "a"
+          ]
+        }
+      ]
+    },
+    "missingRequired": {
+      "about": "The required parts (issue #528) a date's line-up doesn't fill yet, by key: declined places don't count.",
+      "params": [
+        "parts",
+        "lineup"
+      ],
+      "cases": [
+        {
+          "name": "host filled, music leader declined, drums not required",
+          "args": [
+            [
+              {
+                "part": "HOST",
+                "count": 1,
+                "required": true
+              },
+              {
+                "part": "MUSIC_LEADER",
+                "count": 1,
+                "required": true
+              },
+              {
+                "part": "DRUMS",
+                "count": 1
+              }
+            ],
+            [
+              {
+                "partKey": "HOST",
+                "status": "PENDING"
+              },
+              {
+                "partKey": "MUSIC_LEADER",
+                "status": "DECLINED"
+              }
+            ]
+          ],
+          "expected": [
+            "MUSIC_LEADER"
+          ]
+        },
+        {
+          "name": "two needed, one on it: still missing",
+          "args": [
+            [
+              {
+                "name": "Ushers",
+                "count": 2,
+                "required": true
+              }
+            ],
+            [
+              {
+                "partKey": "name:ushers",
+                "status": "ACCEPTED"
+              }
+            ]
+          ],
+          "expected": [
+            "name:ushers"
+          ]
+        }
+      ]
+    },
+    "volunteerOptions": {
+      "about": "The open places (issue #528) someone may take: parts open to one of their teams, never Host or Speaker, with places left, they aren't on already.",
+      "params": [
+        "parts",
+        "lineup",
+        "userId",
+        "teamIds"
+      ],
+      "cases": [
+        {
+          "name": "open to their team, another team, full, already on it",
+          "args": [
+            [
+              {
+                "part": "MUSIC_LEADER",
+                "count": 1,
+                "openTo": [
+                  "music"
+                ]
+              },
+              {
+                "part": "MEDIA_OPERATOR",
+                "count": 2,
+                "openTo": [
+                  "youth"
+                ]
+              },
+              {
+                "part": "SOUND_ENGINEER",
+                "count": 1,
+                "openTo": [
+                  "music"
+                ]
+              },
+              {
+                "part": "BACKING_VOCALS",
+                "count": 2,
+                "openTo": [
+                  "music"
+                ]
+              },
+              {
+                "part": "DRUMS",
+                "count": 1
+              }
+            ],
+            [
+              {
+                "userId": "b",
+                "partKey": "SOUND_ENGINEER",
+                "status": "ACCEPTED"
+              },
+              {
+                "userId": "a",
+                "partKey": "BACKING_VOCALS",
+                "status": "ACCEPTED"
+              }
+            ],
+            "a",
+            [
+              "music"
+            ]
+          ],
+          "expected": [
+            "MUSIC_LEADER"
+          ]
+        },
+        {
+          "name": "a declined place is open again",
+          "args": [
+            [
+              {
+                "part": "MUSIC_LEADER",
+                "count": 1,
+                "openTo": [
+                  "music"
+                ]
+              }
+            ],
+            [
+              {
+                "userId": "b",
+                "partKey": "MUSIC_LEADER",
+                "status": "DECLINED"
+              }
+            ],
+            "a",
+            [
+              "music"
+            ]
+          ],
+          "expected": [
+            "MUSIC_LEADER"
           ]
         }
       ]

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { AVAILABILITY_ANSWERS, callAt, wishOptions, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@oneverse/core";
+import { AVAILABILITY_ANSWERS, missingRequired, volunteerOptions, callAt, wishOptions, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@oneverse/core";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { givenOn, givenPartsAmong } from "../roles/capabilities.js";
@@ -56,8 +56,12 @@ export class AvailabilityService {
     const viewerMembership = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: viewerId } }, select: { positionIds: true } });
     // Who hosts the organisation's events, by a role (issue #520); anyone the team's own.
     const partsGiven = await givenPartsAmong(this.prisma.client, teamId, [viewerId, ...memberRows.map((m) => m.userId)]);
-    const organizationEventOf = new Map((await this.prisma.client.teamEvent.findMany({ where: { id: { in: [...new Set(dates.map((d) => d.eventId))] } }, select: { id: true, organizationEventId: true } })).map((e) => [e.id, e.organizationEventId]));
+    const eventRows = await this.prisma.client.teamEvent.findMany({ where: { id: { in: [...new Set(dates.map((d) => d.eventId))] } }, select: { id: true, organizationEventId: true, timeZone: true } });
+    const organizationEventOf = new Map(eventRows.map((e) => [e.id, e.organizationEventId]));
+    const timeZoneOf = new Map(eventRows.map((e) => [e.id, e.timeZone]));
     const viewerAt = (eventId: string) => (viewerUser ? { ...viewerUser, positionIds: viewerMembership?.positionIds ?? [], givenParts: givenOn(organizationEventOf.get(eventId), partsGiven.get(viewerId)) } : null);
+    // The viewer's teams: the open places (issue #528) they may take.
+    const viewerTeams = new Set((await this.prisma.client.teamMembership.findMany({ where: { userId: viewerId }, select: { teamId: true } })).map((m) => m.teamId));
     const members = isAdmin ? memberRows.map((m) => m.userId) : [viewerId];
     const userIds = members.includes(viewerId) ? members : [...members, viewerId];
     const [answers, away, lineupRows] = await Promise.all([
@@ -132,6 +136,8 @@ export class AvailabilityService {
           guestEmail: isAdmin ? row.guestEmail : null,
           mine,
           note: isAdmin || mine ? row.note : null,
+          // A place one took oneself (issue #528): one may give it up.
+          volunteered: !!row.userId && row.assignedByUserId === row.userId,
           conflicts,
           // A replacement looked for (issue #235, phase 7), and whether the viewer could take it.
           swap: row.swapRequestedAt && row.status !== "DECLINED" ? { requestedAt: row.swapRequestedAt.toISOString(), note: row.swapNote } : null,
@@ -139,7 +145,18 @@ export class AvailabilityService {
           canTake: !!row.swapRequestedAt && row.status !== "DECLINED" && !mine && !onIt && !!part && !!viewer && coversPart(viewer, part) && (!!row.swapWidenedAt || myAnswer.answer === "IF_NEEDED"),
         };
       });
-      return { ...date, myAnswer, counts, coverage, lineup, wishOptions: viewer ? wishOptions(date.parts ?? [], viewer) : [] };
+      // Issue #528: the required parts still to fill, and the open places the viewer may take (coming dates).
+      const coming = date.date >= localDate(new Date(), timeZoneOf.get(date.eventId) ?? "UTC");
+      return {
+        ...date,
+        myAnswer,
+        counts,
+        coverage,
+        lineup,
+        wishOptions: viewer ? wishOptions(date.parts ?? [], viewer) : [],
+        missing: missingRequired(date.parts ?? [], placed),
+        volunteerOptions: coming && !date.rehearsalFor ? volunteerOptions(date.parts ?? [], placed, viewerId, viewerTeams) : [],
+      };
     });
   }
 
@@ -323,6 +340,8 @@ export class AvailabilityService {
           myAnswer: { answer: null, away: false, note: null, byAdmin: false, wishes: [] as string[] },
           parts: [],
           wishOptions: [] as EventPart[],
+          missing: [] as string[],
+          volunteerOptions: [] as string[],
           lineup: [],
           rehearsalFor: { eventId: parent.id, date: forDate, title: row?.title || parent.title } as RehearsalOf | null,
         };
@@ -336,6 +355,7 @@ export class AvailabilityService {
         return eventDates(timingOf(event), from, to, changesOf(event)).filter((date) => membership || guestDates.has(key(event.id, date.date))).map((date) => {
           const mine = answerOf.get(key(event.id, date.date));
           const row = rows.get(date.date);
+          const dayLineup = lineupRows.filter((one) => one.eventId === event.id && dateText(one.date) === date.date);
           return {
             ...date,
             eventId: event.id,
@@ -357,10 +377,11 @@ export class AvailabilityService {
             // What they may say they'd like to play (issue #520).
             wishOptions: wishOptions(partsOf(event), { instruments: me?.instruments ?? [], techRoles: me?.techRoles ?? [], positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenOn(event.organizationEventId, givenIn.get(event.teamId)) }),
             rehearsalFor: null as RehearsalOf | null,
+            // Issue #528: the required parts still to fill, and the open places one may take.
+            missing: missingRequired(partsOf(event), dayLineup),
+            volunteerOptions: date.date >= localDate(new Date(), event.timeZone) ? volunteerOptions(partsOf(event), dayLineup, userId, memberTeams) : [],
             // Who's on which part; one's own place to accept or decline.
-            lineup: lineupRows
-              .filter((row) => row.eventId === event.id && dateText(row.date) === date.date)
-              .map((row) => {
+            lineup: dayLineup.map((row) => {
                 const part = partsOf(event).find((one) => partKey(one) === row.partKey);
                 const offered = !!row.swapRequestedAt && row.status !== "DECLINED";
                 const onIt = lineupRows.some((other) => other.eventId === row.eventId && dateText(other.date) === date.date && other.userId === userId && other.partKey === row.partKey && other.status !== "DECLINED");
@@ -373,6 +394,7 @@ export class AvailabilityService {
                   guest: !row.userId ? ("external" as const) : row.userId === userId && !memberTeams.has(event.teamId) ? ("account" as const) : null,
                   mine: row.userId === userId,
                   note: row.userId === userId ? row.note : null,
+                  volunteered: !!row.userId && row.assignedByUserId === row.userId,
                   conflicts: [] as LineupConflict[],
                   swap: offered ? { requestedAt: row.swapRequestedAt!.toISOString(), note: row.swapNote } : null,
                   canTake:

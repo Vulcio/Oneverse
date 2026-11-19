@@ -47,7 +47,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { coversPart, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { type AssignmentStatus, type EventPart, coversPart, missingRequired, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
@@ -2968,6 +2968,54 @@ export const CONFORMANCE: ConformanceArea[] = [
             ],
           },
           { name: "everyone scheduled declined: back to those available", args: [[{ userId: "a", answer: "AVAILABLE" }], [{ userId: "b", status: "DECLINED" }]] },
+        ],
+      },
+      missingRequired: {
+        about: "The required parts (issue #528) a date's line-up doesn't fill yet, by key: declined places don't count.",
+        params: ["parts", "lineup"],
+        run: missingRequired,
+        cases: [
+          {
+            name: "host filled, music leader declined, drums not required",
+            args: [
+              [
+                { part: "HOST", count: 1, required: true },
+                { part: "MUSIC_LEADER", count: 1, required: true },
+                { part: "DRUMS", count: 1 },
+              ],
+              [
+                { partKey: "HOST", status: "PENDING" },
+                { partKey: "MUSIC_LEADER", status: "DECLINED" },
+              ],
+            ],
+          },
+          { name: "two needed, one on it: still missing", args: [[{ name: "Ushers", count: 2, required: true }], [{ partKey: "name:ushers", status: "ACCEPTED" }]] },
+        ],
+      },
+      volunteerOptions: {
+        about: "The open places (issue #528) someone may take: parts open to one of their teams, never Host or Speaker, with places left, they aren't on already.",
+        params: ["parts", "lineup", "userId", "teamIds"],
+        run: (parts: EventPart[], lineup: { userId: string | null; partKey: string; status: AssignmentStatus }[], userId: string, teamIds: string[]) => volunteerOptions(parts, lineup, userId, new Set(teamIds)),
+        cases: [
+          {
+            name: "open to their team, another team, full, already on it",
+            args: [
+              [
+                { part: "MUSIC_LEADER", count: 1, openTo: ["music"] },
+                { part: "MEDIA_OPERATOR", count: 2, openTo: ["youth"] },
+                { part: "SOUND_ENGINEER", count: 1, openTo: ["music"] },
+                { part: "BACKING_VOCALS", count: 2, openTo: ["music"] },
+                { part: "DRUMS", count: 1 },
+              ],
+              [
+                { userId: "b", partKey: "SOUND_ENGINEER", status: "ACCEPTED" },
+                { userId: "a", partKey: "BACKING_VOCALS", status: "ACCEPTED" },
+              ],
+              "a",
+              ["music"],
+            ],
+          },
+          { name: "a declined place is open again", args: [[{ part: "MUSIC_LEADER", count: 1, openTo: ["music"] }], [{ userId: "b", partKey: "MUSIC_LEADER", status: "DECLINED" }], "a", ["music"]] },
         ],
       },
       partCoverage: {

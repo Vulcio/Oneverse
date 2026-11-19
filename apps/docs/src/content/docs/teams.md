@@ -19,7 +19,7 @@ The team's page starts with its **Calendar**: its services, rehearsals and other
 
 ### Event types
 
-Not every event is the same: a service needs a host, a speaker and a music leader and gets a set; a meeting needs neither. **Event types**, beside **New event**, keeps the kinds of events the team holds. A team with none is offered **Add Service** (Host, Speaker, Music leader), **Add Worship night** (Music leader) and **Add Meeting** (no set); **New type** makes your own: its **Name**, its usual **Start time**, length and call time, its **Parts needed** (see [Parts needed](/teams/#parts-needed)), and **Make a set for each date**. The pencil beside a type changes it; **Delete type** removes it.
+Not every event is the same: a service needs a host, a speaker and a music leader and gets a set; a meeting needs neither. **Event types**, beside **New event**, keeps the kinds of events the team holds. A team with none is offered **Add Service** (Host, Speaker, Music leader and Media operator, all required, the last two open to the team's members), **Add Worship night** (Music leader) and **Add Meeting** (no set); **New type** makes your own: its **Name**, its usual **Start time**, length and call time, its **Parts needed** (see [Parts needed](/teams/#parts-needed)), and **Make a set for each date**. The pencil beside a type changes it; **Delete type** removes it.
 
 In **New event**, **Type** picks one: the event takes its name as its title (unless you typed one), its time, its parts and whether it gets sets. Everything can still be changed for that event. An event keeps what it was given: changing or deleting its type later leaves it as it is.
 
@@ -40,6 +40,8 @@ The team's admins see, beside each date, how many members are available, if need
 In an event's dialog, **Parts needed** lists what it needs and how many: **Add a part** picks an instrument or a role people list under **Roles** on their dashboard (Sound engineer, Media operator…), one an admin added, a name the team used before, or **Another name…** ("Worship leader", "Slides"). A team with positions of its own lists **This group's positions** first (see [Positions](/organizations/#positions)). A member covers the instruments and roles they listed, and the positions they ticked; anyone covers a part with a name of the team's own.
 
 The team's admins then see, beside each coming date, what's short: **Short: Drums, Sound engineer** names the parts that not enough members who cover them have answered **Available**. **Who can play** starts with the parts: who covers each and is available, who would play if needed, or **No one available yet**.
+
+Under each part, **Required** says it must be filled: until enough people are on its line-up, the date shows **Missing: Host, Music leader** to everyone on the team and on [My calendar](/teams/#availability). **Members can take it** opens its places: the team's members see **I'll do it: Music leader** beside the date and put themselves on it, accepted at once, while places are left; the team's admins are told. In a group of an organisation, **Open to:** also lists its other groups: their members find the place under **Open places** on **My calendar**, and taking it makes them a guest of that date (they see its set). Someone who took a place this way can **Give it up**; it's open again and the admins are told. Host and Speaker can be required but never opened: a role or the admins decide who fills them. Event types keep both settings, so every event made from one starts with them.
 
 ### Line-up
 

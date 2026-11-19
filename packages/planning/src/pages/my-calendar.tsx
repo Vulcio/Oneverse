@@ -1,10 +1,11 @@
-import { addDays, localDate, type AwayDays, type CustomInstrument, type MyEventDate } from "@oneverse/core";
+import { addDays, localDate, type AwayDays, type CustomInstrument, type MyEventDate, type OpenPlace } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { MapPin, Repeat } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AwayDaysCard } from "../components/away-days-card";
 import { CalendarFeedCard } from "../components/calendar-feed-card";
+import { OpenPlacesCard } from "../components/open-places-card";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { EventAnswer } from "../components/event-answer";
 import { LineupLine, usePartLabel } from "../components/lineup";
@@ -33,6 +34,9 @@ export function MyCalendarPage() {
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
   const [dates, setDates] = useState<MyEventDate[] | null>(null);
   const [away, setAway] = useState<AwayDays[]>([]);
+  // Open places in other groups one may take (issue #528).
+  const [openPlaces, setOpenPlaces] = useState<OpenPlace[]>([]);
+  const [taking, setTaking] = useState(false);
   const [customInstruments, setCustomInstruments] = useState<CustomInstrument[]>([]);
   const partLabel = usePartLabel(customInstruments);
   useEffect(() => {
@@ -42,7 +46,8 @@ export function MyCalendarPage() {
 
   const load = useCallback(async () => {
     const today = addDays(localDate(new Date(), browserZone()), -1);
-    const [found, ranges] = await Promise.all([api.listMyEventDates(today, addDays(today, weeks * 7)), api.listMyAway()]);
+    const [found, ranges, open] = await Promise.all([api.listMyEventDates(today, addDays(today, weeks * 7)), api.listMyAway(), api.listOpenPlaces(today, addDays(today, weeks * 7)).catch(() => [])]);
+    setOpenPlaces(open.filter((place) => place.guest));
     const now = Date.now();
     setDates(found.filter((date) => Date.parse(date.endsAt) >= now - 12 * 3600_000));
     setAway(ranges);
@@ -137,7 +142,7 @@ export function MyCalendarPage() {
                         </div>
                       ) : null}
                       {!date.cancelled && !date.rehearsalFor ? (
-                        <LineupLine teamId={date.teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} onChanged={() => act(async () => {})} />
+                        <LineupLine teamId={date.teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} missing={date.missing} volunteerOptions={date.volunteerOptions} onChanged={() => act(async () => {})} />
                       ) : null}
                     </div>
                     {!date.cancelled && date.setlistId && sets ? (
@@ -159,6 +164,14 @@ export function MyCalendarPage() {
         </Card>
         <div className="flex flex-col gap-6">
           {/* The dates signed up for, in one's own calendar (issue #235). */}
+          <OpenPlacesCard
+            places={openPlaces}
+            busy={taking}
+            onTake={(place) => {
+              setTaking(true);
+              void act(() => api.takeOpenPlace({ teamId: place.teamId, eventId: place.eventId, date: place.date, part: place.partKey })).finally(() => setTaking(false));
+            }}
+          />
           <CalendarFeedCard />
           <AwayDaysCard
             away={away}
