@@ -13,6 +13,8 @@ If your Songverse offers it, you can also use **Continue with Google** instead o
 
 Some servers only let invited people sign up: **Sign up** then says so. Open the invitation link you were sent (it fills in your email), or a team's invite link or a set's share link someone gave you, and create your account from there.
 
+On some of those, you can also sign up by asking for your organisation: **Sign up** then starts with it - its name, address and the person responsible (see [Signing up with your organisation](/organizations/#signing-up-with-your-organisation)) - and **Next: your account** goes on to the usual form.
+
 ## Your first steps
 
 Once your email is verified, you land in your library, empty for now. Songverse asks **What do you play or do?** (see [Roles](/account/#roles)), and the library shows **Getting started**, three steps from your first song to a set with your band, each ticked as you do it:

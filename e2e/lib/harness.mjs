@@ -85,6 +85,8 @@ export async function waitForLog(offset, pattern) {
 }
 
 const VERIFY_LINK = new RegExp(`${API.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/api/auth/verify-email\\?token=[^\\s&]+`);
+/** A verification link in the API log, for a suite signing someone up itself. */
+export const VERIFY_LINK_PATTERN = VERIFY_LINK;
 
 /** Signs up a verified user (password "hunter2pass") and returns their email, API token and id. */
 export async function user(name) {

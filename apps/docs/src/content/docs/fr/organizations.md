@@ -14,9 +14,17 @@ Une organisation, c'est l'église, le club ou le groupe dont font partie vos éq
 
 ### En demander une
 
-Sur un serveur dont les administrateurs examinent d'abord chaque organisation, **Demander une organisation** prend son **Nom**, **Ce que c'est** (une église, une école, une chorale…), sa **Ville**, une **Personne à contacter** et un **E-mail de contact** - vous, ou quelqu'un qui la dirige - et, si vous voulez, son **Site web**, combien de personnes environ et une **Description**. **Envoyer la demande**, et les administrateurs de ce serveur sont prévenus ; vous l'êtes aussi quand ils l'approuvent - elle est créée, avec vous comme administrateur - ou la refusent, avec leur raison. **Vos demandes** liste celles en attente, que vous pouvez **Retirer**.
+Sur un serveur dont les administrateurs examinent d'abord chaque organisation, **Demander une organisation** prend son **Nom**, **Ce que c'est** (une église, une école, une chorale…), son **Adresse** - **Numéro et rue**, **Code postal**, **Ville** et **Pays** - la **Personne responsable** (**Prénom** et **Nom**), une **Personne à contacter** et un **E-mail de contact** - vous, ou quelqu'un qui la dirige - et, si vous voulez, son **Site web**, combien de personnes environ et une **Description**. **Envoyer la demande**, et les administrateurs de ce serveur sont prévenus ; vous l'êtes aussi quand ils l'approuvent - elle est créée, avec vous comme administrateur - ou la refusent, avec leur raison. **Vos demandes** liste celles en attente, que vous pouvez **Retirer**.
 
-Si elle ressemble à une organisation déjà présente, ou qu'un autre a demandée - presque le même nom, dans la même ville - elle n'est pas envoyée : le formulaire liste celles auxquelles elle ressemble. Si l'une d'elles est la vôtre, demandez plutôt un lien d'invitation à ses administrateurs. Si ce n'est pas la même, dites pourquoi sous **Pourquoi ce n'est pas la même** et renvoyez-la : les administrateurs voient votre note à côté de celles auxquelles elle ressemble.
+Le pays se choisit dans la liste, et le code postal est vérifié selon le format de ce pays pendant que vous le tapez (aucun n'est demandé dans un pays sans codes postaux). Rien de ce que vous tapez n'est envoyé ailleurs pour le vérifier.
+
+Si elle ressemble à une organisation déjà présente, ou qu'un autre a demandée - presque le même nom dans la même ville, ou un autre nom à la même adresse - elle n'est pas envoyée : le formulaire liste celles auxquelles elle ressemble. Si l'une d'elles est la vôtre, demandez plutôt un lien d'invitation à ses administrateurs. Si ce n'est pas la même, dites pourquoi sous **Pourquoi ce n'est pas la même** et renvoyez-la : les administrateurs voient votre note à côté de celles auxquelles elle ressemble. Presque le même nom à la même adresse, c'est la même organisation : elle ne peut pas être demandée à nouveau, même avec une note.
+
+### S'inscrire avec son organisation
+
+Certains serveurs n'acceptent les inscriptions que sur invitation, ou en demandant son organisation. Là, **S'inscrire** sur Oneverse commence par votre organisation - les mêmes informations que ci-dessus - et **Suivant : votre compte** la vérifie, puis affiche le formulaire habituel, votre nom rempli avec celui de la personne responsable. Créez votre compte (ou continuez avec Google) dans l'heure.
+
+Jusqu'à ce que les administrateurs de ce serveur approuvent votre organisation, votre compte n'affiche que l'état de votre demande, sur votre page de compte Oneverse : Songverse et Planiverse vous y renvoient. Vous pouvez la **Retirer**, et en redemander une si elle a été refusée (avec leur raison). Une fois approuvée, elle est créée avec vous comme administrateur, et votre compte s'ouvre. Les invitations fonctionnent toujours : ouvrez le lien d'invitation d'une équipe ou d'une organisation, et vous êtes dedans tout de suite.
 
 ## La mettre en place
 
