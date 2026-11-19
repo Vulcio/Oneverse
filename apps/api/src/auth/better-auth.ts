@@ -14,6 +14,7 @@ import { OAUTH_SCOPES, apiResource } from "./oauth-clients.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
 import { CLIENT_ADDRESS_HEADER, authRateLimitStorage } from "./auth-rate-limit.js";
 import { markInvitationAccepted, passFromCookies, signupAllowed } from "../invitations/signup-gate.js";
+import { takeSignupDraft } from "../organizations/organization-signup.js";
 import {
   sendChangeEmailConfirmation,
   sendNewEmailVerification,
@@ -210,7 +211,10 @@ function buildAuth(settings: EffectiveAuthSettings) {
             if (bootstrapAdminEmails.has(user.email.toLowerCase())) {
               await prisma.user.update({ where: { id: user.id }, data: { isGlobalAdmin: true } });
             }
-            await markInvitationAccepted(user.email, passFromCookies(cookiesOf(ctx)));
+            const pass = passFromCookies(cookiesOf(ctx));
+            await markInvitationAccepted(user.email, pass);
+            // Signed up asking for an organisation (issue #533): theirs now, and they wait for its approval.
+            if (pass?.kind === "request") await takeSignupDraft({ id: user.id, email: user.email, name: user.name }, pass.token);
           },
         },
       },
@@ -240,6 +244,8 @@ function buildAuth(settings: EffectiveAuthSettings) {
             // Audio files (issue #183): a role's, or a global admin's.
             canUploadAudio: capabilities.canUploadAudio || (user as { isGlobalAdmin?: boolean }).isGlobalAdmin === true,
             permissions: capabilities.permissions,
+            // Signed up asking for an organisation, not approved yet (issue #533): the apps show where it stands, nothing else.
+            awaitingApproval: !!(await prisma.user.findUnique({ where: { id: user.id }, select: { awaitingApprovalSince: true } }))?.awaitingApprovalSince,
           },
           session,
         };

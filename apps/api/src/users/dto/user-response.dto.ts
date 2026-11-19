@@ -30,4 +30,5 @@ export class UserResponseDto {
   @ApiProperty({ type: [String], description: "Built-in instruments' keys (INSTRUMENTS), then the ids of those an admin added (issue #166)" }) instruments!: string[];
   @ApiProperty({ enum: TECH_ROLES, isArray: true }) techRoles!: (typeof TECH_ROLES)[number][];
   @ApiProperty({ description: "Ask them what they play or do (issue #109): nothing said yet, not skipped lately" }) askProfile!: boolean;
+  @ApiProperty({ description: "Signed up asking for an organisation, not approved yet (issue #533): only their profile and their request are open to them" }) awaitingApproval!: boolean;
 }

@@ -1,6 +1,7 @@
 import { prisma } from "@oneverse/db";
 import { SIGNUP_PASS_KINDS, type SignupPassKind } from "@oneverse/core";
 import { getEffectiveSecuritySettings } from "../security/security-settings.js";
+import { getEffectiveOrganizationSettings } from "../organizations/organization-settings.js";
 
 /**
  * Sign-up by invitation only (issue #198): who may create an account when
@@ -57,7 +58,27 @@ export async function passIsValid(pass: SignupPass, now = new Date()): Promise<b
     const link = await prisma.organizationInviteLink.findUnique({ where: { token: pass.token }, select: { expiresAt: true, maxUses: true, usedCount: true } });
     return !!link && (!link.expiresAt || link.expiresAt > now) && (link.maxUses === null || link.usedCount < link.maxUses);
   }
+  if (pass.kind === "request") {
+    // An organisation asked for at sign-up (issue #533), kept for the account made next.
+    const draft = await prisma.organizationSignupDraft.findUnique({ where: { token: pass.token }, select: { expiresAt: true } });
+    return !!draft && draft.expiresAt > now && (await organizationSignupOpen());
+  }
   return !!(await prisma.setlistShareLink.findUnique({ where: { token: pass.token }, select: { id: true } }));
+}
+
+/**
+ * Whether people may sign up by asking for an organisation (issue #533):
+ * sign-up by invitation only, this setting on, and organisations - several
+ * of them - on this server.
+ */
+export async function organizationSignupOpen(): Promise<boolean> {
+  const [security, organizations] = await Promise.all([getEffectiveSecuritySettings(), getEffectiveOrganizationSettings()]);
+  return security.signupInviteOnly && security.signupOrganizationRequests && organizations.mode === "MULTI";
+}
+
+/** Keeps a pass in a cookie for BetterAuth's routes, where the account is created (also by Google, whose callback lands there). */
+export function passCookie(pass: SignupPass): [string, string, { httpOnly: true; sameSite: "lax"; secure: boolean; path: string; maxAge: number }] {
+  return [PASS_COOKIE, encodePass(pass), { httpOnly: true, sameSite: "lax", secure: (process.env.AUTH_URL ?? "").startsWith("https:"), path: "/api/auth", maxAge: PASS_MAX_AGE_S * 1000 }];
 }
 
 /** A pending invitation for this email. */

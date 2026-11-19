@@ -18,6 +18,7 @@ const PROMPTS: Record<SignupPassKind, string> = {
   team: "auth.joinTeamPrompt",
   organization: "organizations.joinPrompt",
   set: "sets.joinSignInPrompt",
+  request: "organizations.signup.prompt",
 };
 
 function passOf(value: unknown): { kind: SignupPassKind; token: string } | undefined {
@@ -40,9 +41,9 @@ export const Route = createFileRoute("/sign-in")({
     const pass = passOf(search.pass);
     const session = await getSession();
     if (session) throw redirect({ href: continueTo, reloadDocument: true });
-    const [{ hasGoogleAuth, signupInviteOnly }, locale] = await Promise.all([apiClient.getAuthPublicConfig(), getVisitorLocale()]);
+    const [{ hasGoogleAuth, signupInviteOnly, signupOrganizationRequests }, locale] = await Promise.all([apiClient.getAuthPublicConfig(), getVisitorLocale()]);
     const email = typeof search.email === "string" ? search.email : undefined;
-    return { continueTo, pass, email, hasGoogleAuth, signupInviteOnly, locale: await loadLocale(locale) };
+    return { continueTo, pass, email, hasGoogleAuth, signupInviteOnly, signupOrganizationRequests: !!signupOrganizationRequests, locale: await loadLocale(locale) };
   },
   component: SignInPage,
 });
@@ -58,7 +59,7 @@ function SignInPage() {
 
 function SignInContent() {
   const { t } = useTranslation();
-  const { continueTo, pass, email, hasGoogleAuth, signupInviteOnly } = Route.useRouteContext();
+  const { continueTo, pass, email, hasGoogleAuth, signupInviteOnly, signupOrganizationRequests } = Route.useRouteContext();
   return (
     <AuthPage brand={<OneverseBrand />} actions={<ThemeSwitch />}>
       {pass ? (
@@ -66,7 +67,7 @@ function SignInContent() {
           {t(PROMPTS[pass.kind], { email: email ?? "" })}
         </p>
       ) : null}
-      <AuthCard redirectTo={continueTo} hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} invitePass={pass} email={email} />
+      <AuthCard redirectTo={continueTo} hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} signupOrganizationRequests={signupOrganizationRequests} invitePass={pass} email={email} />
       <SourceCodeLink />
     </AuthPage>
   );

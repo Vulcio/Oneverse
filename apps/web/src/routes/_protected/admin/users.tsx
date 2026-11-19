@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_protected/admin/users")({
       apiClient.adminGetSecuritySettings(),
       apiClient.adminListSignupInvitations(),
     ]);
-    return { users, roles, inviteOnly: security.settings.signupInviteOnly, invitations };
+    return { users, roles, inviteOnly: security.settings.signupInviteOnly, organizationRequests: security.settings.signupOrganizationRequests, invitations };
   },
   component: AdminUsersPage,
 });
@@ -32,7 +32,7 @@ function AdminUsersPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { session } = Route.useRouteContext();
-  const { users, roles, inviteOnly, invitations } = Route.useLoaderData();
+  const { users, roles, inviteOnly, organizationRequests, invitations } = Route.useLoaderData();
   const [dialog, setDialog] = useState<OpenDialog | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -83,7 +83,7 @@ function AdminUsersPage() {
       </Card>
 
       {/* Who can sign up (issue #198). */}
-      <InvitationsCard inviteOnly={inviteOnly} invitations={invitations} />
+      <InvitationsCard inviteOnly={inviteOnly} organizationRequests={organizationRequests} invitations={invitations} />
 
       {dialog?.kind === "roles" ? (
         <RolesDialog

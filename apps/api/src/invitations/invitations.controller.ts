@@ -9,7 +9,7 @@ import type { AuthenticatedUser } from "../common/types/authenticated-request.js
 import { zodDto } from "../common/zod-validation.js";
 import { RateLimit } from "../security/rate-limit.decorator.js";
 import { InvitationsService } from "./invitations.service.js";
-import { encodePass, PASS_COOKIE, PASS_MAX_AGE_S, passIsValid } from "./signup-gate.js";
+import { passCookie, passIsValid } from "./signup-gate.js";
 
 class CreateSignupInvitationDto extends zodDto(CreateSignupInvitationSchema) {}
 class SignupPassDto extends zodDto(SignupPassSchema) {}
@@ -63,12 +63,6 @@ export class SignupPassController {
   @ApiExcludeEndpoint()
   async keepPass(@Body() dto: SignupPassDto, @Res({ passthrough: true }) res: Response): Promise<void> {
     if (!(await passIsValid(dto))) throw new NotFoundException("This link doesn't work any more. Ask for a new one.");
-    res.cookie(PASS_COOKIE, encodePass(dto), {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: (process.env.AUTH_URL ?? "").startsWith("https:"),
-      path: "/api/auth",
-      maxAge: PASS_MAX_AGE_S * 1000,
-    });
+    res.cookie(...passCookie(dto));
   }
 }

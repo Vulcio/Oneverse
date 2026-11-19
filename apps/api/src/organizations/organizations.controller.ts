@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
+import { WhileAwaitingApproval } from "../common/decorators/while-awaiting-approval.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import { planiverseUrl } from "../common/utils/web-apps.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
@@ -16,6 +17,7 @@ import { SetTeamOrganizationDto } from "./dto/set-team-organization.dto.js";
 import { UpdateOrganizationDto } from "./dto/update-organization.dto.js";
 import { clearOrganizationSettings, getOrganizationSettingsSummary, saveOrganizationSettings } from "./organization-settings.js";
 import { OrganizationsService } from "./organizations.service.js";
+import { letInByInvitation } from "./organization-signup.js";
 
 /** Organisations (issue #241): one's own, and for their admins, their members, invite links and teams. */
 @ApiTags("organizations")
@@ -35,23 +37,35 @@ export class OrganizationsController {
     return this.organizations.create(user, dto);
   }
 
-  @RateLimit("heavy")
   @Post("requests")
   @RateLimit("heavy")
+  @WhileAwaitingApproval()
   @ApiOkResponse({ description: "Asked for, reviewed by a global admin (issue #364); 409 with looksLike when it looks like one already here, unless duplicateNote says why it isn't." })
   request(@SignedIn() user: AuthenticatedUser, @Body() dto: RequestOrganizationDto) {
     return this.organizations.request(user, dto);
   }
 
+  @Get("requests/mine")
+  @WhileAwaitingApproval()
+  @ApiOkResponse({ description: "One's own requests, and whether one's account waits for one to be approved (issue #533)." })
+  myRequests(@SignedIn() user: AuthenticatedUser) {
+    return this.organizations.myRequests(user);
+  }
+
   @Delete("requests/:requestId")
+  @WhileAwaitingApproval()
   @HttpCode(HttpStatus.NO_CONTENT)
   withdrawRequest(@SignedIn() user: AuthenticatedUser, @Param("requestId") requestId: string) {
     return this.organizations.withdrawRequest(user, requestId);
   }
 
   @Post("join/:token")
-  join(@SignedIn() user: AuthenticatedUser, @Param("token") token: string) {
-    return this.organizations.join(user, token);
+  @WhileAwaitingApproval()
+  async join(@SignedIn() user: AuthenticatedUser, @Param("token") token: string) {
+    const organization = await this.organizations.join(user, token);
+    // Invitations always work (issue #533): waiting for an organisation's approval or not.
+    if (user.awaitingApproval) await letInByInvitation(user.id);
+    return organization;
   }
 
   @Get(":organizationId")

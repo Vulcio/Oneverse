@@ -6,6 +6,8 @@ export interface AuthenticatedUser {
   isGlobalAdmin: boolean;
   /** May review songs submitted to the global catalogue (global admins always can). */
   isReviewer: boolean;
+  /** Signed up asking for an organisation, not approved yet (issue #533). */
+  awaitingApproval?: boolean;
 }
 
 export interface AuthenticatedRequest extends Request {

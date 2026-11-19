@@ -36,6 +36,7 @@ const SELECT = {
   instruments: true,
   techRoles: true,
   profilePromptSkippedAt: true,
+  awaitingApprovalSince: true,
 } as const;
 
 /** How long a skipped "What do you play or do?" waits before it's asked again (issue #109). */
@@ -51,10 +52,13 @@ function asksProfile(user: { instruments: string[]; techRoles: string[]; profile
 }
 
 /** Stored roles no longer on the lists are dropped, the rest shown in list order; whether to ask what they play (issue #109), not when they skipped it. */
-function toProfile<T extends { instruments: string[]; techRoles: string[]; profilePromptSkippedAt: Date | null }>(user: T, customInstruments: readonly string[]) {
-  const rest: Omit<T, "profilePromptSkippedAt"> & { profilePromptSkippedAt?: Date | null } = { ...user };
+function toProfile<T extends { instruments: string[]; techRoles: string[]; profilePromptSkippedAt: Date | null; awaitingApprovalSince?: Date | null }>(user: T, customInstruments: readonly string[]) {
+  const rest: Omit<T, "profilePromptSkippedAt" | "awaitingApprovalSince"> & { profilePromptSkippedAt?: Date | null; awaitingApprovalSince?: Date | null } = { ...user };
   delete rest.profilePromptSkippedAt;
-  return { ...(rest as Omit<T, "profilePromptSkippedAt">), instruments: orderInstruments(user.instruments, customInstruments), techRoles: orderTechRoles(user.techRoles), askProfile: asksProfile(user) };
+  delete rest.awaitingApprovalSince;
+  // Waiting for their organisation's approval (issue #533): a global admin never waits.
+  const awaitingApproval = !!user.awaitingApprovalSince && !(user as { isGlobalAdmin?: boolean }).isGlobalAdmin;
+  return { ...(rest as Omit<T, "profilePromptSkippedAt" | "awaitingApprovalSince">), instruments: orderInstruments(user.instruments, customInstruments), techRoles: orderTechRoles(user.techRoles), askProfile: asksProfile(user), awaitingApproval };
 }
 
 @Injectable()

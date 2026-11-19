@@ -1,4 +1,4 @@
-import type { AdminOrganizationRequest, OrganizationMode } from "@oneverse/core";
+import { addressLine, type AdminOrganizationRequest, type OrganizationMode } from "@oneverse/core";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -268,7 +268,7 @@ function AdminOrganizationsPage() {
 
 /** A request waiting (issue #364): what they told, what it looks like, approve or decline with a reason. */
 function PendingRequest({ request, busy, run }: { request: AdminOrganizationRequest; busy: string | null; run: (key: string, action: () => Promise<unknown>) => Promise<void> }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   return (
@@ -277,9 +277,24 @@ function PendingRequest({ request, busy, run }: { request: AdminOrganizationRequ
         <p className="text-sm font-medium">
           {request.name} <span className="font-normal text-muted-foreground">· {request.city}</span>
         </p>
-        <span className="text-xs text-muted-foreground">{new Date(request.createdAt).toLocaleDateString()}</span>
+        <span className="text-xs text-muted-foreground">
+          {request.atSignup ? `${t("organizations.requests.atSignup")} · ` : ""}
+          {new Date(request.createdAt).toLocaleDateString()}
+        </span>
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+        {request.street ? (
+          <>
+            <dt className="text-muted-foreground">{t("organizations.address.title")}</dt>
+            <dd data-testid="request-address">{addressLine({ street: request.street, postalCode: request.postalCode, city: request.city, country: request.country }, i18n.language || "en")}</dd>
+          </>
+        ) : null}
+        {request.responsibleFirstName ? (
+          <>
+            <dt className="text-muted-foreground">{t("organizations.address.responsible")}</dt>
+            <dd>{`${request.responsibleFirstName} ${request.responsibleLastName ?? ""}`.trim()}</dd>
+          </>
+        ) : null}
         <dt className="text-muted-foreground">{t("organizations.requests.kind")}</dt>
         <dd>
           {t(`organizations.kinds.${request.kind}`)}
@@ -292,6 +307,7 @@ function PendingRequest({ request, busy, run }: { request: AdminOrganizationRequ
         <dt className="text-muted-foreground">{t("organizations.requests.askedBy")}</dt>
         <dd>
           {request.requestedBy.displayName} ({request.requestedBy.email})
+          {request.requestedBy.emailVerified === false ? ` · ${t("organizations.requests.emailNotVerified")}` : ""}
         </dd>
         {request.website ? (
           <>
@@ -313,7 +329,8 @@ function PendingRequest({ request, busy, run }: { request: AdminOrganizationRequ
             {request.looksLike.map((one) => (
               <li key={`${one.source}-${one.id}`}>
                 {one.name}
-                {one.city ? ` · ${one.city}` : ""} ({t(one.source === "organization" ? "organizations.requests.existing" : "organizations.requests.alsoAsked")})
+                {one.city ? ` · ${one.city}` : ""} ({t(one.source === "organization" ? "organizations.requests.existing" : "organizations.requests.alsoAsked")}
+                {one.match === "same" ? `, ${t("organizations.requests.sameAddress")}` : ""})
               </li>
             ))}
           </ul>

@@ -2,6 +2,7 @@ import "../zod-config.js";
 import { z } from "zod";
 import { ENTITY_COLORS } from "../constants/index.js";
 import { clearableInt, clearableText, optional, queryBoolean } from "./fields.js";
+import { countryHasPostalCodes, isCountryCode, postalCodeFits, tidyPostalCode } from "../addresses/index.js";
 
 /**
  * Organisations (issue #241, Planiverse): whether an instance has none
@@ -63,18 +64,69 @@ export type OrganizationSize = (typeof ORGANIZATION_SIZES)[number];
  * organisation or request (same name, near enough, in the same city) is
  * refused with them, unless `duplicateNote` says why it isn't the same.
  */
-export const RequestOrganizationSchema = z.strictObject({
+/** An organisation's address (issue #533): a country we know, and a postal code in its format where it has them. */
+const countryField = z.string().trim().toUpperCase().refine(isCountryCode, "country must be a country's two-letter code, like FR").describe("ISO 3166-1 alpha-2, like FR");
+const postalCodeField = z.string().trim().max(20).transform(tidyPostalCode);
+const streetField = z.string().trim().min(3).max(200).describe("Number and street, as on a letter");
+const personName = z.string().trim().min(1).max(100);
+
+function checkPostalCode(value: { country?: string; postalCode?: string }, ctx: z.RefinementCtx) {
+  if (!value.country) return;
+  if (!countryHasPostalCodes(value.country)) return;
+  if (!value.postalCode) ctx.addIssue({ code: "custom", path: ["postalCode"], message: "postalCode is needed in that country" });
+  else if (!postalCodeFits(value.country, value.postalCode)) ctx.addIssue({ code: "custom", path: ["postalCode"], message: "postalCode doesn't look like a postal code in that country" });
+}
+
+/** What's told about an organisation when asking for one, in the app or at sign-up. */
+const organizationDetails = {
   name: z.string().trim().min(2).max(100),
   description: optional(z.string().trim().max(500)),
   kind: z.enum(ORGANIZATION_KINDS),
   city: z.string().trim().min(2).max(100).describe("Where it is: tells two of the same name apart"),
-  contactName: z.string().trim().min(2).max(100).describe("Who to reach about it"),
-  contactEmail: z.string().trim().toLowerCase().max(320).pipe(z.email()),
   website: optional(z.string().trim().max(300).pipe(z.url({ protocol: /^https?$/ }))),
   peopleCount: optional(z.enum(ORGANIZATION_SIZES)),
   duplicateNote: optional(z.string().trim().min(5).max(500)).describe("Why it isn't one of those it looks like"),
-});
+};
+
+/**
+ * POST /organizations/requests (issue #364): someone asks for an
+ * organisation, reviewed by a global admin. One that looks like an existing
+ * organisation or request (same name, near enough, in the same city or at
+ * the same address) is refused with them, unless `duplicateNote` says why
+ * it isn't the same; one at the same address with nearly the same name is
+ * refused anyway (`ORGANIZATION_EXISTS`, issue #533).
+ */
+export const RequestOrganizationSchema = z
+  .strictObject({
+    ...organizationDetails,
+    contactName: z.string().trim().min(2).max(100).describe("Who to reach about it"),
+    contactEmail: z.string().trim().toLowerCase().max(320).pipe(z.email()),
+    street: optional(streetField),
+    postalCode: optional(postalCodeField),
+    country: optional(countryField),
+    responsibleFirstName: optional(personName).describe("The person responsible for it (issue #533)"),
+    responsibleLastName: optional(personName),
+  })
+  .superRefine(checkPostalCode);
 export type RequestOrganizationRequest = z.input<typeof RequestOrganizationSchema>;
+
+/**
+ * POST /auth/organization-signup (issue #533): signed out, when sign-up is
+ * by asking for an organisation. The same as asking in the app, with the
+ * address and the person responsible needed; who to reach is the account
+ * made next. Kept for that account (a pass in a cookie, as an invitation's).
+ */
+export const OrganizationSignupSchema = z
+  .strictObject({
+    ...organizationDetails,
+    street: streetField,
+    postalCode: postalCodeField.optional(),
+    country: countryField,
+    responsibleFirstName: personName.describe("The person responsible for it"),
+    responsibleLastName: personName,
+  })
+  .superRefine(checkPostalCode);
+export type OrganizationSignupRequest = z.input<typeof OrganizationSignupSchema>;
 
 /** POST /admin/organizations/requests/:id/decline: why, told to who asked. */
 export const DeclineOrganizationRequestSchema = z.strictObject({
@@ -89,6 +141,11 @@ export const UpdateOrganizationSchema = z.strictObject({
   color: z.enum(ENTITY_COLORS).nullable().optional().describe("Its colour; null: one derived from its name"),
   bible: optional(z.boolean().describe("A Bible in its teams' members' sidebar (issue #310)")),
   city: clearableText(100),
+  street: clearableText(200),
+  postalCode: clearableText(20),
+  country: z.union([z.literal(""), countryField]).nullable().optional().describe("null or \"\" clears it"),
+  responsibleFirstName: clearableText(100),
+  responsibleLastName: clearableText(100),
   contactName: clearableText(100),
   contactEmail: z.union([z.literal(""), z.string().trim().toLowerCase().max(320).pipe(z.email())]).nullable().optional().describe("null or \"\" clears it"),
   website: z.union([z.literal(""), z.string().trim().max(300).pipe(z.url({ protocol: /^https?$/ }))]).nullable().optional(),

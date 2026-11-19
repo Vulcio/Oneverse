@@ -22,6 +22,8 @@ export interface EffectiveSecuritySettings {
   contentSecurityPolicy: "ENFORCE" | "REPORT_ONLY" | "OFF";
   /** Only invited people can create an account (issue #198). */
   signupInviteOnly: boolean;
+  /** By invitation only, anyone may still sign up by asking for an organisation (issue #533). */
+  signupOrganizationRequests: boolean;
 }
 
 type Key = keyof EffectiveSecuritySettings;
@@ -38,6 +40,7 @@ const FIELDS: { [K in Key]: { env: string; parse: (raw: string) => EffectiveSecu
   apiDocsPublic: { env: "API_DOCS_PUBLIC", parse: bool, fallback: () => !production() },
   contentSecurityPolicy: { env: "CONTENT_SECURITY_POLICY", parse: cspMode, fallback: () => "ENFORCE" },
   signupInviteOnly: { env: "SIGNUP_INVITE_ONLY", parse: bool, fallback: () => false },
+  signupOrganizationRequests: { env: "SIGNUP_ORGANIZATION_REQUESTS", parse: bool, fallback: () => false },
 };
 
 function cspMode(raw: string): EffectiveSecuritySettings["contentSecurityPolicy"] | undefined {

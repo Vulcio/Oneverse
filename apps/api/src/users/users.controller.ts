@@ -20,6 +20,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiExcludeEndpoint, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
+import { WhileAwaitingApproval } from "../common/decorators/while-awaiting-approval.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { StorageUsageResponseDto } from "./dto/storage-usage.dto.js";
@@ -40,12 +41,14 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get("me")
+  @WhileAwaitingApproval()
   @ApiOkResponse({ type: UserResponseDto })
   findMe(@SignedIn() user: AuthenticatedUser) {
     return this.usersService.findMe(user.id);
   }
 
   @Patch("me")
+  @WhileAwaitingApproval()
   @ApiOkResponse({ type: UserResponseDto })
   updateMe(@SignedIn() user: AuthenticatedUser, @Body() dto: UpdateUserDto) {
     return this.usersService.updateMe(user.id, dto);
@@ -65,6 +68,7 @@ export class UsersController {
   }
 
   @Put("me/avatar")
+  @WhileAwaitingApproval()
   @UseInterceptors(FileInterceptor("file", { ...UPLOAD_OPTIONS, limits: { fileSize: MAX_AVATAR_SIZE_BYTES } }))
   @ApiConsumes("multipart/form-data")
   @ApiOkResponse({ type: UserResponseDto })
@@ -74,6 +78,7 @@ export class UsersController {
   }
 
   @Delete("me/avatar")
+  @WhileAwaitingApproval()
   @ApiOkResponse({ type: UserResponseDto })
   removeAvatar(@SignedIn() user: AuthenticatedUser) {
     return this.usersService.removeAvatar(user.id);

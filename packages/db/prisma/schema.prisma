@@ -254,6 +254,9 @@ model User {
   // rather than renaming these columns.
   emailVerified Boolean  @default(false)
   isGlobalAdmin Boolean  @default(false)
+  // Signed up with a request for an organisation (issue #533): until a
+  // global admin approves it, they only see where it stands.
+  awaitingApprovalSince DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -759,8 +762,16 @@ model Organization {
   // Asked for when someone requests one (issue #364): where it is, who to
   // reach, what it is. Its city tells two of the same name apart.
   city                  String?
+  // Its address (issue #533): told when it's asked for, compared to tell
+  // duplicates apart. country is ISO 3166 alpha-2 ("FR").
+  street                String?
+  postalCode            String?
+  country               String?
   contactName           String?
   contactEmail          String?
+  // The person responsible for it (issue #533), not always who asked.
+  responsibleFirstName  String?
+  responsibleLastName   String?
   website               String?
   kind                  String?
   // Its admins' setup checklist (issue #364), put away.
@@ -859,8 +870,19 @@ model OrganizationRequest {
   description    String?
   kind           String
   city           String
+  // Its address (issue #533); older requests have none.
+  street         String?
+  postalCode     String?
+  country        String?
   contactName    String
   contactEmail   String
+  responsibleFirstName String?
+  responsibleLastName  String?
+  // Sent with the account, at sign-up (issue #533): its approval lets them in.
+  atSignup       Boolean                   @default(false)
+  // When global admins were told: a request made at sign-up waits for the
+  // email to be verified (they're told on the first page signed in).
+  announcedAt    DateTime?
   website        String?
   peopleCount    String?
   // Why it isn't a duplicate of one that looks the same, when it was asked anyway.
@@ -2679,6 +2701,8 @@ model SecuritySettings {
   contentSecurityPolicy       String?
   // Only invited people can create an account (issue #198).
   signupInviteOnly            Boolean?
+  // Anyone else may sign up by asking for an organisation, approved by a global admin (issue #533).
+  signupOrganizationRequests  Boolean?
   updatedAt                   DateTime @updatedAt
 }
 
@@ -3901,4 +3925,17 @@ model SongProviderSource {
   checkedAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+// A request for an organisation made before the account it comes with
+// (issue #533): kept for an hour, for the account made next (a pass in a
+// cookie, like an invitation's), then turned into an OrganizationRequest.
+model OrganizationSignupDraft {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  data      Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
 }
