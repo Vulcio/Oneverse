@@ -16,7 +16,7 @@ type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin">;
 
 const withGroups = {
   host: { select: { id: true, displayName: true } },
-  teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, withSet: true, team: { select: { name: true, color: true, avatarUrl: true } } }, orderBy: { team: { name: "asc" } } },
+  teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, withSet: true, team: { select: { name: true, color: true, avatarUrl: true, usesSongverse: true } } }, orderBy: { team: { name: "asc" } } },
 } as const;
 type Row = Prisma.OrganizationEventGetPayload<{ include: typeof withGroups }>;
 
@@ -214,7 +214,7 @@ export class OrganizationEventsService {
       }
       const need = needed?.get(part.teamId);
       // A need's call time replaces the group's (none: no call time).
-      const asked = need ? { ...(need.parts ? { parts: need.parts } : {}), callMinutes: need.callMinutes ?? null, withSet: need.withSet ?? part.withSet } : {};
+      const asked = need ? { ...(need.parts ? { parts: need.parts } : {}), callMinutes: need.callMinutes ?? null, withSet: need.withSet ?? part.team.usesSongverse } : {};
       if (timingChanged || need) await this.events.update(part.teamId, part.id, { ...timing, ...asked }, viewer.id, true);
     }
     for (const need of needed?.values() ?? []) {

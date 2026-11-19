@@ -209,7 +209,7 @@ const NeedSchema = z.strictObject({
   teamId: z.string().trim().min(1).max(64),
   parts: optional(eventParts),
   callMinutes: optional(callMinutes).describe("When the group is to be there: minutes before it starts"),
-  withSet: optional(z.boolean()).describe("Whether the group's dates get a set (issue #523): false for a meeting. Left out: a new group's part gets one if the group uses Songverse (issue #531), a part already there keeps what it had"),
+  withSet: optional(z.boolean()).describe("Whether the group's dates get a set (issue #523): false for a meeting. Left out: true for a group that uses Songverse, false for one that only plans (issue #531)"),
 });
 const needs = z
   .array(NeedSchema)
