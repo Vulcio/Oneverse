@@ -5589,7 +5589,7 @@ const fr: typeof en = {
     metronomeBeatsSet: "En choisir un pour cette version",
     metronomeBeatsPlayers: "Utiliser celui de chaque musicien",
     fret: "Case {{fret}}",
-    tagsHint: "Choisissez parmi les étiquettes existantes.",
+    tagsHint: "Thèmes, saisons, occasions et genres. Tapez dans n'importe quelle langue pour en trouver une.",
     noMatchingTag: "Aucune étiquette de ce nom.",
     otherCredits: "Autres crédits",
     songbooks: "Recueils",

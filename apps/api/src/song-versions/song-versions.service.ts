@@ -1,7 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import {
   computeSectionLabel,
-  foldForSearch,
   formatSongbookReference,
   MetadataMatchSchema,
   MusicBrainzRecordingMatchSchema,
@@ -36,6 +35,7 @@ import {
   matchLyrics,
   parseLyricsQuery,
   type LyricsMatch,
+  matchTagIds as tagIdsNamed,
 } from "@oneverse/core";
 import type { ContributorRole, Prisma, VersionRelationshipType } from "@oneverse/db";
 import { recordingAsMatch } from "./metadata-match-backfill.js";
@@ -138,10 +138,6 @@ function chartFrom(
 function parseTimeSignature(text: string | null): { numerator: number; denominator: number } | null {
   const match = text ? /^(\d+)\/(\d+)$/.exec(text) : null;
   return match ? { numerator: Number(match[1]), denominator: Number(match[2]) } : null;
-}
-
-function foldName(name: string): string {
-  return foldForSearch(name).trim().replace(/\s+/g, " ");
 }
 
 /** A name someone's already credited under, for autocomplete. */
@@ -818,16 +814,11 @@ export class SongVersionsService {
           ...(owner.ownerTeamId ? [{ scope: "TEAM" as const, ownerTeamId: owner.ownerTeamId }] : []),
         ],
       },
-      select: { id: true, label: true, slug: true, translations: true },
+      select: { id: true, label: true, slug: true, translations: true, aliases: true, retired: true },
+      // Picker order, so the built-in list's own names come first (issue #37).
+      orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
     });
-    const byName = new Map<string, string>();
-    for (const tag of tags) {
-      const translations = tag.translations && typeof tag.translations === "object" ? Object.values(tag.translations) : [];
-      for (const name of [tag.label, tag.slug.replace(/-/g, " "), ...translations]) {
-        if (typeof name === "string" && !byName.has(foldName(name))) byName.set(foldName(name), tag.id);
-      }
-    }
-    return [...new Set(names.map((name) => byName.get(foldName(name))).filter((id): id is string => !!id))];
+    return tagIdsNamed(tags, names);
   }
 
   private buildVersionData(

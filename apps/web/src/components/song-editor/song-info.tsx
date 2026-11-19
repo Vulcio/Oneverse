@@ -2,6 +2,8 @@ import {
   formatDuration,
   getLanguageDisplayName,
   resolveTranslation,
+  tagMatchesQuery,
+  tagPickerGroups,
   METADATA_PROVIDER_NAMES,
   TEMPO_UNITS,
   TIME_SIGNATURE_PATTERN,
@@ -725,11 +727,12 @@ export function MoreDetailsCard({
                 labelFor={tagLabel}
                 allowCustom={false}
                 suggest={(query) => {
-                  const q = query.toLowerCase();
-                  return tags
-                    .map((tag) => ({ value: tag.id, label: resolveTranslation(tag.label, tag.translations, locale) }))
-                    .filter((tag) => !q || tag.label.toLowerCase().includes(q))
-                    .sort((a, b) => a.label.localeCompare(b.label));
+                  // Grouped as the list has them; typing finds a tag by any of its names, in any language (issue #37).
+                  const options = tagPickerGroups(tags, locale)
+                    .flatMap((group) => group.tags)
+                    .filter((tag) => tagMatchesQuery(tag, query))
+                    .map((tag) => ({ value: tag.id, label: tagLabel(tag.id) }));
+                  return query.trim() ? options.sort((a, b) => a.label.localeCompare(b.label)) : options;
                 }}
                 placeholder={t("songEditor.placeholders.tags")}
                 noMatches={t("songEditor.noMatchingTag")}

@@ -3,6 +3,7 @@ import "./zod-config.js";
 export * from "./constants/index.js";
 export * from "./ids/index.js";
 export * from "./slug/index.js";
+export * from "./tags/index.js";
 export * from "./songbook-sections/index.js";
 export * from "./bulk-upload-matching/index.js";
 export * from "./languages/index.js";

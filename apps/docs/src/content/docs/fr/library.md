@@ -36,6 +36,10 @@ Pour chercher, utilisez **Rechercher** en haut de chaque page, ou le champ au-de
 - **Triez** par colonne en cliquant sur son titre.
 - La colonne **Statut** dit où en est un chant : **Personnel** ou **Équipe** s'il n'a jamais été proposé au catalogue global, puis où en est sa proposition (**En attente de relecture**, **Publié**…).
 
+### Étiquettes
+
+Les étiquettes disent de quoi parle un chant et quand il convient, pour trouver des chants pour une liste : des **thèmes** (amour, espérance, deuil, liberté, grâce, la croix...), rangés en groupes comme **Amour et relations**, **Épreuves** ou **Salut** ; une **saison** (Noël, Pâques, l'été...) ; une **occasion** (un mariage, des funérailles, la sainte cène, l'ouverture...) ; et un **genre** (pop, gospel, cantique, louange contemporaine...). Elles valent pour toute musique, pas seulement la louange. Choisissez-les dans les **Infos** du chant : en tapant, on trouve une étiquette par n'importe lequel de ses noms, en français ou en anglais (« grâce », « grace » et « faveur » trouvent tous **Grâce**). Le filtre **Toutes les étiquettes** les range par groupe.
+
 ## Artistes
 
 **Artistes** montre toutes les personnes créditées comme artiste sur les chants que vous pouvez voir, en grille : sa photo (ou ses initiales), son nom et son nombre de chants ; la recherche les filtre. Les noms écrits différemment (avec ou sans majuscules ou accents) comptent pour un seul artiste.

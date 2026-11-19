@@ -2267,16 +2267,26 @@ export interface TagCategory {
   label: string;
   translations: Record<string, string> | null;
   isGlobal: boolean;
+  sortOrder: number;
 }
 
 export interface Tag {
   id: string;
   categoryId: string;
+  /** Its category's slug: theme, season, occasion, style (shown as Genre), mood, instrumentation, or an admin's own. */
+  category: { slug: string };
   slug: string;
   label: string;
   translations: Record<string, string> | null;
   scope: string;
   isApproved: boolean;
+  sortOrder: number;
+  /** A theme's group (issue #37): one of TAG_GROUPS. */
+  group: string | null;
+  /** Other words for it, per locale; names to match, not to show. */
+  aliases: Partial<Record<string, string[]>> | null;
+  /** Hidden from pickers, still shown on the songs that have it. */
+  retired: boolean;
 }
 
 export interface SongVersionSummary {

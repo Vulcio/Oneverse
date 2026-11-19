@@ -1006,6 +1006,13 @@ model Tag {
   ownerTeamId  String? // set when scope = TEAM
   isApproved   Boolean  @default(false) // user-suggested tags start false; admin approves
   sortOrder    Int      @default(0)
+  // A theme's group (issue #37): TAG_GROUPS in @oneverse/core, e.g. "salvation".
+  group        String?
+  // Other words for the same idea, per locale: {"en": ["gracious"], "fr": ["faveur"]}.
+  // Names to match (imports, search, music services' genres), never shown as tags.
+  aliases      Json?
+  // Hidden from pickers, kept on the songs that have it (a slug is never reused).
+  retired      Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

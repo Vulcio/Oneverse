@@ -5587,7 +5587,7 @@ const en = {
     metronomeBeatsSet: "Set one for this version",
     metronomeBeatsPlayers: "Use each player's own",
     fret: "Fret {{fret}}",
-    tagsHint: "Pick from the existing tags.",
+    tagsHint: "Themes, seasons, occasions and genres. Type in any language to find one.",
     noMatchingTag: "No tag by that name.",
     otherCredits: "Other credits",
     songbooks: "Songbooks",
