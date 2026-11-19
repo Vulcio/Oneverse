@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { ASSIGNMENT_STATUSES, GUEST_PARTS, isGivenPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
+import { ASSIGNMENT_STATUSES, isGivenPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
@@ -167,8 +167,8 @@ export type CreateAnswerRequestRequest = z.input<typeof CreateAnswerRequestSchem
  * Someone scheduled on a part for a date (issue #235, phase 7), and the
  * part's key (partKey): a member or one of the admin's People (`userId`),
  * or someone without an account, by name, for reference (`guestName`).
- * A speaker without an account also comes with an email (`guestEmail`,
- * issue #523), so they can be reached.
+ * Someone without an account always comes with an email too (`guestEmail`,
+ * issues #523 and #520), so they can be reached.
  */
 export const AssignPartSchema = z
   .strictObject({
@@ -178,8 +178,8 @@ export const AssignPartSchema = z
     part: z.string().trim().min(1).max(80).describe("The part's key: its instrument or role, position: and a position's ID, or name: and its name"),
   })
   .refine((place) => !!place.userId !== !!place.guestName, "Each place needs either userId or guestName, not both")
-  .refine((place) => !place.guestEmail || (!!place.guestName && GUEST_PARTS.includes(place.part)), "guestEmail is only for a speaker without an account (guestName)")
-  .refine((place) => !place.guestName || !GUEST_PARTS.includes(place.part) || !!place.guestEmail, "A speaker without an account needs guestEmail");
+  .refine((place) => !place.guestEmail || !!place.guestName, "guestEmail is only for someone without an account (guestName)")
+  .refine((place) => !place.guestName || !!place.guestEmail, "Someone without an account needs guestEmail");
 export type AssignPartRequest = z.input<typeof AssignPartSchema>;
 
 /** Someone puts themselves on an open place (issue #528): the event, its date and the part's key. */

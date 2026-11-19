@@ -1,4 +1,4 @@
-import { coversPart, GUEST_PARTS, isGivenPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
+import { coversPart, isGivenPart, isMembersOnlyPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
 import { AlertTriangle, ArrowLeftRight, Check, Clock, HandHelping, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -336,9 +336,8 @@ export function LineupDialog({
                       onChange={(event) => setNaming({ ...naming, name: event.target.value })}
                       data-testid="lineup-outside-name"
                     />
-                    {/* A speaker without an account comes with an email, to reach them (issue #523). */}
-                    {GUEST_PARTS.includes(key) ? (
-                      <Input
+                    {/* Someone without an account comes with an email, to reach them (issues #523, #520). */}
+                    <Input
                         type="email"
                         className="h-8 w-48 text-xs"
                         value={naming.email}
@@ -347,14 +346,13 @@ export function LineupDialog({
                         onChange={(event) => setNaming({ ...naming, email: event.target.value })}
                         data-testid="lineup-outside-email"
                       />
-                    ) : null}
                     <Button
                       size="sm"
                       className="h-8"
-                      disabled={!naming.name.trim() || (GUEST_PARTS.includes(key) && !/^\S+@\S+\.\S+$/.test(naming.email.trim()))}
+                      disabled={!naming.name.trim() || !/^\S+@\S+\.\S+$/.test(naming.email.trim())}
                       onClick={() => {
                         const guestName = naming.name.trim();
-                        const guestEmail = GUEST_PARTS.includes(key) ? naming.email.trim() : undefined;
+                        const guestEmail = naming.email.trim();
                         setNaming(null);
                         void run(() => api.assignTeamEventPart(teamId, eventId, date, { guestName, guestEmail, part: key }));
                       }}
@@ -392,7 +390,8 @@ export function LineupDialog({
                       ))}
                     </optgroup>
                   ) : null}
-                  {people.some((person) => !memberIds.has(person.id) && !on.has(person.id)) ? (
+                  {/* Hosting is never a guest's (issue #520). */}
+                  {!isMembersOnlyPart(key) && people.some((person) => !memberIds.has(person.id) && !on.has(person.id)) ? (
                     <optgroup label={t("teamCalendar.lineupPeople")}>
                       {people
                         .filter((person) => !memberIds.has(person.id) && !on.has(person.id))
@@ -403,7 +402,7 @@ export function LineupDialog({
                         ))}
                     </optgroup>
                   ) : null}
-                  <option value="__outside">{t("teamCalendar.lineupOutside")}</option>
+                  {!isMembersOnlyPart(key) ? <option value="__outside">{t("teamCalendar.lineupOutside")}</option> : null}
                 </NativeSelect>
               </li>
             );
