@@ -238,8 +238,11 @@ export interface EventTypeTemplate {
 /** The most types a team keeps. */
 export const EVENT_TYPES_LIMIT = 30;
 
-/** In a suggestion's openTo (issue #528): the team it's added to, swapped for its ID by suggestionFor(). */
-const OWN_TEAM = "own";
+/**
+ * In openTo (issue #528), for a suggestion or an organisation's event type:
+ * the group the event is made in, swapped for its ID by partsForTeam().
+ */
+export const OWN_TEAM = "own";
 
 /** The one who runs the screens (issue #528: "screen operator"). */
 const MEDIA_OPERATOR = "MEDIA_OPERATOR";
@@ -267,7 +270,7 @@ export const EVENT_TYPE_SUGGESTIONS: readonly EventTypeTemplate[] = [
   { key: "meeting", startTime: "19:00", durationMinutes: 60, parts: [], withSet: false },
 ];
 
-/** A suggestion's parts for a team (issue #528): its places open to "the team" open to that team. */
-export function suggestionParts(template: EventTypeTemplate, teamId: string): EventPart[] {
-  return template.parts.map((part) => (part.openTo ? { ...part, openTo: part.openTo.map((id) => (id === OWN_TEAM ? teamId : id)) } : part));
+/** Parts for a team (issue #528): places open to "the group the event is in" (OWN_TEAM) open to that team. */
+export function partsForTeam(parts: readonly EventPart[], teamId: string): EventPart[] {
+  return parts.map((part) => (part.openTo ? { ...part, openTo: [...new Set(part.openTo.map((id) => (id === OWN_TEAM ? teamId : id)))] } : part));
 }

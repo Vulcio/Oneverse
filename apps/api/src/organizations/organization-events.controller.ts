@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { TeamEventDatesQueryDto } from "../team-events/dto/team-events.dto.js";
+import { CreateTeamEventTypeDto, TeamEventDatesQueryDto, UpdateTeamEventTypeDto } from "../team-events/dto/team-events.dto.js";
 import { CreateOrganizationEventDto, OrganizationEventPresetDto, UpdateOrganizationEventDateDto, UpdateOrganizationEventDto } from "./dto/organization-events.dto.js";
 import { OrganizationEventsService } from "./organization-events.service.js";
 
@@ -65,5 +65,27 @@ export class OrganizationEventsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   deletePreset(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("presetId") presetId: string) {
     return this.events.deletePreset(user, organizationId, presetId);
+  }
+
+  /** Event types its groups pick from (issue #528). */
+  @Get("event-types")
+  eventTypes(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string) {
+    return this.events.eventTypes(user, organizationId);
+  }
+
+  @Post("event-types")
+  createEventType(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Body() dto: CreateTeamEventTypeDto) {
+    return this.events.createEventType(user, organizationId, dto);
+  }
+
+  @Patch("event-types/:typeId")
+  updateEventType(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("typeId") typeId: string, @Body() dto: UpdateTeamEventTypeDto) {
+    return this.events.updateEventType(user, organizationId, typeId, dto);
+  }
+
+  @Delete("event-types/:typeId")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteEventType(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("typeId") typeId: string) {
+    return this.events.deleteEventType(user, organizationId, typeId);
   }
 }

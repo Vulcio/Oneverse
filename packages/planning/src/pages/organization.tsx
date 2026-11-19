@@ -8,6 +8,7 @@ import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
 import { OrganizationSetupCard } from "../components/organization-setup";
+import { OrganizationEventTypesButton } from "../components/organization-event-types";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
@@ -96,6 +97,8 @@ export function OrganizationPage({
             <CalendarDays />
             {t("organizations.events")}
           </Button>
+          {/* The event types its groups pick from (issue #528). */}
+          {isAdmin ? <OrganizationEventTypesButton organizationId={organization.id} teams={organization.teams} /> : null}
           {isAdmin ? (
             <ConfirmButton
               label={t("organizations.delete")}

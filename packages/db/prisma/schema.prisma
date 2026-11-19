@@ -775,6 +775,7 @@ model Organization {
   teams           Team[]
   events          OrganizationEvent[]
   eventPresets    OrganizationEventPreset[]
+  eventTypes      TeamEventType[]
   // Its screens (issue #222): the church's projector, its stage monitor.
   screens         Screen[]
   // Its brands (issue #279): logos, colours, fonts, backgrounds, links.
@@ -1552,7 +1553,9 @@ model OrganizationEvent {
 // picked from it copies its title, usual timing, parts and withSet.
 model TeamEventType {
   id              String   @id @default(cuid())
-  teamId          String
+  // A team's own type, or (issue #528) an organisation's, offered to all its groups: one or the other.
+  teamId          String?
+  organizationId  String?
   name            String
   startTime       String?
   durationMinutes Int?
@@ -1563,10 +1566,12 @@ model TeamEventType {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  team   Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  events TeamEvent[]
+  team         Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  events       TeamEvent[]
 
   @@unique([teamId, name])
+  @@unique([organizationId, name])
 }
 
 // A saved list of what an organisation's event needs (issue #241):

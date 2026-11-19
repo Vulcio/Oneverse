@@ -50,13 +50,13 @@ export class TeamEventsController {
   @Post("event-types")
   @UseGuards(TeamAdminGuard)
   createType(@Param("teamId") teamId: string, @Body() dto: CreateTeamEventTypeDto) {
-    return this.types.create(teamId, dto);
+    return this.types.create({ teamId }, dto);
   }
 
   @Patch("event-types/:typeId")
   @UseGuards(TeamAdminGuard)
   updateType(@Param("teamId") teamId: string, @Param("typeId") typeId: string, @Body() dto: UpdateTeamEventTypeDto) {
-    return this.types.update(teamId, typeId, dto);
+    return this.types.update({ teamId }, typeId, dto);
   }
 
   /** Its events stay, with no type. */
@@ -64,7 +64,7 @@ export class TeamEventsController {
   @UseGuards(TeamAdminGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   removeType(@Param("teamId") teamId: string, @Param("typeId") typeId: string) {
-    return this.types.remove(teamId, typeId);
+    return this.types.remove({ teamId }, typeId);
   }
 
   /** The team's calendar link (issue #240): all its dates, no answers. Its admins make, reset or turn it off. */

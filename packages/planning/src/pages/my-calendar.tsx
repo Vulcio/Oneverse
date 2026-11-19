@@ -148,7 +148,7 @@ export function MyCalendarPage() {
                     {!date.cancelled && date.setlistId && sets ? (
                       <Button variant="outline" size="sm" className="col-start-2 row-start-1" render={<HostLink href={sets.href(date.setlistId)} />}>
                         {t("teamCalendar.openSet")}
-                        <span className="text-muted-foreground">· {t("teamCalendar.songs", { count: date.songCount })}</span>
+                        <span className="text-muted-foreground">· {t("teamCalendar.setItems", { count: date.songCount })}</span>
                       </Button>
                     ) : null}
                   </li>

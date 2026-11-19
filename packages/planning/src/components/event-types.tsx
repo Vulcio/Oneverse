@@ -1,4 +1,4 @@
-import { EVENT_TYPE_SUGGESTIONS, suggestionParts, type CustomInstrument, type EventPart, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { EVENT_TYPE_SUGGESTIONS, OWN_TEAM, partsForTeam, type CreateTeamEventTypeRequest, type UpdateTeamEventTypeRequest, type CustomInstrument, type EventPart, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,13 +13,36 @@ import { usePlanning } from "../host";
 import { DEFAULT_START, partBody, PartsEditor, useOpenToTeams } from "./team-calendar";
 
 /**
- * A team's event types (issue #523), for its admins: what each asks for and
+ * Whose event types: a team's own, or (issue #528) an organisation's, which
+ * all its groups pick from - `teams`, its groups, for the places it opens.
+ */
+export type EventTypesOwner = { teamId: string } | { organizationId: string; teams: readonly { id: string; name: string }[] };
+
+/** The API calls for the owner's types. */
+function typesApi(api: ReturnType<typeof usePlanning>["api"], owner: EventTypesOwner) {
+  return "teamId" in owner
+    ? {
+        create: (body: CreateTeamEventTypeRequest) => api.createTeamEventType(owner.teamId, body),
+        update: (id: string, body: UpdateTeamEventTypeRequest) => api.updateTeamEventType(owner.teamId, id, body),
+        remove: (id: string) => api.deleteTeamEventType(owner.teamId, id),
+      }
+    : {
+        create: (body: CreateTeamEventTypeRequest) => api.createOrganizationEventType(owner.organizationId, body),
+        update: (id: string, body: UpdateTeamEventTypeRequest) => api.updateOrganizationEventType(owner.organizationId, id, body),
+        remove: (id: string) => api.deleteOrganizationEventType(owner.organizationId, id),
+      };
+}
+
+/**
+ * Event types (issue #523), for a team's admins - or an organisation's
+ * (issue #528), whose types all its groups pick from: what each asks for and
  * whether its dates get a set. With none yet, the suggestions (a service with
  * its host and music leader; a worship night; a meeting without a set)
- * are a click away.
+ * are a click away. A team sees its organisation's types too, kept by the
+ * organisation's admins.
  */
 export function EventTypesDialog({
-  teamId,
+  owner,
   types,
   makesSets,
   teamNames,
@@ -29,7 +52,7 @@ export function EventTypesDialog({
   onChanged,
   onClose,
 }: {
-  teamId: string;
+  owner: EventTypesOwner;
   types: TeamEventType[];
   /** The team keeps sets: whether a type gets them is asked. */
   makesSets: boolean;
@@ -42,6 +65,7 @@ export function EventTypesDialog({
 }) {
   const { api } = usePlanning();
   const { t } = useTranslation();
+  const calls = typesApi(api, owner);
   const [editing, setEditing] = useState<TeamEventType | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
   // The suggestions the team hasn't added yet (by name), sets-only ones left out for a group that only plans.
@@ -62,7 +86,7 @@ export function EventTypesDialog({
   if (editing) {
     return (
       <EventTypeDialog
-        teamId={teamId}
+        owner={owner}
         type={editing === "new" ? null : editing}
         makesSets={makesSets}
         teamNames={teamNames}
@@ -96,11 +120,12 @@ export function EventTypesDialog({
                   size="sm"
                   onClick={() =>
                     void run(() =>
-                      api.createTeamEventType(teamId, {
+                      calls.create({
                         name,
                         startTime: suggestion.startTime,
                         durationMinutes: suggestion.durationMinutes,
-                        parts: suggestionParts(suggestion, teamId),
+                        // An organisation's keep "the group the event is in"; a team's, the team.
+                        parts: "teamId" in owner ? partsForTeam(suggestion.parts, owner.teamId) : [...suggestion.parts],
                         withSet: suggestion.withSet,
                       }),
                     )
@@ -122,22 +147,30 @@ export function EventTypesDialog({
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-sm font-medium">{type.name}</span>
                     {makesSets && !type.withSet ? <Badge variant="muted" data-testid="event-type-no-set">{t("teamCalendar.eventTypeNoSet")}</Badge> : null}
+                    {"teamId" in owner && type.organizationId ? (
+                      <Badge variant="outline" data-testid="event-type-organization">
+                        {type.organizationName}
+                      </Badge>
+                    ) : null}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {type.parts.length > 0 ? type.parts.map((part) => `${partLabel(part)}${part.count > 1 ? ` ×${part.count}` : ""}`).join(", ") : t("teamCalendar.eventTypeNoParts")}
                     {type.eventCount > 0 ? ` · ${t("teamCalendar.eventTypeEvents", { count: type.eventCount })}` : ""}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  aria-label={t("teamCalendar.eventTypeEdit", { name: type.name })}
-                  title={t("teamCalendar.eventTypeEdit", { name: type.name })}
-                  onClick={() => setEditing(type)}
-                  data-testid="event-type-edit"
-                >
-                  <Pencil className="size-4" />
-                </button>
+                {/* An organisation's type, in a group: its admins keep it, not the group's. */}
+                {"teamId" in owner && type.organizationId ? null : (
+                  <button
+                    type="button"
+                    className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label={t("teamCalendar.eventTypeEdit", { name: type.name })}
+                    title={t("teamCalendar.eventTypeEdit", { name: type.name })}
+                    onClick={() => setEditing(type)}
+                    data-testid="event-type-edit"
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -159,7 +192,7 @@ export function EventTypesDialog({
 
 /** A type made or changed: its name, usual timing, parts and whether its dates get a set. */
 function EventTypeDialog({
-  teamId,
+  owner,
   type,
   makesSets,
   teamNames,
@@ -169,7 +202,7 @@ function EventTypeDialog({
   onClose,
   onSaved,
 }: {
-  teamId: string;
+  owner: EventTypesOwner;
   type: TeamEventType | null;
   makesSets: boolean;
   teamNames: string[];
@@ -181,7 +214,10 @@ function EventTypeDialog({
 }) {
   const { api } = usePlanning();
   const { t } = useTranslation();
-  const openToTeams = useOpenToTeams(teamId);
+  const calls = typesApi(api, owner);
+  // A team's: the team and its organisation's groups; an organisation's: the group the event is in, then each group.
+  const teamTeams = useOpenToTeams("teamId" in owner ? owner.teamId : null);
+  const openToTeams = "teamId" in owner ? teamTeams : [{ id: OWN_TEAM, name: t("teamCalendar.partOpenOwnGroup") }, ...owner.teams];
   const [name, setName] = useState(type?.name ?? "");
   const [startTime, setStartTime] = useState(type?.startTime ?? DEFAULT_START);
   const [duration, setDuration] = useState(String(type?.durationMinutes ?? 90));
@@ -197,8 +233,8 @@ function EventTypeDialog({
     setError(null);
     const body = { name, startTime: startTime || null, durationMinutes: duration ? Number(duration) : null, callMinutes: call ? Number(call) : null, parts: parts.map(partBody), withSet };
     try {
-      if (type) await api.updateTeamEventType(teamId, type.id, body);
-      else await api.createTeamEventType(teamId, body);
+      if (type) await calls.update(type.id, body);
+      else await calls.create(body);
       await onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -238,7 +274,7 @@ function EventTypeDialog({
             <Input id="event-type-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} />
           </div>
           {makesSets ? <WithSetField id="event-type-with-set" checked={withSet} onChange={setWithSet} /> : null}
-          <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} ownTeamId={teamId} />
+          <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} ownTeamId={"teamId" in owner ? owner.teamId : OWN_TEAM} />
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
@@ -252,7 +288,7 @@ function EventTypeDialog({
                 busy={deleting}
                 onConfirm={async () => {
                   setDeleting(true);
-                  await api.deleteTeamEventType(teamId, type.id);
+                  await calls.remove(type.id);
                   await onSaved();
                 }}
               />

@@ -6,7 +6,9 @@ import { eventLocation } from "../locations/locations.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { AvailabilityService } from "../team-events/availability.service.js";
+import { EventTypesService } from "../team-events/event-types.service.js";
 import { dateText, day, partsOf, TeamEventsService } from "../team-events/team-events.service.js";
+import type { CreateTeamEventTypeDto, UpdateTeamEventTypeDto } from "../team-events/dto/team-events.dto.js";
 import type { CreateOrganizationEventDto, OrganizationEventPresetDto, UpdateOrganizationEventDto } from "./dto/organization-events.dto.js";
 import { OrganizationsService } from "./organizations.service.js";
 
@@ -33,6 +35,7 @@ export class OrganizationEventsService {
     private readonly events: TeamEventsService,
     private readonly availability: AvailabilityService,
     private readonly notifications: NotificationsService,
+    private readonly types: EventTypesService,
   ) {}
 
   /** The viewer's role in the organisation; not in it: not found. */
@@ -309,5 +312,31 @@ export class OrganizationEventsService {
     if ((await this.role(viewer, organizationId)) !== "ADMIN") throw new ForbiddenException("Only the organisation's admins remove presets");
     const { count } = await this.prisma.client.organizationEventPreset.deleteMany({ where: { id: presetId, organizationId } });
     if (count === 0) throw new NotFoundException("Preset not found");
+  }
+
+  /** The organisation's event types (issue #528): its members see them, its groups pick from them. */
+  async eventTypes(viewer: Viewer, organizationId: string) {
+    await this.role(viewer, organizationId);
+    return this.types.listOf(organizationId);
+  }
+
+  /** Only its admins make, change and remove them. */
+  private async assertTypesAdmin(viewer: Viewer, organizationId: string) {
+    if ((await this.role(viewer, organizationId)) !== "ADMIN") throw new ForbiddenException("Only the organisation's admins keep its event types");
+  }
+
+  async createEventType(viewer: Viewer, organizationId: string, dto: CreateTeamEventTypeDto) {
+    await this.assertTypesAdmin(viewer, organizationId);
+    return this.types.create({ organizationId }, dto);
+  }
+
+  async updateEventType(viewer: Viewer, organizationId: string, typeId: string, dto: UpdateTeamEventTypeDto) {
+    await this.assertTypesAdmin(viewer, organizationId);
+    return this.types.update({ organizationId }, typeId, dto);
+  }
+
+  async deleteEventType(viewer: Viewer, organizationId: string, typeId: string) {
+    await this.assertTypesAdmin(viewer, organizationId);
+    await this.types.remove({ organizationId }, typeId);
   }
 }

@@ -93,6 +93,10 @@ Its admins make one with **New event**: its **Title**, first date, start time, l
 
 **Presets** keep what an event usually needs: in an event's dialog, **Save as preset** under a **Preset name**. **New event** then starts from one with **Preset**, which fills its title, time, place and groups. The admins remove presets under **Presets**.
 
+### Event types
+
+**Event types**, at the top of the organisation's page, keeps the kinds of events all its groups hold - a service, a prayer night, a meeting - for its admins: each with its usual timing, its parts (which are required, and which places are open to the group the event is in or to other groups; see [Parts needed](/teams/#parts-needed)) and **Make a set for each date**. They're offered to every group: on a group's calendar, **Event types** lists them, marked with the organisation's name, and **New event** picks from them like the group's own. An event made from one can still ask for more parts. Only the organisation's admins change or delete them; the group's admins can still keep types of their own.
+
 ## Locations
 
 Where the organisation's events take place - a church, a hall, a campus: its admins add them under **Locations** on its page, with **Add location** (a **Name**, an **Address (optional)**, a **Time zone**), **Edit** and **Remove**. Its events pick one with **Location** in their dialog, which fills the place and the time zone, and each group's part follows it; a preset keeps it too. Its groups' own events can use them as well, beside the team's own (see [Locations](/teams/#locations)).

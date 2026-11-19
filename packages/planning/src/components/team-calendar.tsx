@@ -1,4 +1,4 @@
-import { addDays, coversPart, GIVEN_PARTS, INSTRUMENTS, isGivenPart, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, coversPart, GIVEN_PARTS, INSTRUMENTS, isGivenPart, partsForTeam, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -265,7 +265,7 @@ export function TeamCalendar({
                   {!date.cancelled && date.setlistId && setHref ? (
                     <Button variant="outline" size="sm" className="col-start-2 row-start-1" render={<HostLink href={setHref(date.setlistId)} />} data-testid="calendar-open-set">
                       {t("teamCalendar.openSet")}
-                      <span className="text-muted-foreground">· {t("teamCalendar.songs", { count: date.songCount })}</span>
+                      <span className="text-muted-foreground">· {t("teamCalendar.setItems", { count: date.songCount })}</span>
                     </Button>
                   ) : !date.cancelled && !rehearsal && isAdmin && makesSets && date.withSet !== false ? (
                     <Button variant="outline" size="sm" className="col-start-2 row-start-1" onClick={() => void planSet(date)} data-testid="calendar-plan-set">
@@ -335,7 +335,7 @@ export function TeamCalendar({
                   {date.setlistId && setHref ? (
                     <Button variant="outline" size="sm" render={<HostLink href={setHref(date.setlistId)} />} data-testid="calendar-past-set">
                       {t("teamCalendar.openSet")}
-                      <span className="text-muted-foreground">· {t("teamCalendar.songs", { count: date.songCount })}</span>
+                      <span className="text-muted-foreground">· {t("teamCalendar.setItems", { count: date.songCount })}</span>
                     </Button>
                   ) : null}
                 </li>
@@ -391,7 +391,7 @@ export function TeamCalendar({
       ) : null}
       {typesOpen ? (
         <EventTypesDialog
-          teamId={teamId}
+          owner={{ teamId }}
           types={types}
           makesSets={makesSets}
           teamNames={teamNames}
@@ -631,7 +631,7 @@ function EventDialog({
     if (type.startTime) setStartTime(type.startTime);
     if (type.durationMinutes) setDuration(String(type.durationMinutes));
     setCall(type.callMinutes ? String(type.callMinutes) : "");
-    setParts(type.parts);
+    setParts(partsForTeam(type.parts, teamId));
     setWithSet(type.withSet);
   };
 
@@ -1114,10 +1114,11 @@ export function PartsEditor({
  * The teams a part's places may be open to (issue #528): the team itself,
  * then the other groups of its organisation.
  */
-export function useOpenToTeams(teamId: string): { id: string; name: string }[] {
+export function useOpenToTeams(teamId: string | null): { id: string; name: string }[] {
   const { api } = usePlanning();
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
+    if (!teamId) return;
     let live = true;
     void (async () => {
       const team = await api.getTeam(teamId);

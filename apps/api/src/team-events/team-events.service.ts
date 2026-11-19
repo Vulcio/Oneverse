@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, callAt, daysBetween, eventDates, eventFallsOn, GIVEN_PARTS, INSTRUMENTS, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@oneverse/core";
+import { addDays, callAt, daysBetween, eventDates, eventFallsOn, GIVEN_PARTS, INSTRUMENTS, OWN_TEAM, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@oneverse/core";
 import type { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { eventLocation } from "../locations/locations.service.js";
@@ -139,17 +139,27 @@ export class TeamEventsService {
   /** An event type (issue #523): one of the team's. */
   private async checkType(teamId: string, typeId: string | null | undefined): Promise<string | null | undefined> {
     if (!typeId) return typeId;
-    const type = await this.prisma.client.teamEventType.findFirst({ where: { id: typeId, teamId }, select: { id: true } });
+    // The team's own, or its organisation's (issue #528).
+    const organizationId = (await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { organizationId: true } }))?.organizationId;
+    const type = await this.prisma.client.teamEventType.findFirst({ where: { id: typeId, OR: [{ teamId }, ...(organizationId ? [{ organizationId }] : [])] }, select: { id: true } });
     if (!type) throw new BadRequestException(["typeId must be one of the team's event types"]);
     return type.id;
   }
 
-  /** Parts that name an instrument or role must be one: built in, or an admin's custom instrument. */
-  async checkParts(parts: EventPart[] | undefined, teamId: string): Promise<Prisma.InputJsonValue | undefined> {
+  /**
+   * Parts that name an instrument or role must be one: built in, or an
+   * admin's custom instrument. A team's (`teamId`), or an organisation's
+   * event type's (`{ organizationId }`, issue #528): no group's positions,
+   * and its places open to the group the event is made in (OWN_TEAM) or
+   * to named groups of its own.
+   */
+  async checkParts(parts: EventPart[] | undefined, owner: string | { organizationId: string }): Promise<Prisma.InputJsonValue | undefined> {
     if (!parts) return undefined;
+    const teamId = typeof owner === "string" ? owner : null;
     // The group's own positions (issue #241): its, not another group's.
     const positionIds = parts.map((part) => part.position).filter((id): id is string => !!id);
-    const positions = new Map((await this.prisma.client.teamPosition.findMany({ where: { teamId, id: { in: positionIds } }, select: { id: true, name: true } })).map((row) => [row.id, row.name]));
+    if (!teamId && positionIds.length > 0) throw new BadRequestException(["parts: an organisation's event type can't ask for a group's positions"]);
+    const positions = new Map(teamId ? (await this.prisma.client.teamPosition.findMany({ where: { teamId, id: { in: positionIds } }, select: { id: true, name: true } })).map((row) => [row.id, row.name]) : []);
     const strangers = positionIds.filter((id) => !positions.has(id));
     if (strangers.length > 0) throw new BadRequestException(strangers.map((id) => `parts: "${id}" isn't one of the team's positions`));
     const keys = parts.map((part) => part.part).filter((key): key is string => !!key);
@@ -159,10 +169,11 @@ export class TeamEventsService {
     if (unknown.length > 0) throw new BadRequestException(unknown.map((key) => `parts: "${key}" isn't an instrument or a role`));
     // Open places (issue #528): to the team itself or groups of its organisation, no other.
     const openTo = [...new Set(parts.flatMap((part) => part.openTo ?? []))];
-    if (openTo.some((id) => id !== teamId)) {
-      const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { organizationId: true } });
-      const near = new Set(team?.organizationId ? (await this.prisma.client.team.findMany({ where: { organizationId: team.organizationId, id: { in: openTo } }, select: { id: true } })).map((row) => row.id) : []);
-      const far = openTo.filter((id) => id !== teamId && !near.has(id));
+    const mine = (id: string) => (teamId ? id === teamId : id === OWN_TEAM);
+    if (openTo.some((id) => !mine(id))) {
+      const organizationId = teamId ? (await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { organizationId: true } }))?.organizationId : (owner as { organizationId: string }).organizationId;
+      const near = new Set(organizationId ? (await this.prisma.client.team.findMany({ where: { organizationId, id: { in: openTo } }, select: { id: true } })).map((row) => row.id) : []);
+      const far = openTo.filter((id) => !mine(id) && !near.has(id));
       if (far.length > 0) throw new BadRequestException(far.map((id) => `parts: "${id}" isn't this team or a group of its organisation`));
     }
     // What a part asks beyond its count (issue #528): only when set.

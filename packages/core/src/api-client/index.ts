@@ -1594,7 +1594,11 @@ export interface TeamEvent {
 /** A kind of event a team holds (issue #523): what a new event of it starts with. */
 export interface TeamEventType {
   id: string;
-  teamId: string;
+  /** A team's own type; null for an organisation's (issue #528). */
+  teamId: string | null;
+  /** An organisation's type, offered to all its groups (issue #528): only its admins change it. */
+  organizationId: string | null;
+  organizationName?: string | null;
   name: string;
   startTime: string | null;
   durationMinutes: number | null;
@@ -3193,6 +3197,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     updateTeamEventType: (teamId: string, typeId: string, data: UpdateTeamEventTypeRequest) =>
       request<TeamEventType>(`/teams/${teamId}/event-types/${typeId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteTeamEventType: (teamId: string, typeId: string) => request<void>(`/teams/${teamId}/event-types/${typeId}`, { method: "DELETE" }),
+    listOrganizationEventTypes: (organizationId: string) => request<TeamEventType[]>(`/organizations/${organizationId}/event-types`),
+    createOrganizationEventType: (organizationId: string, data: CreateTeamEventTypeRequest) =>
+      request<TeamEventType>(`/organizations/${organizationId}/event-types`, { method: "POST", body: JSON.stringify(data) }),
+    updateOrganizationEventType: (organizationId: string, typeId: string, data: UpdateTeamEventTypeRequest) =>
+      request<TeamEventType>(`/organizations/${organizationId}/event-types/${typeId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteOrganizationEventType: (organizationId: string, typeId: string) => request<void>(`/organizations/${organizationId}/event-types/${typeId}`, { method: "DELETE" }),
     updateTeamEventDate: (teamId: string, eventId: string, date: string, data: UpdateTeamEventDateRequest) =>
       request<TeamEventDateSummary>(`/teams/${teamId}/events/${eventId}/dates/${date}`, { method: "PATCH", body: JSON.stringify(data) }),
     ensureTeamEventDateSet: (teamId: string, eventId: string, date: string) =>
