@@ -3,7 +3,7 @@ import { addDays, coversPart, GUEST_PARTS, isGivenPart, effectiveAnswer, eventDa
 import { Prisma } from "@oneverse/db";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { givenPartsAmong, mayFill } from "../roles/capabilities.js";
+import { givenOn, givenPartsAmong, mayFill } from "../roles/capabilities.js";
 import { changesOf, dateText, day, partsOf, TeamEventsService, timingOf, withDates, type EventRow } from "./team-events.service.js";
 
 type Client = PrismaService["client"];
@@ -106,18 +106,20 @@ export class LineupService {
     const event = await this.comingDate(teamId, eventId, date);
     if (!partsOf(event).some((part) => partKey(part) === dto.part)) throw new BadRequestException(["part isn't one this event needs"]);
     let guest = false;
-    // A given part (hosting, speaking) is for those a role gives it (issue #520): never someone without an account -
-    // except a part guests can fill too (speaking, issue #523): someone by name, or one of the admin's People.
-    const given = isGivenPart(dto.part);
+    // On an organisation's event, a given part (hosting, speaking) is for those a role gives it (issue #520): never
+    // someone without an account. On a team's own event, its admins name whoever they like. A part guests can fill
+    // (speaking, issue #523) still takes a guest on an organisation's event: someone by name, or one of the admin's
+    // People - the role only decides which members may fill it.
+    const byRole = !!event.organizationEventId && isGivenPart(dto.part);
     const forGuests = GUEST_PARTS.includes(dto.part);
-    const allowed = given && dto.userId ? await mayFill(this.prisma.client, teamId, dto.userId, dto.part) : false;
-    if (given && !allowed && !forGuests) throw new BadRequestException(["Only someone a role gives that part to can be put on it"]);
+    const allowed = byRole && dto.userId ? await mayFill(this.prisma.client, teamId, dto.userId, dto.part) : false;
+    if (byRole && !allowed && !forGuests) throw new BadRequestException(["Only someone a role gives that part to can be put on it"]);
     if (dto.userId) {
       const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: dto.userId } } });
       guest = !member;
-      // A member on a given part needs the role, even where guests may fill it.
-      if (given && !allowed && !guest) throw new BadRequestException(["Only someone a role gives that part to can be put on it"]);
       // Someone a role gives the part to (a host from the organisation's Présidence group, issue #520) needn't be in the team.
+      // A member without the role, on an organisation's event: not even where guests may fill it.
+      if (byRole && !allowed && !guest) throw new BadRequestException(["Only someone a role gives that part to can be put on it"]);
       if (guest && !allowed && !(await this.connected(by, dto.userId))) throw new BadRequestException(["userId isn't a member of the team or one of your People"]);
     }
     const accepted = !dto.userId || dto.userId === by;
@@ -213,12 +215,13 @@ export class LineupService {
       this.prisma.client.userAway.findMany({ where: { user: { teamMemberships: { some: { teamId } } }, from: { lte: day(date) }, to: { gte: day(date) } }, select: { userId: true, from: true, to: true } }),
       this.prisma.client.teamEventAssignment.findMany({ where: { eventId, date: day(date), userId: { not: null } }, select: { userId: true, partKey: true, status: true } }),
     ]);
-    // Hosting is a role's (issue #520).
-    const given = part.part && isGivenPart(part.part) ? await givenPartsAmong(this.prisma.client, teamId, members.map((one) => one.userId)) : new Map<string, string[]>();
+    // Hosting is a role's on an organisation's event (issue #520), anyone's on a team's own.
+    const organizationEventId = (await this.prisma.client.teamEvent.findUnique({ where: { id: eventId }, select: { organizationEventId: true } }))?.organizationEventId;
+    const given = organizationEventId && part.part && isGivenPart(part.part) ? await givenPartsAmong(this.prisma.client, teamId, members.map((one) => one.userId)) : new Map<string, string[]>();
     const answered = members.map(({ userId: member, user, positionIds }) => {
       const own = answers.find((answer) => answer.userId === member)?.answer ?? null;
       const ranges = away.filter((range) => range.userId === member).map((range) => ({ from: dateText(range.from), to: dateText(range.to) }));
-      return { userId: member, ...user, positionIds, givenParts: given.get(member) ?? [], answer: effectiveAnswer(own, ranges, date).answer };
+      return { userId: member, ...user, positionIds, givenParts: givenOn(organizationEventId, given.get(member)), answer: effectiveAnswer(own, ranges, date).answer };
     });
     const offered = swapCandidates(part, answered, lineup.map((one) => ({ ...one, userId: one.userId! })), userId);
     return offered.map((candidate) => ({ userId: candidate, answer: answered.find((one) => one.userId === candidate)!.answer }));
@@ -294,7 +297,7 @@ export class LineupService {
     if (row.userId === userId) throw new BadRequestException(["It's your own place"]);
     const part = partsOf(event).find((one) => partKey(one) === row.partKey);
     const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { positionIds: true, user: { select: { instruments: true, techRoles: true, displayName: true } } } });
-    const givenParts = part?.part && isGivenPart(part.part) ? ((await givenPartsAmong(this.prisma.client, teamId, [userId])).get(userId) ?? []) : [];
+    const givenParts = givenOn(event.organizationEventId, event.organizationEventId && part?.part && isGivenPart(part.part) ? (await givenPartsAmong(this.prisma.client, teamId, [userId])).get(userId) : []);
     if (!member || !part || !coversPart({ ...member.user, positionIds: member.positionIds, givenParts }, part)) throw new BadRequestException(["You don't play that part"]);
     // Until it's offered to everyone, only those who answered If needed (issue #240).
     if (!row.swapWidenedAt && !(await this.swapCandidatesFor(teamId, eventId, date, part, row.userId!)).some((one) => one.userId === userId && one.answer === "IF_NEEDED")) {

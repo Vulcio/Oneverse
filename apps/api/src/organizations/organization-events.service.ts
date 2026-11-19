@@ -14,7 +14,7 @@ type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin">;
 
 const withGroups = {
   host: { select: { id: true, displayName: true } },
-  teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, team: { select: { name: true, color: true, avatarUrl: true } } }, orderBy: { team: { name: "asc" } } },
+  teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, withSet: true, team: { select: { name: true, color: true, avatarUrl: true } } }, orderBy: { team: { name: "asc" } } },
 } as const;
 type Row = Prisma.OrganizationEventGetPayload<{ include: typeof withGroups }>;
 
@@ -70,7 +70,7 @@ export class OrganizationEventsService {
       note: event.note,
       repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null,
       host: event.host,
-      needs: event.teamEvents.map((one) => ({ teamId: one.teamId, teamName: one.team.name, color: one.team.color, avatarUrl: one.team.avatarUrl, teamEventId: one.id, parts: partsOf(one), callMinutes: one.callMinutes })),
+      needs: event.teamEvents.map((one) => ({ teamId: one.teamId, teamName: one.team.name, color: one.team.color, avatarUrl: one.team.avatarUrl, teamEventId: one.id, parts: partsOf(one), callMinutes: one.callMinutes, withSet: one.withSet })),
       canManage: role === "ADMIN" || event.hostUserId === viewer.id,
     };
   }
@@ -132,7 +132,7 @@ export class OrganizationEventsService {
       },
     });
     try {
-      for (const need of dto.needs) await this.events.create(need.teamId, viewer.id, { ...this.timing(event), parts: need.parts, callMinutes: need.callMinutes }, event.id);
+      for (const need of dto.needs) await this.events.create(need.teamId, viewer.id, { ...this.timing(event), parts: need.parts, callMinutes: need.callMinutes, withSet: need.withSet }, event.id);
     } catch (error) {
       // A group's part refused (one of its parts): none of it is kept.
       await this.prisma.client.organizationEvent.delete({ where: { id: event.id } });
@@ -211,11 +211,11 @@ export class OrganizationEventsService {
       }
       const need = needed?.get(part.teamId);
       // A need's call time replaces the group's (none: no call time).
-      const asked = need ? { ...(need.parts ? { parts: need.parts } : {}), callMinutes: need.callMinutes ?? null } : {};
+      const asked = need ? { ...(need.parts ? { parts: need.parts } : {}), callMinutes: need.callMinutes ?? null, withSet: need.withSet ?? true } : {};
       if (timingChanged || need) await this.events.update(part.teamId, part.id, { ...timing, ...asked }, viewer.id, true);
     }
     for (const need of needed?.values() ?? []) {
-      if (!before.teamEvents.some((part) => part.teamId === need.teamId)) await this.events.create(need.teamId, viewer.id, { ...this.timing(after), parts: need.parts, callMinutes: need.callMinutes }, eventId);
+      if (!before.teamEvents.some((part) => part.teamId === need.teamId)) await this.events.create(need.teamId, viewer.id, { ...this.timing(after), parts: need.parts, callMinutes: need.callMinutes, withSet: need.withSet }, eventId);
     }
     if (after.hostUserId !== before.hostUserId) await this.tellHost(after, viewer.id);
     return this.summary(await this.find(organizationId, eventId), viewer, role);
@@ -286,7 +286,7 @@ export class OrganizationEventsService {
   async presets(viewer: Viewer, organizationId: string) {
     await this.role(viewer, organizationId);
     const rows = await this.prisma.client.organizationEventPreset.findMany({ where: { organizationId }, orderBy: { name: "asc" } });
-    return rows.map((row) => ({ id: row.id, name: row.name, title: row.title, startTime: row.startTime, durationMinutes: row.durationMinutes, place: row.place, locationId: row.locationId, needs: row.needs as unknown as { teamId: string; parts?: EventPart[]; callMinutes?: number }[] }));
+    return rows.map((row) => ({ id: row.id, name: row.name, title: row.title, startTime: row.startTime, durationMinutes: row.durationMinutes, place: row.place, locationId: row.locationId, needs: row.needs as unknown as { teamId: string; parts?: EventPart[]; callMinutes?: number; withSet?: boolean }[] }));
   }
 
   /** By its admins: what an event usually needs, under a name of its own. */

@@ -1,7 +1,8 @@
-// Who may host an organisation's dates (issue #520): its admins make a
-// role that hosts and give it to one of its groups ("Présidence") - every
-// member of that group can then be the Host on the dates of the
-// organisation's teams - or, as a one-off, to one person outside it.
+// Who may host (issue #520): on a team's own events, whoever its admins
+// name. On an organisation's events, only those a role lets host: its
+// admins make a role that hosts and give it to one of its groups
+// ("Présidence") - every member of that group can then be the Host there -
+// or, as a one-off, to one person outside it.
 import { call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
 
 const admin = await user("Org hosts admin");
@@ -25,7 +26,20 @@ try {
   join(musician, music.id, 2);
   join(visitor, null, 3);
 
-  const event = (await call(orgAdmin, "POST", `/teams/${music.id}/events`, { title: "Sunday", date: plus(3), startTime: "10:00", timeZone: "UTC", parts: [{ part: "HOST", count: 1 }, { part: "DRUMS", count: 1 }] })).body;
+  // A team's own event: its admins name whoever they like.
+  const own = (await call(orgAdmin, "POST", `/teams/${music.id}/events`, { title: "Rehearsal", date: plus(4), startTime: "19:00", timeZone: "UTC", parts: [{ part: "HOST", count: 1 }] })).body;
+  const ownBase = `/teams/${music.id}/events/${own.id}/dates/${plus(4)}`;
+  let r0 = await call(musician, "PUT", `${ownBase}/answer`, { answer: "AVAILABLE", wishes: ["HOST"] });
+  check("a team's own event: any member may wish to host", r0.status === 200 && r0.body.wishes.join() === "HOST", JSON.stringify(r0.body));
+  r0 = await call(orgAdmin, "POST", `${ownBase}/lineup`, { userId: musician.id, part: "HOST" });
+  check("…and its admins put whoever they like on it", r0.status === 201, JSON.stringify(r0.body));
+  r0 = await call(orgAdmin, "POST", `${ownBase}/lineup`, { guestName: "Visiting pastor", part: "HOST" });
+  check("…a guest by name too", r0.status === 201, JSON.stringify(r0.body));
+
+  // The organisation's event: hosts by a role.
+  const made = (await call(orgAdmin, "POST", `/organizations/${org.id}/events`, { title: "Sunday", date: plus(3), startTime: "10:00", timeZone: "UTC", hostUserId: orgAdmin.id, needs: [{ teamId: music.id, parts: [{ part: "HOST", count: 1 }, { part: "DRUMS", count: 1 }] }] })).body;
+  const event = (await call(orgAdmin, "GET", `/teams/${music.id}/events`)).body.find((one) => one.organizationEventId === made.id);
+  check("the organisation's event, on the music group's calendar", !!event, JSON.stringify(made));
   const base = `/teams/${music.id}/events/${event.id}/dates/${plus(3)}`;
   let r = await call(orgAdmin, "POST", `${base}/lineup`, { userId: presider.id, part: "HOST" });
   check("without the role: nobody hosts", r.status === 400, JSON.stringify(r.body));
@@ -35,7 +49,7 @@ try {
   r = await call(orgAdmin, "PUT", `/organizations/${org.id}/teams/${presidency.id}/roles`, { roleIds: [hosts.id] });
   check("given to the Présidence group", r.status === 204 || r.status === 200, `${r.status} ${JSON.stringify(r.body)}`);
   r = await call(orgAdmin, "POST", `${base}/lineup`, { userId: presider.id, part: "HOST" });
-  check("a member of that group hosts another team's date", r.status === 201, JSON.stringify(r.body));
+  check("a member of that group hosts the organisation's event", r.status === 201, JSON.stringify(r.body));
   r = await call(orgAdmin, "POST", `${base}/lineup`, { userId: visitor.id, part: "HOST" });
   check("someone outside the group: not yet", r.status === 400, JSON.stringify(r.body));
   r = await call(orgAdmin, "PUT", `/organizations/${org.id}/members/${visitor.id}/roles`, { roleIds: [hosts.id] });
@@ -43,7 +57,7 @@ try {
   r = await call(orgAdmin, "POST", `${base}/lineup`, { userId: visitor.id, part: "HOST" });
   check("…they host too", r.status === 201, JSON.stringify(r.body));
   const answers = (await call(orgAdmin, "GET", `${base}/answers`)).body;
-  check("the team's own members: no hosting", answers.find((one) => one.userId === musician.id)?.givenParts.length === 0, JSON.stringify(answers));
+  check("the group's own members: no hosting there", answers.find((one) => one.userId === musician.id)?.givenParts.length === 0, JSON.stringify(answers));
   r = await call(musician, "PUT", `${base}/answer`, { answer: "AVAILABLE", wishes: ["HOST"] });
   check("…nor wishing for it", r.status === 400, JSON.stringify(r.body));
   await call(admin, "DELETE", `/admin/organizations/${org.id}`);

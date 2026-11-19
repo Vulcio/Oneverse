@@ -29,9 +29,6 @@ const event = await api(admin, "POST", `/teams/${team.id}/events`, {
   parts: [{ part: "HOST", count: 1 }, { part: "MUSIC_LEADER", count: 1 }, { part: "LEAD_VOCALS", count: 1 }, { part: "DRUMS", count: 1 }],
 });
 const base = `/teams/${team.id}/events/${event.id}/dates/${date}`;
-// Hosting is a role's (issue #520): the admin can host.
-const hosting = await api(admin, "POST", `/teams/${team.id}/roles`, { name: "Hosts", canHost: true });
-await api(admin, "PUT", `/teams/${team.id}/members/${admin.id}/roles`, { roleIds: [hosting.id] });
 await api(leader, "PUT", `${base}/answer`, { answer: "AVAILABLE", wishes: ["MUSIC_LEADER", "LEAD_VOCALS"] });
 await api(away, "PUT", `${base}/answer`, { answer: "UNAVAILABLE", note: "Away that weekend" });
 await api(admin, "PUT", `${base}/answer`, { answer: "IF_NEEDED", wishes: ["HOST"] });
@@ -48,7 +45,8 @@ try {
     await row.getByTestId("answer-AVAILABLE").click();
     await row.locator('[data-answer="AVAILABLE"]').waitFor();
     await row.getByTestId("answer-wishes").click();
-    if (await page.locator('[data-wish="HOST"]').count()) throw new Error("hosting offered without the role");
+    // A team's own event: anyone may wish to host (issue #520).
+    await page.locator('[data-wish="HOST"]').waitFor();
     await page.locator('[data-wish="DRUMS"]').click();
     await page.locator('[data-wish="DRUMS"][aria-pressed="true"]').waitFor();
     if (shots) await page.screenshot({ path: `${shots}/answer-roles.png` });

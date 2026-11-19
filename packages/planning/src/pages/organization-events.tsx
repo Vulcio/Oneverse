@@ -8,6 +8,7 @@ import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { usePartLabel } from "../components/lineup";
 import { DEFAULT_START, firstDateAt, partBody, PartsEditor } from "../components/team-calendar";
+import { WithSetField } from "../components/event-types";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
@@ -263,7 +264,7 @@ function OrganizationEventDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
-  const { api } = usePlanning();
+  const { api, sets } = usePlanning();
   const { t } = useTranslation();
   const [title, setTitle] = useState(event?.title ?? "");
   const [date, setDate] = useState(event?.date ?? firstDateAt(DEFAULT_START));
@@ -279,7 +280,7 @@ function OrganizationEventDialog({
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
   const [hostUserId, setHostUserId] = useState(event?.host?.id ?? "");
   // Each group's parts, and when it's to be there (issue #240: minutes before; blank, none).
-  const [needs, setNeeds] = useState<{ teamId: string; parts: EventPart[]; call: string }[]>(event?.needs.map((need) => ({ teamId: need.teamId, parts: need.parts, call: need.callMinutes ? String(need.callMinutes) : "" })) ?? []);
+  const [needs, setNeeds] = useState<{ teamId: string; parts: EventPart[]; call: string; withSet: boolean }[]>(event?.needs.map((need) => ({ teamId: need.teamId, parts: need.parts, call: need.callMinutes ? String(need.callMinutes) : "", withSet: need.withSet ?? true })) ?? []);
   const [presetName, setPresetName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -295,9 +296,9 @@ function OrganizationEventDialog({
     setLocationId(preset.locationId ?? "");
     const presetLocation = locations.find((one) => one.id === preset.locationId);
     if (presetLocation) setTimeZone(presetLocation.timeZone);
-    setNeeds(preset.needs.filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts ?? [], call: need.callMinutes ? String(need.callMinutes) : "" })));
+    setNeeds(preset.needs.filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts ?? [], call: need.callMinutes ? String(need.callMinutes) : "", withSet: need.withSet ?? true })));
   };
-  const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}) }));
+  const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}), ...(need.withSet ? {} : { withSet: false }) }));
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
@@ -470,6 +471,10 @@ function OrganizationEventDialog({
                       data-testid="need-call"
                     />
                   </div>
+                  {/* A music group's dates get a set unless the event needs none (issue #523). */}
+                  {team?.usesSongverse && sets ? (
+                    <WithSetField id={`need-with-set-${need.teamId}`} checked={need.withSet} onChange={(withSet) => setNeeds(needs.map((one, at) => (at === index ? { ...one, withSet } : one)))} />
+                  ) : null}
                 </div>
               );
             })}
@@ -478,7 +483,7 @@ function OrganizationEventDialog({
                 value=""
                 aria-label={t("organizations.addGroup")}
                 onChange={(e) => {
-                  if (e.target.value) setNeeds([...needs, { teamId: e.target.value, parts: [], call: "" }]);
+                  if (e.target.value) setNeeds([...needs, { teamId: e.target.value, parts: [], call: "", withSet: true }]);
                 }}
                 data-testid="org-event-add-group"
               >

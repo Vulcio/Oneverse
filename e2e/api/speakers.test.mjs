@@ -1,8 +1,9 @@
-// Who may speak at a team's dates (issue #523): like hosting (issue #520), a
-// role's right - "Speak at the dates" - given by the organisation to one of
-// its groups (every member of it can be a date's Speaker) or to one person as
-// a one-off. Unlike hosting, guests can speak too: one of the admin's People,
-// or someone without an account, by name. A member without the role can't.
+// Who may speak (issue #523). On a team's own event, its admins put whoever
+// they like on Speaker. On an organisation's event, like hosting (issue #520),
+// a role's right - "Speak at the dates" - decides which members may: given by
+// the organisation to one of its groups or to one person as a one-off. Unlike
+// hosting, guests can always speak there too, even from outside the
+// organisation: someone without an account, by name.
 import { call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
 
 const admin = await user("Speakers admin");
@@ -26,14 +27,20 @@ try {
   join(musician, music.id, 2);
   join(visitor, null, 3);
 
-  // The suggested Service type asks for one (issue #523).
-  const event = (await call(planner, "POST", `/teams/${music.id}/events`, { title: "Sunday", date: plus(3), startTime: "10:00", timeZone: "UTC", parts: [{ part: "SPEAKER", count: 3 }, { part: "DRUMS", count: 1 }] })).body;
-  check("an event asks for a Speaker", event.parts?.[0]?.part === "SPEAKER", JSON.stringify(event));
+  // A team's own event: its admins pick anyone.
+  const own = (await call(planner, "POST", `/teams/${music.id}/events`, { title: "Practice", date: plus(4), startTime: "19:00", timeZone: "UTC", parts: [{ part: "SPEAKER", count: 1 }] })).body;
+  let r = await call(planner, "POST", `/teams/${music.id}/events/${own.id}/dates/${plus(4)}/lineup`, { userId: musician.id, part: "SPEAKER" });
+  check("a team's own event: a member without the role speaks", r.status === 201, JSON.stringify(r.body));
+
+  const made = (await call(planner, "POST", `/organizations/${org.id}/events`, { title: "Sunday", date: plus(3), startTime: "10:00", timeZone: "UTC", hostUserId: planner.id, needs: [{ teamId: music.id, parts: [{ part: "SPEAKER", count: 3 }, { part: "DRUMS", count: 1 }] }] })).body;
+  const event = (await call(planner, "GET", `/teams/${music.id}/events`)).body.find((one) => one.organizationEventId === made.id);
   const base = `/teams/${music.id}/events/${event.id}/dates/${plus(3)}`;
-  let r = await call(planner, "POST", `${base}/lineup`, { userId: preacher.id, part: "SPEAKER" });
-  check("without the role: nobody with an account speaks", r.status === 400, JSON.stringify(r.body));
+  r = await call(planner, "POST", `${base}/lineup`, { userId: preacher.id, part: "SPEAKER" });
+  check("an organisation's event, without the role: no member speaks", r.status === 400, JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { userId: musician.id, part: "SPEAKER" });
   check("…not even a member of the team", r.status === 400, JSON.stringify(r.body));
+  r = await call(planner, "POST", `${base}/lineup`, { guestName: "Pastor Jean", part: "SPEAKER" });
+  check("…but a guest from outside, without an account, does", r.status === 201 && r.body.guest === "external", JSON.stringify(r.body));
 
   const speakers = (await call(planner, "POST", `/organizations/${org.id}/roles`, { name: "Speakers", canSpeak: true })).body;
   check("the organisation's own role that speaks", speakers.canSpeak === true, JSON.stringify(speakers));
@@ -47,14 +54,21 @@ try {
   check("given to them alone, as a one-off", r.status === 204, String(r.status));
   r = await call(planner, "POST", `${base}/lineup`, { userId: visitor.id, part: "SPEAKER" });
   check("…they speak too", r.status === 201, JSON.stringify(r.body));
-  const second = await call(planner, "POST", `${base}/lineup`, { guestName: "Pastor Jean", part: "SPEAKER" });
-  check("a guest without an account, by name", second.status === 201 && second.body.guest === "external", JSON.stringify(second.body));
   r = await call(planner, "POST", `${base}/lineup`, { guestName: "Someone", part: "DRUMS" });
   check("other parts still take a guest by name", r.status === 201, JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { userId: musician.id, part: "SPEAKER" });
   check("a member without the role: still not", r.status === 400, JSON.stringify(r.body));
   r = await call(musician, "PUT", `${base}/answer`, { answer: "AVAILABLE", wishes: ["SPEAKER"] });
   check("…nor wishing for it", r.status === 400, JSON.stringify(r.body));
+
+  // An organisation's event (issue #523): a music group's part can go without a set - a meeting.
+  const meeting = (await call(planner, "POST", `/organizations/${org.id}/events`, { title: "Members' meeting", date: plus(5), startTime: "19:00", timeZone: "UTC", hostUserId: planner.id, needs: [{ teamId: music.id, withSet: false }] })).body;
+  check("an organisation's event: the music group's part without a set", meeting.needs?.[0]?.withSet === false, JSON.stringify(meeting));
+  let dates = (await call(planner, "GET", `/teams/${music.id}/event-dates?from=${plus(5)}&to=${plus(5)}`)).body;
+  check("…its date has none", dates.length === 1 && dates[0].setlistId === null && dates[0].withSet === false, JSON.stringify(dates));
+  r = await call(planner, "PATCH", `/organizations/${org.id}/events/${meeting.id}`, { needs: [{ teamId: music.id }] });
+  dates = (await call(planner, "GET", `/teams/${music.id}/event-dates?from=${plus(5)}&to=${plus(5)}`)).body;
+  check("…and gets one when the need no longer says so", r.status === 200 && !!dates[0].setlistId, JSON.stringify(dates));
   await call(admin, "DELETE", `/admin/organizations/${org.id}`);
 } finally {
   await call(admin, "DELETE", "/admin/organizations/settings");

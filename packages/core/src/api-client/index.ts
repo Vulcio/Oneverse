@@ -1616,6 +1616,8 @@ export interface OrganizationEventNeed {
   parts: EventPart[];
   /** When the group is to be there (issue #240): minutes before the start. */
   callMinutes: number | null;
+  /** Whether the group's dates get a set (issue #523). */
+  withSet?: boolean;
 }
 
 /** An organisation's event (issue #241): its host, its timing, the groups it needs. */
@@ -1683,7 +1685,7 @@ export interface OrganizationEventPreset {
   place: string | null;
   /** Where it takes place (issue #320): one of its owner's locations. */
   locationId: string | null;
-  needs: { teamId: string; parts?: EventPart[]; callMinutes?: number }[];
+  needs: { teamId: string; parts?: EventPart[]; callMinutes?: number; withSet?: boolean }[];
 }
 
 /** A date of a team's event, with its set. */

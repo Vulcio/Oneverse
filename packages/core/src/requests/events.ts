@@ -192,6 +192,7 @@ const NeedSchema = z.strictObject({
   teamId: z.string().trim().min(1).max(64),
   parts: optional(eventParts),
   callMinutes: optional(callMinutes).describe("When the group is to be there: minutes before it starts"),
+  withSet: optional(z.boolean()).describe("Whether the group's dates get a set (issue #523): false for a music group at a meeting; true when left out"),
 });
 const needs = z
   .array(NeedSchema)
