@@ -128,6 +128,8 @@ export class AvailabilityService {
           status: row.status,
           // A guest (issue #235, phase 7): one of an admin's People, or someone without an account.
           guest: !row.userId ? ("external" as const) : memberIds.has(row.userId) ? null : ("account" as const),
+          // How to reach a speaker without an account (issue #523): the admins only.
+          guestEmail: isAdmin ? row.guestEmail : null,
           mine,
           note: isAdmin || mine ? row.note : null,
           conflicts,

@@ -40,7 +40,14 @@ try {
   r = await call(planner, "POST", `${base}/lineup`, { userId: musician.id, part: "SPEAKER" });
   check("…not even a member of the team", r.status === 400, JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { guestName: "Pastor Jean", part: "SPEAKER" });
-  check("…but a guest from outside, without an account, does", r.status === 201 && r.body.guest === "external", JSON.stringify(r.body));
+  check("a speaker without an account: not without an email", r.status === 400 && r.body.message.join().includes("guestEmail"), JSON.stringify(r.body));
+  r = await call(planner, "POST", `${base}/lineup`, { guestName: "Pastor Jean", guestEmail: "Jean@Example.org", part: "SPEAKER" });
+  check("…but a guest from outside, without an account, with an email, does", r.status === 201 && r.body.guest === "external" && r.body.guestEmail === "jean@example.org", JSON.stringify(r.body));
+  r = await call(planner, "POST", `${base}/lineup`, { guestName: "Someone", guestEmail: "someone@example.org", part: "DRUMS" });
+  check("an email is only for a speaker", r.status === 400 && r.body.message.join().includes("speaker"), JSON.stringify(r.body));
+  const seen = async (who) => (await call(who, "GET", `/teams/${music.id}/event-dates?from=${plus(3)}&to=${plus(3)}`)).body.find((one) => one.eventId === event.id).lineup.find((place) => place.displayName === "Pastor Jean");
+  check("the team's admins see the speaker's email", (await seen(planner))?.guestEmail === "jean@example.org");
+  check("…its members don't", (await seen(musician))?.guestEmail === null, JSON.stringify(await seen(musician)));
 
   const speakers = (await call(planner, "POST", `/organizations/${org.id}/roles`, { name: "Speakers", canSpeak: true })).body;
   check("the organisation's own role that speaks", speakers.canSpeak === true, JSON.stringify(speakers));

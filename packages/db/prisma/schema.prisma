@@ -1720,6 +1720,8 @@ model TeamEventAssignment {
   // Null for a guest without an account (guestName): there for reference, never told anything.
   userId           String?
   guestName        String?
+  // How to reach a speaker without an account (issue #523): needed for one, shown to the line-up's admins only.
+  guestEmail       String?
   status           AssignmentStatus @default(PENDING)
   // Their note when answering ("I can do keys instead").
   note             String?

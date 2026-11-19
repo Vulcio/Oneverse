@@ -2283,6 +2283,7 @@ const fr: typeof en = {
     lineupPeople: "Vos personnes (invités)",
     lineupOutside: "Quelqu'un sans compte…",
     lineupOutsideName: "Son nom",
+    lineupOutsideEmail: "Son e-mail",
     guestBadge: "Invité",
     externalBadge: "Sans compte",
     swapAsk: "Chercher un remplaçant",

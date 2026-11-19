@@ -132,6 +132,7 @@ export class LineupService {
           partKey: dto.part,
           userId: dto.userId ?? null,
           guestName: dto.userId ? null : dto.guestName,
+          guestEmail: dto.userId ? null : (dto.guestEmail ?? null),
           assignedByUserId: by,
           ...(accepted ? { status: "ACCEPTED", respondedAt: new Date() } : {}),
         },
@@ -145,7 +146,7 @@ export class LineupService {
     if (dto.userId && !accepted) {
       await this.notifications.notify([{ userId: dto.userId, kind: "SCHEDULED", data: { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, dto.part)) }, url: "/calendar", teamId }]);
     }
-    return { id: row.id, userId: row.userId, displayName: row.user?.displayName ?? row.guestName ?? "", partKey: row.partKey, status: row.status, guest: row.userId ? (guest ? "account" : null) : "external" };
+    return { id: row.id, userId: row.userId, displayName: row.user?.displayName ?? row.guestName ?? "", partKey: row.partKey, status: row.status, guest: row.userId ? (guest ? "account" : null) : "external", guestEmail: row.guestEmail };
   }
 
   /** Someone taken off a part; told, unless they'd declined it. */

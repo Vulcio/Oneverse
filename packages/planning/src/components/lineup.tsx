@@ -1,4 +1,4 @@
-import { coversPart, isGivenPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
+import { coversPart, GUEST_PARTS, isGivenPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
 import { AlertTriangle, ArrowLeftRight, Check, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -203,8 +203,8 @@ export function LineupDialog({
   const [members, setMembers] = useState<MemberEventAnswer[]>([]);
   // The admin's People (#79), to schedule as guests (issue #235, phase 7).
   const [people, setPeople] = useState<Person[]>([]);
-  // The part someone without an account is being added to, and their name.
-  const [naming, setNaming] = useState<{ part: string; name: string } | null>(null);
+  // The part someone without an account is being added to, their name, and (a speaker, issue #523) their email.
+  const [naming, setNaming] = useState<{ part: string; name: string; email: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     void api.listTeamEventDateAnswers(teamId, eventId, date).then(setMembers);
@@ -259,6 +259,11 @@ export function LineupDialog({
                     <div key={place.id} className={cn("flex flex-wrap items-center gap-2 text-sm", place.status === "DECLINED" && "text-muted-foreground line-through")} data-place={place.userId} data-status={place.status}>
                       <Icon className="size-3.5" aria-label={statusWord[place.status]} />
                       <span>{place.displayName}</span>
+                      {place.guestEmail ? (
+                        <a className="text-xs text-muted-foreground hover:underline" href={`mailto:${place.guestEmail}`} data-testid="lineup-guest-email">
+                          {place.guestEmail}
+                        </a>
+                      ) : null}
                       {place.guest ? (
                         <Badge variant="outline" data-guest={place.guest}>
                           {place.guest === "external" ? t("teamCalendar.externalBadge") : t("teamCalendar.guestBadge")}
@@ -291,24 +296,37 @@ export function LineupDialog({
                   );
                 })}
                 {naming?.part === key ? (
-                  <div className="flex max-w-xs gap-2">
+                  <div className="flex max-w-md flex-wrap gap-2">
                     <Input
                       autoFocus
-                      className="h-8 text-xs"
+                      className="h-8 w-40 text-xs"
                       value={naming.name}
                       maxLength={80}
                       placeholder={t("teamCalendar.lineupOutsideName")}
-                      onChange={(event) => setNaming({ part: key, name: event.target.value })}
+                      onChange={(event) => setNaming({ ...naming, name: event.target.value })}
                       data-testid="lineup-outside-name"
                     />
+                    {/* A speaker without an account comes with an email, to reach them (issue #523). */}
+                    {GUEST_PARTS.includes(key) ? (
+                      <Input
+                        type="email"
+                        className="h-8 w-48 text-xs"
+                        value={naming.email}
+                        maxLength={320}
+                        placeholder={t("teamCalendar.lineupOutsideEmail")}
+                        onChange={(event) => setNaming({ ...naming, email: event.target.value })}
+                        data-testid="lineup-outside-email"
+                      />
+                    ) : null}
                     <Button
                       size="sm"
                       className="h-8"
-                      disabled={!naming.name.trim()}
+                      disabled={!naming.name.trim() || (GUEST_PARTS.includes(key) && !/^\S+@\S+\.\S+$/.test(naming.email.trim()))}
                       onClick={() => {
                         const guestName = naming.name.trim();
+                        const guestEmail = GUEST_PARTS.includes(key) ? naming.email.trim() : undefined;
                         setNaming(null);
-                        void run(() => api.assignTeamEventPart(teamId, eventId, date, { guestName, part: key }));
+                        void run(() => api.assignTeamEventPart(teamId, eventId, date, { guestName, guestEmail, part: key }));
                       }}
                       data-testid="lineup-outside-add"
                     >
@@ -322,7 +340,7 @@ export function LineupDialog({
                   className="h-8 max-w-xs text-xs"
                   onChange={(event) => {
                     const userId = event.target.value;
-                    if (userId === "__outside") setNaming({ part: key, name: "" });
+                    if (userId === "__outside") setNaming({ part: key, name: "", email: "" });
                     else if (userId) void run(() => api.assignTeamEventPart(teamId, eventId, date, { userId, part: key }));
                   }}
                   data-testid="lineup-add"

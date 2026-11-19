@@ -2280,6 +2280,7 @@ const en = {
     lineupPeople: "Your People (guests)",
     lineupOutside: "Someone without an account…",
     lineupOutsideName: "Their name",
+    lineupOutsideEmail: "Their email",
     guestBadge: "Guest",
     externalBadge: "No account",
     swapAsk: "Ask for a replacement",

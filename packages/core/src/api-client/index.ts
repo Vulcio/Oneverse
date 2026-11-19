@@ -1783,6 +1783,8 @@ export interface LineupPlace {
   status: AssignmentStatus;
   /** A guest: one of an admin's People ("account"), or someone without an account ("external"). */
   guest: "account" | "external" | null;
+  /** A speaker without an account's email (issue #523): for the team's admins only, else null. */
+  guestEmail?: string | null;
   mine: boolean;
   note: string | null;
   conflicts: ("AWAY" | "UNAVAILABLE" | "ELSEWHERE")[];
