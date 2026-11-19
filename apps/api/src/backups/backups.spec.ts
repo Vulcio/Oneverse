@@ -67,7 +67,11 @@ describe("dump encryption", () => {
     const encrypted = await readAll(Readable.from([bytes]).pipe(encryptStream("key-one")));
     expect(encrypted!.subarray(0, 8).toString("latin1")).toBe("Salted__");
     expect(await readAll(Readable.from([encrypted!]).pipe(decryptStream("key-one")))).toEqual(bytes);
-    await expect(readAll(Readable.from([encrypted!]).pipe(decryptStream("key-two")))).rejects.toThrow(/SETTINGS_ENCRYPTION_KEY/);
+    // CBC has no integrity check: about one wrong key in 256 leaves valid padding and
+    // gives garbage instead of an error, so either is a refusal - never the bytes.
+    const other = await readAll(Readable.from([encrypted!]).pipe(decryptStream("key-two"))).catch((error: unknown) => error);
+    if (other instanceof Error) expect(other.message).toMatch(/SETTINGS_ENCRYPTION_KEY/);
+    else expect(other).not.toEqual(bytes);
   });
 
   it.skipIf(!hasOpenssl)("is what openssl enc -aes-256-cbc -pbkdf2 -iter 100000 opens, both ways", async () => {
