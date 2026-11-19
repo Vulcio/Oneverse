@@ -64,12 +64,17 @@ export class AccessPolicyService {
   }
 
   /**
-   * Songs, songbooks, sets and arrangements belong to Songverse's teams only,
-   * not to an organisation's groups that only plan (issue #241).
+   * Songs, songbooks and arrangements belong to Songverse's teams only,
+   * not to an organisation's groups that only plan (issue #241). Sets are
+   * every team's (issue #531): they aren't only songs.
    */
   async assertSongverseTeam(teamId: string): Promise<void> {
-    const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { usesSongverse: true } });
-    if (team && !team.usesSongverse) throw new BadRequestException(["teamId must be a team that uses Songverse"]);
+    if (!(await this.usesSongverse(teamId))) throw new BadRequestException(["teamId must be a team that uses Songverse"]);
+  }
+
+  /** Whether a team has songs of its own (issue #241); true for one that doesn't exist, left to the caller's own check. */
+  async usesSongverse(teamId: string): Promise<boolean> {
+    return requestMemo(`usesSongverse:${teamId}`, async () => (await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { usesSongverse: true } }))?.usesSongverse ?? true);
   }
 
   /** The user's role in a team, or null when they're not in it. */

@@ -23,7 +23,7 @@ Tous les événements ne se ressemblent pas : un culte a besoin d'une présidenc
 
 Dans **Nouvel événement**, **Type** en choisit un : l'événement prend son nom comme titre (sauf si vous en avez tapé un), son heure, ses postes et s'il a des listes. Tout peut encore être changé pour cet événement, et il peut demander plus de postes que son type. Un événement garde ce qu'il a reçu : modifier ou supprimer son type ensuite le laisse tel quel.
 
-**Créer une liste pour chaque date**, dans la fenêtre d'un événement, est activé par défaut. Une liste n'est pas faite que de chants : elle réunit ce que la date projette et joue - passages bibliques, diapositives, annonces. Désactivez-le pour un événement qui n'en a pas besoin - une réunion : ses dates n'ont ni liste ni **Préparer la liste**. Le désactiver sur un événement existant supprime ses listes à venir encore vides (une liste qui contient quelque chose reste) ; le réactiver les recrée.
+**Créer une liste pour chaque date**, dans la fenêtre d'un événement, est activé par défaut (désactivé dans un groupe d'une organisation qui ne fait que planifier). Une liste n'est pas faite que de chants : elle réunit ce que la date projette et joue - passages bibliques, diapositives, annonces. Désactivez-le pour un événement qui n'en a pas besoin - une réunion : ses dates n'ont ni liste ni **Préparer la liste**. Le désactiver sur un événement existant supprime ses listes à venir encore vides (une liste qui contient quelque chose reste) ; le réactiver les recrée.
 
 ### Disponibilités
 

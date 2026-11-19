@@ -296,9 +296,9 @@ function OrganizationEventDialog({
     setLocationId(preset.locationId ?? "");
     const presetLocation = locations.find((one) => one.id === preset.locationId);
     if (presetLocation) setTimeZone(presetLocation.timeZone);
-    setNeeds(preset.needs.filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts ?? [], call: need.callMinutes ? String(need.callMinutes) : "", withSet: need.withSet ?? true })));
+    setNeeds(preset.needs.filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts ?? [], call: need.callMinutes ? String(need.callMinutes) : "", withSet: need.withSet ?? teamOf(need.teamId)?.usesSongverse !== false })));
   };
-  const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}), ...(need.withSet ? {} : { withSet: false }) }));
+  const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}), withSet: need.withSet }));
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
@@ -473,8 +473,8 @@ function OrganizationEventDialog({
                       data-testid="need-call"
                     />
                   </div>
-                  {/* A music group's dates get a set unless the event needs none (issue #523). */}
-                  {team?.usesSongverse && sets ? (
+                  {/* A group's dates get a set unless the event needs none (issue #523); a group that only plans too (issue #531). */}
+                  {sets ? (
                     <WithSetField id={`need-with-set-${need.teamId}`} checked={need.withSet} onChange={(withSet) => setNeeds(needs.map((one, at) => (at === index ? { ...one, withSet } : one)))} />
                   ) : null}
                 </div>
@@ -485,7 +485,7 @@ function OrganizationEventDialog({
                 value=""
                 aria-label={t("organizations.addGroup")}
                 onChange={(e) => {
-                  if (e.target.value) setNeeds([...needs, { teamId: e.target.value, parts: [], call: "", withSet: true }]);
+                  if (e.target.value) setNeeds([...needs, { teamId: e.target.value, parts: [], call: "", withSet: teamOf(e.target.value)?.usesSongverse !== false }]);
                 }}
                 data-testid="org-event-add-group"
               >

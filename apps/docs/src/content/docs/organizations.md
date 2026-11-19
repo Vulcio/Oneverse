@@ -60,10 +60,10 @@ On a team's page, its admins choose the organisation under **Organisation** - on
 
 An organisation's groups are its teams: the music team, but also a welcome team or a cleaning rota. Its admins make one with **New group**: a **Name**, the group it goes **Under** (or none, at the top), and whether it **Uses Songverse**, then **Create group** - you're its admin, and its page opens.
 
-- A group that **Uses Songverse** is a team as you know it: its songs, songbooks and sets.
-- One that doesn't (the default for a new group) only plans: it has its calendar, its members and its positions, but no songs, songbooks or sets, and its dates have no set. It isn't listed among your teams in Songverse; you find it on the organisation's page.
+- A group that **Uses Songverse** is a team as you know it: its songs, songbooks, arrangements and sets.
+- One that doesn't (the default for a new group) only plans: it has its calendar, its members and its positions, and no songs or songbooks of its own. Its dates can still have a set - for the Bible passages, slides and the catalogue's songs they show - when its event asks for one (**Make a set for each date**, off by default for such a group). Its sets open in Songverse. It isn't listed among your teams in Songverse; you find it on the organisation's page.
 
-On a group's page, its admins change both under **Group**, then **Save**. A team with songs, songbooks or sets keeps using Songverse until they're moved or deleted. A group taken out of the organisation becomes a team of its own again, using Songverse.
+On a group's page, its admins change both under **Group**, then **Save**. A team with songs, songbooks or arrangements keeps using Songverse until they're moved or deleted; its sets stay either way. A group taken out of the organisation becomes a team of its own again, using Songverse.
 
 A group's admins make groups under it too: **New sub-group** on its page, with a **Name** and whether it **Uses Songverse**, then **Create group** - you're its admin.
 
@@ -85,7 +85,7 @@ An organisation's events need several of its groups: a Sunday service needs the 
 
 ![An organisation's events, with each group's coverage](../../assets/screenshots/en/organization-events.jpg)
 
-Its admins make one with **New event**: its **Title**, first date, start time, length, time zone, **Repeats** and **Place (optional)** as for a team's event, its **Host** - one of the organisation's members, who's told - and under **Groups needed**, **Add a group** for each, with the parts it asks of it (its positions, instruments, roles or names; see [Parts needed](/teams/#parts-needed)) and, if you like, its **Call time (minutes before)**: the musicians an hour early, the welcome team a quarter of an hour. A music group's part has **Make a set for each date**, on by default: turn it off for a meeting, and that group's dates get no set. **Save event** puts the event on each group's calendar: the group's admins fill its line-up as for any of its events, a music team's date gets its set, and those signed up get their reminders.
+Its admins make one with **New event**: its **Title**, first date, start time, length, time zone, **Repeats** and **Place (optional)** as for a team's event, its **Host** - one of the organisation's members, who's told - and under **Groups needed**, **Add a group** for each, with the parts it asks of it (its positions, instruments, roles or names; see [Parts needed](/teams/#parts-needed)) and, if you like, its **Call time (minutes before)**: the musicians an hour early, the welcome team a quarter of an hour. Each group's part has **Make a set for each date**, on by default for a group that uses Songverse and off for one that only plans: turn it off for a meeting, and that group's dates get no set. **Save event** puts the event on each group's calendar: the group's admins fill its line-up as for any of its events, a group's date gets its set when it asks for one, and those signed up get their reminders.
 
 - On a group's calendar, the event is marked **Planned by** the organisation (and its host). Its date, time and place are set on the organisation's Events; the group's admins choose only what it needs from them, under **Parts needed**, and its call time.
 - On the organisation's Events, its admins and the event's host see how each group's parts are covered (**Short: Drums**, or **All set**), change the event with **Edit event**, and **Cancel this date** - or restore it - for every group at once. Others see the groups and how many are on each.

@@ -83,15 +83,14 @@ export class GroupsService {
       await this.checkParent(team.organizationId, dto.parentId, teamId);
     }
     if (dto.usesSongverse === false) {
-      // Songs, songbooks, sets and arrangements belong to Songverse's teams: moved or deleted first.
-      const [songs, songbooks, sets, arrangements] = await Promise.all([
+      // Songs, songbooks and arrangements belong to Songverse's teams: moved or deleted first. Its sets stay (issue #531).
+      const [songs, songbooks, arrangements] = await Promise.all([
         this.prisma.client.songVersion.count({ where: { ownerTeamId: teamId } }),
         this.prisma.client.songbook.count({ where: { ownerTeamId: teamId } }),
-        this.prisma.client.setlist.count({ where: { ownerTeamId: teamId } }),
         this.prisma.client.arrangement.count({ where: { ownerTeamId: teamId } }),
       ]);
-      if (songs + songbooks + sets + arrangements > 0) {
-        throw new ConflictException(`This team still has ${songs} song(s), ${songbooks} songbook(s), ${sets} set(s) and ${arrangements} arrangement(s) - move or delete them first.`);
+      if (songs + songbooks + arrangements > 0) {
+        throw new ConflictException(`This team still has ${songs} song(s), ${songbooks} songbook(s) and ${arrangements} arrangement(s) - move or delete them first.`);
       }
     }
     await this.prisma.client.team.update({

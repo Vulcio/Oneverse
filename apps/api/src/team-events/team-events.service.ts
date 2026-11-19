@@ -244,7 +244,8 @@ export class TeamEventsService {
         daysBefore: parent ? dto.rehearsalFor!.daysBefore : null,
         organizationEventId,
         typeId: (await this.checkType(teamId, dto.typeId)) ?? null,
-        withSet: dto.withSet ?? true,
+        // Left out: a set for a Songverse team, none for a group that only plans (issue #531).
+        withSet: dto.withSet ?? (await this.usesSongverse(teamId)),
         createdByUserId: userId,
       },
       include: withDates,
@@ -431,7 +432,6 @@ export class TeamEventsService {
   async ensureDateSet(teamId: string, eventId: string, date: string) {
     const event = await this.find(teamId, eventId);
     if (event.rehearsalForId) throw new BadRequestException(["A rehearsal uses its event's set"]);
-    if (!(await this.usesSongverse(event.teamId))) throw new BadRequestException(["A group that doesn't use Songverse has no sets"]);
     if (!event.withSet) throw new BadRequestException(["This event's dates have no set"]);
     if (!eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     const setlistId = await this.makeSet(event, date, true);
@@ -449,8 +449,8 @@ export class TeamEventsService {
     if (row?.cancelled) return null;
     if (row?.setlistId) return row.setlistId;
     if (row?.setCreatedAt && !again) return null;
-    // A group that only plans (issue #241), or an event without sets (issue #523): its dates have none.
-    if (!event.withSet || !(await this.usesSongverse(event.teamId))) return null;
+    // An event without sets (issue #523): its dates have none. A group that only plans has them too (issue #531): sets aren't only songs.
+    if (!event.withSet) return null;
     return this.prisma.client.$transaction(async (tx) => {
       const set = await tx.setlist.create({ data: { ownerTeamId: event.teamId, name: row?.title || event.title, eventDate: day(date) } });
       await tx.teamEventDate.upsert({
@@ -477,13 +477,13 @@ export class TeamEventsService {
     return made;
   }
 
-  private async usesSongverse(teamId: string) {
-    return (await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { usesSongverse: true } }))?.usesSongverse ?? false;
+  private async usesSongverse(teamId: string): Promise<boolean> {
+    return (await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { usesSongverse: true } }))?.usesSongverse ?? true;
   }
 
   /** Every team's coming sets (the daily job). */
   async makeAllSets(): Promise<number> {
-    const events = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: null, withSet: true, team: { usesSongverse: true } }, select: { id: true } });
+    const events = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: null, withSet: true }, select: { id: true } });
     let made = 0;
     for (const { id } of events) made += await this.makeSets(id);
     return made;

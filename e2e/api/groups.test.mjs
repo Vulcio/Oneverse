@@ -1,7 +1,7 @@
 // An organisation's groups (issue #241): its admins make groups that only
 // plan (a welcome team) or use Songverse, under one another; a group that
-// only plans owns no songs, songbooks or sets and isn't among Songverse's
-// teams; each group has positions of its own that its members say they
+// only plans owns no songs or songbooks and isn't among Songverse's teams,
+// but has sets (issue #531: passages, slides, the catalogue's songs); each group has positions of its own that its members say they
 // cover; a group's admins make sub-groups under it (issue #245); a team
 // leaving the organisation is a Songverse team again.
 import { stamp, sql, check, user, call, finish } from "../lib/harness.mjs";
@@ -38,15 +38,29 @@ check("…all of them, when asked", teams.some((t) => t.id === welcome.id && t.u
 r = await call(alice, "GET", `/organizations/${org.id}`);
 check("the organisation shows its groups, which is under which", r.body.teams.find((t) => t.id === choir.id)?.parentId === music.id && r.body.teams.find((t) => t.id === welcome.id)?.usesSongverse === false, JSON.stringify(r.body.teams));
 
-// --- what a group that only plans can't have
-r = await call(alice, "POST", "/setlists", { name: "Coffee rota", teamId: welcome.id });
-check("no sets", r.status === 400, JSON.stringify(r.body));
+// --- what a group that only plans can't have, and what it can (issue #531)
 r = await call(alice, "POST", "/songbooks", { name: "Welcome songs", kind: "SIMPLE", teamId: welcome.id });
 check("no songbooks", r.status === 400, JSON.stringify(r.body));
+r = await call(alice, "POST", "/setlists", { name: "Welcome slides", teamId: welcome.id });
+const welcomeSet = r.body;
+check("sets, though: they aren't only songs", r.status === 201 && welcomeSet.teamId === welcome.id, JSON.stringify(r.body));
+r = await call(alice, "POST", `/setlists/${welcomeSet.id}/items`, { text: { title: "Welcome", body: "Good morning" } });
+check("…with slides in them", r.status === 201 && r.body.items.length === 1, JSON.stringify(r.body));
+const ownSong = (await call(alice, "POST", "/song-versions", { title: `Groups own ${stamp}`, language: "en", artists: ["Test Artist"] })).body;
+r = await call(alice, "POST", `/setlists/${welcomeSet.id}/items`, { songVersionId: ownSong.id });
+check("…but not one's own song: nothing to share it with", r.status === 400 && /doesn't use Songverse/.test(JSON.stringify(r.body)), JSON.stringify(r.body));
+r = await call(alice, "POST", `/setlists/${welcomeSet.id}/items`, { songVersionId: ownSong.id, teamAccess: "share" });
+check("…even when asked to share it", r.status === 400, JSON.stringify(r.body));
+r = await call(alice, "GET", `/song-versions?addableTo=${welcomeSet.id}`);
+check("…and Add songs doesn't offer it", r.status === 200 && !JSON.stringify(r.body).includes(ownSong.id), JSON.stringify(r.body).slice(0, 300));
 const date = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
-const event = (await call(alice, "POST", `/teams/${welcome.id}/events`, { title: "Sunday welcome", date, startTime: "09:30", timeZone: "UTC" })).body;
+const meeting = (await call(alice, "POST", `/teams/${welcome.id}/events`, { title: "Rota meeting", date, startTime: "19:00", timeZone: "UTC" })).body;
+check("a new event of a group that only plans: no set, unless asked", meeting.withSet === false, JSON.stringify(meeting));
+const event = (await call(alice, "POST", `/teams/${welcome.id}/events`, { title: "Sunday welcome", date, startTime: "09:30", timeZone: "UTC", withSet: true })).body;
 r = await call(alice, "POST", `/teams/${welcome.id}/events/${event.id}/dates/${date}/set`);
-check("its dates: on its calendar, without a set", r.status === 400 && (await call(alice, "GET", `/teams/${welcome.id}/event-dates?from=${date}&to=${date}`)).body[0]?.setlistId === null, JSON.stringify(r.body));
+check("its dates get a set when the event asks for one", r.status === 201 && !!r.body.setlistId && (await call(alice, "GET", `/teams/${welcome.id}/event-dates?from=${date}&to=${date}`)).body[0]?.setlistId === r.body.setlistId, JSON.stringify(r.body));
+r = await call(alice, "POST", `/teams/${welcome.id}/events/${meeting.id}/dates/${date}/set`);
+check("…and none when it doesn't", r.status === 400, JSON.stringify(r.body));
 
 // --- moving groups around
 r = await call(alice, "PATCH", `/teams/${music.id}/group`, { parentId: choir.id });
@@ -57,7 +71,11 @@ r = await call(alice, "PATCH", `/teams/${choir.id}/group`, { parentId: null });
 check("back at the top", r.status === 200 && r.body.parentId === null, JSON.stringify(r.body));
 await call(alice, "POST", "/setlists", { name: "Sunday", teamId: music.id });
 r = await call(alice, "PATCH", `/teams/${music.id}/group`, { usesSongverse: false });
-check("a team with sets can't stop using Songverse", r.status === 409, JSON.stringify(r.body));
+check("a team with sets can stop using Songverse (issue #531): they stay", r.status === 200 && r.body.usesSongverse === false, JSON.stringify(r.body));
+await call(alice, "PATCH", `/teams/${music.id}/group`, { usesSongverse: true });
+await call(alice, "POST", "/songbooks", { name: "Sunday songs", kind: "SIMPLE", teamId: music.id });
+r = await call(alice, "PATCH", `/teams/${music.id}/group`, { usesSongverse: false });
+check("a team with songbooks can't", r.status === 409, JSON.stringify(r.body));
 r = await call(alice, "PATCH", `/teams/${welcome.id}/group`, { usesSongverse: true });
 check("a group can start using Songverse", r.status === 200 && r.body.usesSongverse === true, JSON.stringify(r.body));
 await call(alice, "PATCH", `/teams/${welcome.id}/group`, { usesSongverse: false });

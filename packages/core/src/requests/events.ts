@@ -56,7 +56,7 @@ export const CreateTeamEventSchema = z.strictObject({
   parts: optional(eventParts),
   rehearsalFor: optional(RehearsalForSchema).describe("A rehearsal tied to another event (issue #235): its dates follow that event's"),
   typeId: optional(z.string().trim().min(1).max(64)).describe("The team's event type it's made from (issue #523), kept for reference: the other fields are sent as they are"),
-  withSet: optional(z.boolean()).describe("Whether its dates get a set (issue #523); true when left out. Ignored for a group that only plans"),
+  withSet: optional(z.boolean()).describe("Whether its dates get a set (issue #523); left out, true for a team that uses Songverse and false for a group that only plans (issue #531)"),
 });
 export type CreateTeamEventRequest = z.input<typeof CreateTeamEventSchema>;
 
@@ -209,7 +209,7 @@ const NeedSchema = z.strictObject({
   teamId: z.string().trim().min(1).max(64),
   parts: optional(eventParts),
   callMinutes: optional(callMinutes).describe("When the group is to be there: minutes before it starts"),
-  withSet: optional(z.boolean()).describe("Whether the group's dates get a set (issue #523): false for a music group at a meeting; true when left out"),
+  withSet: optional(z.boolean()).describe("Whether the group's dates get a set (issue #523): false for a meeting. Left out: a new group's part gets one if the group uses Songverse (issue #531), a part already there keeps what it had"),
 });
 const needs = z
   .array(NeedSchema)
