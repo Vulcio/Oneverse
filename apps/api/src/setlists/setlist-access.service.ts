@@ -120,7 +120,6 @@ export class SetlistAccessService {
   }
 
   async assertTeamAdmin(user: AuthenticatedUser, teamId: string): Promise<void> {
-    await this.policy.assertSongverseTeam(teamId);
     if (user.isGlobalAdmin) {
       const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { id: true } });
       if (!team) throw new NotFoundException("Team not found");
@@ -168,11 +167,12 @@ export class SetlistAccessService {
   /**
    * Songs `user` may pick for the set: what's addable, and in a team's set
    * their own personal songs too, shared with the team or moved to it as
-   * they're added (issue #331, AddSetlistItem's teamAccess).
+   * they're added (issue #331, AddSetlistItem's teamAccess) - not in the set
+   * of a group that only plans (issue #531), which has no songs to share with.
    */
   async pickableWhere(user: AuthenticatedUser, set: SetRow): Promise<Prisma.SongVersionWhereInput> {
     const addable = await this.addableWhere(set);
-    return set.ownerTeamId ? { OR: [addable, { ownerScope: "USER", ownerUserId: user.id }] } : addable;
+    return set.ownerTeamId && (await this.policy.usesSongverse(set.ownerTeamId)) ? { OR: [addable, { ownerScope: "USER", ownerUserId: user.id }] } : addable;
   }
 
   /** In-memory twin of `addableWhere()`, for songs already loaded. */

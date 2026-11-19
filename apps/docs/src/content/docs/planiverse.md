@@ -3,7 +3,7 @@ title: Planiverse
 description: The planning on its own - your calendar, organisations, groups and their events - for those who plan without playing.
 ---
 
-Planiverse is Songverse's planning on its own: [My calendar](/teams/#calendar), [organisations](/organizations/), their groups and their events, without the songs, songbooks and sets. It's for the people who plan with you without playing - the welcome team, the tech team, whoever hosts. A server has it only if its admins deployed it, beside Songverse.
+Planiverse is Songverse's planning on its own: [My calendar](/teams/#calendar), [organisations](/organizations/), their groups and their events, without the songs and songbooks. It's for the people who plan with you without playing - the welcome team, the tech team, whoever hosts. A server has it only if its admins deployed it, beside Songverse.
 
 ![My calendar in Planiverse](../../assets/screenshots/en/planiverse.jpg)
 
@@ -18,7 +18,7 @@ It's the same account as Songverse's, your Oneverse account: Planiverse sends yo
 - **Organisations**: the ones you're in, their groups, members and events, as in Songverse (see [Organisations](/organizations/)).
 - A team's or group's page: its calendar, members and positions, and for its admins the same tools as in Songverse - events, answers asked for, the line-up, invite links.
 
-A date of a team that uses Songverse shows its set: **Open set** opens it in Songverse. Sets are planned there, not in Planiverse.
+A date with a set shows it - a group that only plans has sets too, for the Bible passages, slides and the catalogue's songs its date shows: **Open set** opens it in Songverse, where sets are filled. **Plan the set**, on a date that has none yet, makes it and opens it there.
 
 An invite link to an organisation or a group, opened on Planiverse, joins you there.
 

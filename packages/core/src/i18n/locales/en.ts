@@ -2532,7 +2532,7 @@ const en = {
     newGroup: "New group",
     createGroup: "Create group",
     usesSongverse: "Uses Songverse",
-    usesSongverseHint: "Its songs, songbooks and sets. Without it, the group only plans.",
+    usesSongverseHint: "Its own songs, songbooks and arrangements. Without it, the group plans, and its sets take Bible passages, slides and the catalogue's songs.",
     onlyPlans: "Only plans",
     under: "Under",
     atTheTop: "- (at the top)",

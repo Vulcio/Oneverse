@@ -13,7 +13,7 @@ export function songverseUrl(): string | null {
 /** The paths Planiverse has: a notification's path that isn't one opens in Songverse. */
 const PLANIVERSE_PATHS = /^\/(calendar|teams|organizations|account|notifications)(\/|$|[?#])/;
 
-/** Planiverse's pages, and Songverse's sets, opened there - made only in Songverse (issue #241). */
+/** Planiverse's pages, and Songverse's sets, opened there (issue #241) - made from here too (issue #531). */
 export function planningHost(): PlanningHost {
   const songverse = songverseUrl();
   return {
@@ -29,6 +29,6 @@ export function planningHost(): PlanningHost {
       // Its own pages here; the rest (a set, a song, People) in Songverse - or My calendar without it.
       notification: (url) => (PLANIVERSE_PATHS.test(url) ? url : songverse ? `${songverse}${url}` : "/calendar"),
     },
-    sets: songverse ? { href: (setlistId) => `${songverse}/sets/${setlistId}`, canMake: false } : null,
+    sets: songverse ? { href: (setlistId) => `${songverse}/sets/${setlistId}`, canMake: true } : null,
   };
 }

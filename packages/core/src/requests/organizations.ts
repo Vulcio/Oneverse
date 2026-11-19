@@ -163,7 +163,7 @@ export type SetTeamOrganizationRequest = z.input<typeof SetTeamOrganizationSchem
 export const CreateGroupSchema = z.strictObject({
   name: z.string().trim().min(2).max(100),
   description: optional(z.string().trim().max(500)),
-  usesSongverse: z.boolean().optional().describe("A Songverse team (songs, songbooks, sets), or one that only plans (the default)"),
+  usesSongverse: z.boolean().optional().describe("A Songverse team (its own songs, songbooks, arrangements), or one that only plans (the default); both have sets"),
   parentId: optional(z.string().min(1)).describe("The group it's under, in the same organisation"),
 });
 export type CreateGroupRequest = z.input<typeof CreateGroupSchema>;

@@ -1,7 +1,8 @@
 // Planiverse (issue #241): the planning on its own, with the same account
 // as Songverse. Signed out, its sign-in page; signed in, My calendar with a
 // Songverse team's set opening in Songverse; an organisation, a group that
-// only plans and a Songverse team, without Songverse's set tools; joining
+// only plans and a Songverse team, whose sets open in Songverse (a group
+// that only plans has them too, issue #531); joining
 // an organisation by its link; signing out.
 import { chromium } from "playwright";
 import { LOG, ONEVERSE, PLANIVERSE, WEB, api, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
@@ -22,6 +23,9 @@ const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 const service = await api(alice, "POST", `/teams/${music.id}/events`, { title: "Sunday service", date: tomorrow, startTime: "10:00", timeZone: "UTC" });
 const { setlistId } = await api(alice, "POST", `/teams/${music.id}/events/${service.id}/dates/${tomorrow}/set`);
 await api(alice, "POST", `/teams/${welcome.id}/events`, { title: "Door welcome", date: tomorrow, startTime: "09:30", timeZone: "UTC" });
+// Its notices, read out: a set, though the group only plans (issue #531), beyond the sets made ahead (4 weeks), so none is there yet.
+const later = new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10);
+const notices = await api(alice, "POST", `/teams/${welcome.id}/events`, { title: "Notices", date: later, startTime: "09:00", timeZone: "UTC", withSet: true });
 const { token } = await api(alice, "POST", `/organizations/${org.id}/invite-links`, {});
 // Bob, in a group (and so its organisation's member later, by its link): his Teams page lists it.
 sql(`insert into "TeamMembership" (id, "teamId", "userId", role, "joinedAt", "updatedAt") values ('tmpv${stamp}', '${welcome.id}', '${bob.id}', 'MEMBER', now(), now())`);
@@ -69,12 +73,24 @@ try {
     await page.getByTestId("team-calendar").getByText("Door welcome").first().waitFor();
   });
 
-  await step("a Songverse team's calendar: its set opens in Songverse, no set made from here", async () => {
+  await step("a Songverse team's calendar: its set opens in Songverse", async () => {
     await page.goto(`${PLANIVERSE}/teams/${music.id}`);
     const calendar = page.getByTestId("team-calendar");
     const open = calendar.getByTestId("calendar-open-set").first();
     if ((await open.getAttribute("href")) !== `${WEB}/sets/${setlistId}`) throw new Error(`the set opens at ${await open.getAttribute("href")}`);
-    if (await calendar.getByTestId("calendar-sets-ahead").count()) throw new Error("Planiverse offers to make sets");
+  });
+
+  await step("a group that only plans: its event's set planned from here, opening in Songverse (issue #531)", async () => {
+    await page.goto(`${PLANIVERSE}/teams/${welcome.id}`);
+    const calendar = page.getByTestId("team-calendar");
+    const row = calendar.locator(`[data-event-id="${notices.id}"]`).first();
+    await row.getByTestId("calendar-plan-set").click();
+    await page.waitForURL(`${WEB}/sets/**`);
+    const made = (await api(alice, "GET", `/teams/${welcome.id}/event-dates?from=${later}&to=${later}`))[0];
+    if (!made?.setlistId || !page.url().endsWith(`/sets/${made.setlistId}`)) throw new Error(`the set: ${JSON.stringify(made)} at ${page.url()}`);
+    // A notification's address in Planiverse (its emails) goes on to Songverse too.
+    await page.goto(`${PLANIVERSE}/sets/${made.setlistId}`);
+    await page.waitForURL(`${WEB}/sets/${made.setlistId}`);
     await page.goto(`${PLANIVERSE}/organizations/${org.id}/events`);
     await page.getByTestId("org-new-event").waitFor();
   });

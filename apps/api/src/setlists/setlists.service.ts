@@ -811,6 +811,8 @@ export class SetlistsService {
   private async giveToTeam(user: AuthenticatedUser, set: SetRow, songVersionId: string, teamAccess: "share" | "move" | undefined): Promise<void> {
     const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { ownerScope: true, ownerUserId: true } });
     if (!set.ownerTeamId || song?.ownerScope !== "USER" || song.ownerUserId !== user.id) throw this.notAddable(set);
+    // A group that only plans (issue #531): no songs of its own, so none shared with it or moved to it.
+    if (!(await this.policy.usesSongverse(set.ownerTeamId))) throw new BadRequestException("This group doesn't use Songverse: its sets take Bible passages, slides and the catalogue's songs, not your own songs");
     if (!teamAccess) {
       const team = await this.prisma.client.team.findUnique({ where: { id: set.ownerTeamId }, select: { id: true, name: true } });
       throw new ConflictException({ code: "SONG_NOT_SHARED", message: `Share this song with ${team?.name ?? "the team"} to add it to the team's set`, team });

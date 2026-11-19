@@ -40,7 +40,7 @@ export function TeamCalendar({
   teamId,
   isAdmin,
   customInstruments = [],
-  withSets = true,
+  setsByDefault = true,
   positions = [],
 }: {
   teamId: string;
@@ -48,14 +48,14 @@ export function TeamCalendar({
   customInstruments?: readonly CustomInstrument[];
   /** The group's own positions (issue #241), parts its events can ask for. */
   positions?: readonly TeamPosition[];
-  /** False for a group that only plans (issue #241): its dates have no set. */
-  withSets?: boolean;
+  /** False for a group that only plans (issue #241): its new events start without a set, which can still be asked for (issue #531). */
+  setsByDefault?: boolean;
 }) {
   const { api, sets } = usePlanning();
   const { t, i18n } = useTranslation();
   const partLabel = usePartLabel(customInstruments);
-  // A date's set, where the app has sets and the group uses them; made only where they're kept.
-  const setHref = sets && withSets ? sets.href : null;
+  // A date's set, where the app has sets (every group's, issue #531); made only where they're kept.
+  const setHref = sets ? sets.href : null;
   const makesSets = Boolean(setHref && sets?.canMake);
   const navigate = useNavigate();
   const router = useRouter();
@@ -111,7 +111,11 @@ export function TeamCalendar({
   const planSet = (date: TeamEventDateSummary) =>
     act(async () => {
       const { setlistId } = await api.ensureTeamEventDateSet(teamId, date.eventId, date.date);
-      if (setHref) await navigate({ to: setHref(setlistId) });
+      if (!setHref) return;
+      const href = setHref(setlistId);
+      // Another app's set (Planiverse opening Songverse's): a page of its own.
+      if (/^https?:\/\//.test(href)) window.location.assign(href);
+      else await navigate({ to: href });
     });
 
   // The team's own part names used before: its events' and its types'.
@@ -393,7 +397,7 @@ export function TeamCalendar({
         <EventTypesDialog
           owner={{ teamId }}
           types={types}
-          makesSets={makesSets}
+          makesSets={!!setHref}
           teamNames={teamNames}
           positions={positions}
           customInstruments={customInstruments}
@@ -406,9 +410,10 @@ export function TeamCalendar({
         <EventDialog
           teamId={teamId}
           event={editing === "new" ? null : editing}
+          setsByDefault={setsByDefault}
           teamEvents={events}
           types={types}
-          makesSets={makesSets}
+          makesSets={!!setHref}
           teamNames={teamNames}
           positions={positions}
           customInstruments={customInstruments}
@@ -565,6 +570,7 @@ function SetsAhead({ teamId, onSaved }: { teamId: string; onSaved: () => Promise
 function EventDialog({
   teamId,
   event,
+  setsByDefault,
   teamEvents,
   types,
   makesSets,
@@ -577,11 +583,13 @@ function EventDialog({
 }: {
   teamId: string;
   event: TeamEvent | null;
+  /** A new event's dates get a set until unticked (false for a group that only plans). */
+  setsByDefault: boolean;
   /** The team's events, a rehearsal's possible event. */
   teamEvents: TeamEvent[];
   /** The team's event types (issue #523): picking one fills the form. */
   types: TeamEventType[];
-  /** The team keeps sets: whether the event's dates get one is asked. */
+  /** The app has sets: whether the event's dates get one is asked. */
   makesSets: boolean;
   teamNames: string[];
   positions: readonly TeamPosition[];
@@ -615,7 +623,7 @@ function EventDialog({
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
   // Its type (issue #523), and whether its dates get a set.
   const [typeId, setTypeId] = useState(event?.typeId ?? "");
-  const [withSet, setWithSet] = useState(event?.withSet ?? true);
+  const [withSet, setWithSet] = useState(event?.withSet ?? setsByDefault);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);

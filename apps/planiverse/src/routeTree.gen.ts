@@ -19,6 +19,7 @@ import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as AuthSignOutRouteImport } from './routes/auth.sign-out'
 import { Route as JoinOrganizationTokenRouteImport } from './routes/join-organization.$token'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
+import { Route as SetsSetlistIdRouteImport } from './routes/sets.$setlistId'
 import { Route as ProtectedOrganizationsIndexRouteImport } from './routes/_protected/organizations/index'
 import { Route as ProtectedOrganizationsOrganizationIdRouteImport } from './routes/_protected/organizations/$organizationId'
 import { Route as ProtectedTeamsIndexRouteImport } from './routes/_protected/teams/index'
@@ -74,6 +75,11 @@ const JoinTokenRoute = JoinTokenRouteImport.update({
   path: '/join/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetsSetlistIdRoute = SetsSetlistIdRouteImport.update({
+  id: '/sets/$setlistId',
+  path: '/sets/$setlistId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedOrganizationsIndexRoute =
   ProtectedOrganizationsIndexRouteImport.update({
     id: '/organizations/',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-out': typeof AuthSignOutRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
+  '/sets/$setlistId': typeof SetsSetlistIdRoute
   '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
   '/organizations/': typeof ProtectedOrganizationsIndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/auth/sign-out': typeof AuthSignOutRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
+  '/sets/$setlistId': typeof SetsSetlistIdRoute
   '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
   '/organizations': typeof ProtectedOrganizationsIndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/auth/sign-out': typeof AuthSignOutRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
+  '/sets/$setlistId': typeof SetsSetlistIdRoute
   '/_protected/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/_protected/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
   '/_protected/organizations/': typeof ProtectedOrganizationsIndexRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/auth/sign-out'
     | '/join-organization/$token'
     | '/join/$token'
+    | '/sets/$setlistId'
     | '/organizations/$organizationId'
     | '/teams/$teamId'
     | '/organizations/'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/auth/sign-out'
     | '/join-organization/$token'
     | '/join/$token'
+    | '/sets/$setlistId'
     | '/organizations/$organizationId'
     | '/teams/$teamId'
     | '/organizations'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/auth/sign-out'
     | '/join-organization/$token'
     | '/join/$token'
+    | '/sets/$setlistId'
     | '/_protected/organizations/$organizationId'
     | '/_protected/teams/$teamId'
     | '/_protected/organizations/'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   AuthSignOutRoute: typeof AuthSignOutRoute
   JoinOrganizationTokenRoute: typeof JoinOrganizationTokenRoute
   JoinTokenRoute: typeof JoinTokenRoute
+  SetsSetlistIdRoute: typeof SetsSetlistIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/join/$token'
       fullPath: '/join/$token'
       preLoaderRoute: typeof JoinTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sets/$setlistId': {
+      id: '/sets/$setlistId'
+      path: '/sets/$setlistId'
+      fullPath: '/sets/$setlistId'
+      preLoaderRoute: typeof SetsSetlistIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protected/organizations/': {
@@ -361,6 +381,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignOutRoute: AuthSignOutRoute,
   JoinOrganizationTokenRoute: JoinOrganizationTokenRoute,
   JoinTokenRoute: JoinTokenRoute,
+  SetsSetlistIdRoute: SetsSetlistIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

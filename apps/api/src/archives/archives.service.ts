@@ -77,7 +77,7 @@ export class ArchivesService {
     if (scope === "team") {
       const team = await db.team.findUnique({ where: { id }, select: { usesSongverse: true } });
       if (!team) throw new NotFoundException("Team not found");
-      if (!team.usesSongverse) throw new BadRequestException(["This group only plans: it owns no songs, songbooks or sets"]);
+      if (!team.usesSongverse) throw new BadRequestException(["This group only plans: it owns no songs or songbooks to archive"]);
       if (!user.isGlobalAdmin && (await this.policy.teamRole(user.id, id)) !== "ADMIN") throw new ForbiddenException("Team admin role required");
       return { scope: "TEAM", teamId: id };
     }

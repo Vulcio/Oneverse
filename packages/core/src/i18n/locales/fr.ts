@@ -2535,7 +2535,7 @@ const fr: typeof en = {
     newGroup: "Nouveau groupe",
     createGroup: "Créer le groupe",
     usesSongverse: "Utilise Songverse",
-    usesSongverseHint: "Ses chants, recueils et listes. Sans cela, le groupe ne fait que planifier.",
+    usesSongverseHint: "Ses propres chants, recueils et arrangements. Sans cela, le groupe planifie, et ses listes reçoivent des passages bibliques, des diapositives et les chants du catalogue.",
     onlyPlans: "Planification seule",
     under: "Sous",
     atTheTop: "- (au premier niveau)",
