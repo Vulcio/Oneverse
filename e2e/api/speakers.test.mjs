@@ -44,7 +44,7 @@ try {
   r = await call(planner, "POST", `${base}/lineup`, { guestName: "Pastor Jean", guestEmail: "Jean@Example.org", part: "SPEAKER" });
   check("…but a guest from outside, without an account, with an email, does", r.status === 201 && r.body.guest === "external" && r.body.guestEmail === "jean@example.org", JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { guestName: "Someone", guestEmail: "someone@example.org", part: "DRUMS" });
-  check("an email is only for a speaker", r.status === 400 && r.body.message.join().includes("speaker"), JSON.stringify(r.body));
+  check("any guest without an account comes with an email", r.status === 201 && r.body.guestEmail === "someone@example.org", JSON.stringify(r.body));
   const seen = async (who) => (await call(who, "GET", `/teams/${music.id}/event-dates?from=${plus(3)}&to=${plus(3)}`)).body.find((one) => one.eventId === event.id).lineup.find((place) => place.displayName === "Pastor Jean");
   check("the team's admins see the speaker's email", (await seen(planner))?.guestEmail === "jean@example.org");
   check("…its members don't", (await seen(musician))?.guestEmail === null, JSON.stringify(await seen(musician)));
@@ -61,8 +61,8 @@ try {
   check("given to them alone, as a one-off", r.status === 204, String(r.status));
   r = await call(planner, "POST", `${base}/lineup`, { userId: visitor.id, part: "SPEAKER" });
   check("…they speak too", r.status === 201, JSON.stringify(r.body));
-  r = await call(planner, "POST", `${base}/lineup`, { guestName: "Someone", part: "DRUMS" });
-  check("other parts still take a guest by name", r.status === 201, JSON.stringify(r.body));
+  r = await call(planner, "POST", `${base}/lineup`, { guestName: "Someone else", part: "DRUMS" });
+  check("other parts: a guest by name alone, no", r.status === 400 && r.body.message.join().includes("guestEmail"), JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { userId: musician.id, part: "SPEAKER" });
   check("a member without the role: still not", r.status === 400, JSON.stringify(r.body));
   r = await call(musician, "PUT", `${base}/answer`, { answer: "AVAILABLE", wishes: ["SPEAKER"] });

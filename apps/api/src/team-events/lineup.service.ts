@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, coversPart, GUEST_PARTS, isGivenPart, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
+import { addDays, coversPart, GUEST_PARTS, isGivenPart, isMembersOnlyPart, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -96,6 +96,13 @@ export class LineupService {
     return shown?.title || event.title;
   }
 
+  /** Whether someone is in the organisation the team belongs to (none: no). */
+  private async inOrganizationOf(teamId: string, userId: string): Promise<boolean> {
+    const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { organizationId: true } });
+    if (!team?.organizationId) return false;
+    return !!(await this.prisma.client.organizationMembership.findFirst({ where: { organizationId: team.organizationId, userId }, select: { id: true } }));
+  }
+
   /**
    * Someone put on a part for a date: a member, or a guest - one of the
    * admin's People (they're told and answer like a member, and see the
@@ -114,13 +121,19 @@ export class LineupService {
     const forGuests = GUEST_PARTS.includes(dto.part);
     const allowed = byRole && dto.userId ? await mayFill(this.prisma.client, teamId, dto.userId, dto.part) : false;
     if (byRole && !allowed && !forGuests) throw new BadRequestException(["Only someone a role gives that part to can be put on it"]);
+    // Hosting is never a guest's (issue #520): someone of the team or its organisation, with an account.
+    const membersOnly = isMembersOnlyPart(dto.part);
+    if (membersOnly && !dto.userId) throw new BadRequestException(["Only a member of the team or its organisation can be put on that part"]);
     if (dto.userId) {
       const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: dto.userId } } });
       guest = !member;
       // Someone a role gives the part to (a host from the organisation's Présidence group, issue #520) needn't be in the team.
       // A member without the role, on an organisation's event: not even where guests may fill it.
       if (byRole && !allowed && !guest) throw new BadRequestException(["Only someone a role gives that part to can be put on it"]);
-      if (guest && !allowed && !(await this.connected(by, dto.userId))) throw new BadRequestException(["userId isn't a member of the team or one of your People"]);
+      if (membersOnly && guest && !allowed && !(await this.inOrganizationOf(teamId, dto.userId))) {
+        throw new BadRequestException(["Only a member of the team or its organisation can be put on that part"]);
+      }
+      if (guest && !allowed && !membersOnly && !(await this.connected(by, dto.userId))) throw new BadRequestException(["userId isn't a member of the team or one of your People"]);
     }
     const accepted = !dto.userId || dto.userId === by;
     let row;

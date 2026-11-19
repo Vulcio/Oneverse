@@ -57,6 +57,7 @@ try {
     await drums.locator(`[data-place="${friend.id}"]`).getByText("Guest").waitFor();
     await drums.getByTestId("lineup-add").selectOption("__outside");
     await drums.getByTestId("lineup-outside-name").fill("Mo (sub)");
+    await drums.getByTestId("lineup-outside-email").fill("mo@example.org");
     await drums.getByTestId("lineup-outside-add").click();
     await drums.getByText("Mo (sub)").waitFor();
     await drums.locator('[data-guest="external"]').getByText("No account").waitFor();

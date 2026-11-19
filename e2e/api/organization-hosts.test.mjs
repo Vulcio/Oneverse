@@ -34,7 +34,9 @@ try {
   r0 = await call(orgAdmin, "POST", `${ownBase}/lineup`, { userId: musician.id, part: "HOST" });
   check("…and its admins put whoever they like on it", r0.status === 201, JSON.stringify(r0.body));
   r0 = await call(orgAdmin, "POST", `${ownBase}/lineup`, { guestName: "Visiting pastor", part: "HOST" });
-  check("…a guest by name too", r0.status === 201, JSON.stringify(r0.body));
+  check("…but never a guest: hosting is a member's", r0.status === 400, JSON.stringify(r0.body));
+  r0 = await call(orgAdmin, "POST", `${ownBase}/lineup`, { userId: visitor.id, part: "HOST" });
+  check("…someone of the team's organisation, though, yes", r0.status === 201, JSON.stringify(r0.body));
 
   // The organisation's event: hosts by a role.
   const made = (await call(orgAdmin, "POST", `/organizations/${org.id}/events`, { title: "Sunday", date: plus(3), startTime: "10:00", timeZone: "UTC", hostUserId: orgAdmin.id, needs: [{ teamId: music.id, parts: [{ part: "HOST", count: 1 }, { part: "DRUMS", count: 1 }] }] })).body;

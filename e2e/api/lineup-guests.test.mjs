@@ -36,7 +36,7 @@ r = await call(bassist, "PUT", `${base}/lineup/${place.id}/response`, { status: 
 check("the guest accepts their place", r.status === 200 && r.body.status === "ACCEPTED", JSON.stringify(r.body));
 
 // --- without an account
-r = await call(admin, "POST", `${base}/lineup`, { guestName: "Mo (sub)", part: "DRUMS" });
+r = await call(admin, "POST", `${base}/lineup`, { guestName: "Mo (sub)", guestEmail: "mo@example.org", part: "DRUMS" });
 check("someone without an account, by name: on the line-up, accepted", r.status === 201 && r.body.userId === null && r.body.guest === "external" && r.body.status === "ACCEPTED" && r.body.displayName === "Mo (sub)", JSON.stringify(r.body));
 const seen = await adminDate();
 check("the line-up shows both guests; the parts are filled", seen.lineup.length === 2 && seen.coverage.every((part) => part.missing === 0), JSON.stringify(seen.lineup.map((one) => [one.displayName, one.guest])));

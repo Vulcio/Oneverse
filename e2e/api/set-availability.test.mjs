@@ -40,7 +40,9 @@ check("hosting: anyone may wish for it", r0.status === 200 && r0.body.wishes.joi
 const leaderDate = (await call(leader, "GET", `/teams/${team.id}/event-dates?from=${date}&to=${date}`)).body.find((one) => one.eventId === event.id);
 check("…among what one may wish for", leaderDate.wishOptions.some((part) => part.part === "HOST"), JSON.stringify(leaderDate.wishOptions));
 r0 = await call(admin, "POST", `${base}/lineup`, { guestName: "Visitor", part: "HOST" });
-check("…and the admins put whoever they like on it, a guest by name too", r0.status === 201, JSON.stringify(r0.body));
+check("…never someone without an account", r0.status === 400, JSON.stringify(r0.body));
+r0 = await call(admin, "POST", `${base}/lineup`, { userId: quiet.id, part: "HOST" });
+check("…but any member the admins pick", r0.status === 201, JSON.stringify(r0.body));
 await call(admin, "DELETE", `${base}/lineup/${r0.body.id}`);
 
 // --- wishes

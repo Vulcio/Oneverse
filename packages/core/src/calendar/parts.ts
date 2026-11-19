@@ -85,6 +85,15 @@ export const GIVEN_PARTS = { [HOST]: "canHost", [SPEAKER]: "canSpeak" } as const
 /** Given parts a guest can fill too (issue #523): someone from outside, by name or one of the admin's People. */
 export const GUEST_PARTS: readonly string[] = [SPEAKER];
 
+/**
+ * Whether a part is for members only (brice, issue #520): a given part guests
+ * can't fill - hosting. Never someone without an account or from outside the
+ * team and its organisation.
+ */
+export function isMembersOnlyPart(key: string): boolean {
+  return isGivenPart(key) && !GUEST_PARTS.includes(key);
+}
+
 /** Whether a part is one a role gives (GIVEN_PARTS). */
 export function isGivenPart(key: string): boolean {
   return Object.hasOwn(GIVEN_PARTS, key);
