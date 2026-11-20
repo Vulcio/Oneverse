@@ -47,7 +47,7 @@ em { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-w
 .hero {
   position: relative; isolation: isolate; overflow: hidden;
   background:
-    radial-gradient(60rem 36rem at 78% 30%, rgba(246, 193, 119, 0.16), transparent 70%),
+    radial-gradient(60rem 36rem at 78% 30%, rgba(246, 193, 119, 0.1), transparent 70%),
     radial-gradient(40rem 30rem at 10% 60%, rgba(124, 108, 240, 0.1), transparent 70%);
 }
 /* Fades the glow out at the bottom, so the hero has no edge. */
@@ -57,16 +57,12 @@ em { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-w
 .hero-text { position: relative; z-index: 1; }
 /* The orbits sit behind the words, on the right, the apps turning slowly around Oneverse. */
 .orbits { position: absolute; z-index: 0; top: 50%; right: -6rem; width: min(46rem, 70vw); translate: 0 -50%; overflow: visible; pointer-events: none; }
-.orbits circle { fill: none; stroke: rgba(244, 241, 234, 0.1); stroke-width: 1; }
-.orbits .core { fill: var(--accent); stroke: none; filter: drop-shadow(0 0 18px rgba(246, 193, 119, 0.8)); }
-.orbits .planet circle { fill: var(--fg); stroke: none; filter: drop-shadow(0 0 8px rgba(244, 241, 234, 0.6)); }
-.orbits .planet text { fill: #d8d5ce; font-size: 15px; font-weight: 550; letter-spacing: 0.01em; }
-.orbits .planet.later circle { fill: none; stroke: var(--muted); stroke-dasharray: 2 3; filter: none; }
-.orbits .planet.later text { fill: var(--muted); font-style: italic; }
-.orbits { animation: spin 240s linear infinite; }
-.orbits text { animation: unspin 240s linear infinite; transform-box: fill-box; transform-origin: left center; }
+.orbits circle { fill: none; stroke: rgba(244, 241, 234, 0.06); stroke-width: 1; }
+.orbits .core { fill: var(--accent); stroke: none; opacity: 0.7; filter: drop-shadow(0 0 14px rgba(246, 193, 119, 0.5)); }
+.orbits .planet { fill: rgba(244, 241, 234, 0.45); stroke: none; }
+.orbits .planet.later { fill: none; stroke: rgba(244, 241, 234, 0.3); stroke-dasharray: 2 2; }
+.orbits { animation: spin 300s linear infinite; }
 @keyframes spin { to { rotate: 360deg; } }
-@keyframes unspin { to { rotate: -360deg; } }
 h1 {
   margin: 0; font-size: clamp(2.6rem, 5.4vw, 4.4rem); line-height: 1.04;
   font-weight: 620; letter-spacing: -0.035em; max-width: 12ch;
@@ -150,8 +146,7 @@ section h2 em { color: var(--accent); font-size: 1.08em; }
 
 
 @media (max-width: 960px) {
-  .orbits { right: -45%; width: 125vw; opacity: 0.35; }
-  .orbits text { display: none; }
+  .orbits { right: -45%; width: 125vw; opacity: 0.6; }
 }
 
 @media (max-width: 640px) {
@@ -167,5 +162,5 @@ section h2 em { color: var(--accent); font-size: 1.08em; }
   .songverse-text { padding-block: 0 3rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .orbits, .orbits text { animation: none; }
+  .orbits { animation: none; }
 }
