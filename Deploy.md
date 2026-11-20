@@ -131,7 +131,7 @@ Keep this stable once set — BetterAuth encrypts its signing key with it in the
 
 **Sign-up by invitation only** (issue #198) is switched on at **Admin > Users** (under **Sign-up and invitations**); `SIGNUP_INVITE_ONLY=true` is the fallback (default `false`: anyone can sign up). The `BOOTSTRAP_ADMIN_EMAILS` can always sign up, so a new server can't lock its admins out.
 
-**Notifications by email** (issue #236) are switched on at **Admin > Notifications**; `NOTIFICATION_EMAILS=true` is the fallback (default `false`: notifications only show in the app). They're sent by the Worker, through the same Resend key as account mail, one email per person per batch; the links in them point at `WEB_URL` as the API knows it, since the Worker may run without it.
+**Notifications by email** (issue #236) are switched on at **Admin > Notifications**; `NOTIFICATION_EMAILS=true` is the fallback (default `false`: notifications only show in the app). They're sent by the Worker, through the same Resend key as account mail, one email per person per batch; the links in them point at `WEB_URL` (or `PLANIVERSE_URL`) as the process that made the notification knows it - the API, or the Worker for the event reminders and swap requests it makes - so set both on the Worker too, with the API's values.
 
 **Organisations** (issue #241, Oneverse Plan) are set at **Admin > Organisations**; `ORGANIZATION_MODE` is the fallback: `NONE` (the default: Songverse on its own), `SINGLE` (one organisation, everyone who signs in is in it - a church hosting its own server) or `MULTI` (several, each kept apart - a hosted service), and with several, `ORGANIZATIONS_OPEN=true` lets anyone create one (default `false`: global admins only) - and then `ORGANIZATIONS_REVIEWED` (default `true`) has them ask for one, with its city and a contact person, approved by a global admin in Admin > Organisations (issue #364). `ORGANIZATIONS_OWN_STORAGE=true` (or the setting there) lets an organisation's admins with a role that allows it keep its teams' songs' files in the organisation's own bucket - Cloudflare R2, Amazon S3, Backblaze B2 or Wasabi (issue #206): the Worker moves them in and out, checking each file's hash, and they're left out of this server's backups and quotas. Keep `OWN_STORAGE_LOCAL_DIR` unset in production: it turns those buckets into local folders, for the e2e suites.
 
@@ -297,7 +297,7 @@ REDIRECT_HOSTS=planiverse.top
 PORT=3000
 ```
 
-Then set `PLANIVERSE_URL=https://plan.oneverse.top` on the **API** and redeploy it: until then the API refuses Oneverse Plan's sign-ins. The Worker needs nothing new (the API passes the addresses with each job).
+Then set `PLANIVERSE_URL=https://plan.oneverse.top` on the **API** and redeploy it: until then the API refuses Oneverse Plan's sign-ins. Set it on the **Worker** too and redeploy it: the event reminders it makes link there.
 
 ### Screen app
 
@@ -379,15 +379,15 @@ The apps can move to other domains later: change their address on the API and on
 
 A one-time change for a deployment whose Oneverse app was at `account.oneverse.top` (#538). Same app, now people's home too:
 1. **Oneverse app:** add the domain `app.oneverse.top`, keep `account.oneverse.top`; set `ONEVERSE_URL=https://app.oneverse.top`, `REDIRECT_HOSTS=account.oneverse.top` and, with the screen app, `SCREEN_URL`; redeploy.
-2. **API**, the **Worker**, **Songverse**, **Oneverse Plan** and the **screen app:** set `ONEVERSE_URL=https://app.oneverse.top` and redeploy them. The cookie's domain and the passkeys' relying party stay `oneverse.top`: everyone stays signed in and keeps their passkeys.
-3. **Site:** rebuild it with `PUBLIC_ONEVERSE_URL=https://app.oneverse.top`, or leave it: its link to `account.oneverse.top` is sent on.
+2. **API**, **Songverse**, **Oneverse Plan** and the **screen app:** set `ONEVERSE_URL=https://app.oneverse.top` and redeploy them (the Worker doesn't use it). The cookie's domain and the passkeys' relying party stay `oneverse.top`: everyone stays signed in and keeps their passkeys.
+3. **Site:** redeploy it from this version: its Sign in link now goes to `app.oneverse.top` (built into the page; a Dokploy variable doesn't change it). Until then, its link to `account.oneverse.top` is sent on.
 4. **Check:** `https://account.oneverse.top/sign-in` answers 301 to `https://app.oneverse.top/sign-in`; signing in to Songverse goes through `app.oneverse.top` and back; signing in at `app.oneverse.top` itself lands on the home.
 
 ### Planiverse becomes Oneverse Plan
 
 A one-time change for a deployment that had Planiverse at `planiverse.top` (#539). Same app, same image, new name and address:
 1. **Oneverse Plan** (the Planiverse application): add the domain `plan.oneverse.top` and keep `planiverse.top`; set `PLANIVERSE_URL=https://plan.oneverse.top` and `REDIRECT_HOSTS=planiverse.top`, and redeploy.
-2. **API:** set `PLANIVERSE_URL=https://plan.oneverse.top` and redeploy it and the Worker. As it starts, the API gives Plan's sign-in client its new address; until then, signing in to Plan is refused.
+2. **API** and **Worker:** set `PLANIVERSE_URL=https://plan.oneverse.top` on both (and, on a Worker still at `app.songverse.one`, `WEB_URL=https://songverse.top`), and redeploy them. As it starts, the API gives Plan's sign-in client its new address; until then, signing in to Plan is refused.
 3. **Oneverse app:** set `PLANIVERSE_URL=https://plan.oneverse.top` and redeploy (the account page's link).
 4. **Check:** `https://planiverse.top/calendar` answers 301 to `https://plan.oneverse.top/calendar`, and signing in to Plan comes back there. People who installed Planiverse on a phone's home screen are sent on too; they can add Plan again at its new address.
 
