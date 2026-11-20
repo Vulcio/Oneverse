@@ -43,18 +43,27 @@ em { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-w
 .button.ghost { background: rgba(11, 11, 15, 0.35); color: var(--fg); box-shadow: inset 0 0 0 1px rgba(244, 241, 234, 0.25); backdrop-filter: blur(6px); }
 .button.ghost:hover { background: rgba(11, 11, 15, 0.6); }
 
-/* Hero: the words beside a drawing of Oneverse's home, in a warm glow. */
-.hero {
-  position: relative; isolation: isolate; overflow: hidden;
+/* Hero: the words over a solar system. On a wide screen it's a scene: the
+   hero stays pinned while the page scrolls through it and the system moves,
+   then it scrolls away. */
+.hero { position: relative; isolation: isolate; overflow: clip; }
+.hero-stage {
+  position: relative; display: flex; flex-direction: column; min-height: min(84vh, 760px); overflow: clip;
   background:
     radial-gradient(60rem 36rem at 78% 30%, rgba(246, 193, 119, 0.1), transparent 70%),
     radial-gradient(40rem 30rem at 10% 60%, rgba(124, 108, 240, 0.1), transparent 70%);
 }
+/* The words stay readable: whatever passes behind them is darkened. */
+.hero-stage::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(11, 11, 15, 0.92) 0%, rgba(11, 11, 15, 0.75) 32%, rgba(11, 11, 15, 0) 55%); }
 /* Fades the glow out at the bottom, so the hero has no edge. */
-.hero::after { content: ""; position: absolute; inset: auto 0 0; height: 8rem; z-index: -1; background: linear-gradient(0deg, var(--bg), transparent); }
-.hero { min-height: min(84vh, 760px); display: flex; flex-direction: column; }
-.hero-body { position: relative; flex: 1; display: flex; align-items: center; padding-block: clamp(2rem, 5vw, 4rem) clamp(3.5rem, 8vw, 6rem); }
-.hero-text { position: relative; z-index: 1; }
+.hero-stage::after { content: ""; position: absolute; inset: auto 0 0; height: 10rem; z-index: 1; pointer-events: none; background: linear-gradient(0deg, var(--bg), transparent); }
+@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
+  .hero { height: 200vh; }
+  .hero-stage { position: sticky; top: 0; height: 100vh; min-height: 0; }
+}
+.top { position: relative; z-index: 2; }
+.hero-body { flex: 1; display: flex; align-items: center; padding-block: clamp(2rem, 5vw, 4rem) clamp(3.5rem, 8vw, 6rem); }
+.hero-text { position: relative; z-index: 2; }
 h1 {
   margin: 0; font-size: clamp(2.6rem, 5.4vw, 4.4rem); line-height: 1.04;
   font-weight: 620; letter-spacing: -0.035em; max-width: 12ch;
@@ -141,7 +150,8 @@ section h2 em { color: var(--accent); font-size: 1.08em; }
 }
 
 @media (max-width: 640px) {
-  .hero { min-height: 0; }
+  .hero-stage { min-height: 0; }
+  .hero-stage::before { display: none; }
   /* On a phone the photo gets its own space, framed on the tablet and the hands, with the words below it. */
   .songverse { display: block; min-height: 0; }
   .songverse-photo {

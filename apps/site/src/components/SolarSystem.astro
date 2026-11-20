@@ -1,13 +1,17 @@
 ---
-// Oneverse and its apps as a small solar system, seen from the side: the
-// apps orbit a glowing centre, pass in front of it and behind it, and the
-// whole system tilts and drifts as the page scrolls. Drawn by the script
-// below from these bodies; still when someone asks for less motion.
+// Oneverse and its apps as a solar system, seen from the side: a sun and
+// four planets that pass in front of it and behind it, each lit from the sun
+// (a planet in front shows its night side), the whole system tilting,
+// turning and growing as the page scrolls. Drawn by the script below from
+// these bodies; still when someone asks for less motion.
 const bodies = [
-  { key: "songverse", orbit: 0.3, size: 0.075, angle: 0.4, speed: 0.05 },
-  { key: "plan", orbit: 0.5, size: 0.06, angle: 2.6, speed: 0.032 },
-  { key: "screen", orbit: 0.7, size: 0.05, angle: 4.4, speed: 0.022 },
-  { key: "slideverse", orbit: 0.9, size: 0.036, angle: 1.4, speed: 0.015 },
+  { key: "songverse", orbit: 0.4, size: 0.15, angle: 0.5, speed: 0.045, ring: true },
+  { key: "plan", orbit: 0.62, size: 0.095, angle: 2.5, speed: 0.03, ring: false },
+  { key: "screen", orbit: 0.84, size: 0.075, angle: 4.3, speed: 0.021, ring: false },
+  { key: "slideverse", orbit: 1.05, size: 0.05, angle: 1.3, speed: 0.015, ring: false },
+  // Further out, off the screen at first: they come in as the page scrolls.
+  { key: "ice", orbit: 1.4, size: 0.13, angle: 0.35, speed: 0.01, ring: false },
+  { key: "rock", orbit: 1.75, size: 0.06, angle: 0.95, speed: 0.008, ring: false },
 ];
 ---
 
@@ -16,9 +20,14 @@ const bodies = [
     <svg class="rings" preserveAspectRatio="none">
       {bodies.map(() => <ellipse />)}
     </svg>
-    <span class="body sun"></span>
+    <span class="body sun"><span class="corona"></span></span>
     {bodies.map((b) => (
-      <span class={`body planet is-${b.key}`} data-orbit={b.orbit} data-size={b.size} data-angle={b.angle} data-speed={b.speed}></span>
+      <span class={`body planet is-${b.key}`} data-orbit={b.orbit} data-size={b.size} data-angle={b.angle} data-speed={b.speed}>
+        {b.ring && <span class="ring back"></span>}
+        <span class="surface"></span>
+        <span class="shade"></span>
+        {b.ring && <span class="ring front"></span>}
+      </span>
     ))}
   </div>
 </div>
@@ -26,8 +35,9 @@ const bodies = [
 <script>
   for (const system of document.querySelectorAll<HTMLElement>("[data-solar-system]")) {
     const plane = system.querySelector<HTMLElement>(".plane")!;
+    const hero = system.closest<HTMLElement>(".hero") ?? document.body;
     const sun = system.querySelector<HTMLElement>(".sun")!;
-    const rings = [...system.querySelectorAll<SVGEllipseElement>("ellipse")];
+    const orbits = [...system.querySelectorAll<SVGEllipseElement>("ellipse")];
     const planets = [...system.querySelectorAll<HTMLElement>(".planet")].map((el) => ({
       el,
       orbit: Number(el.dataset.orbit),
@@ -47,32 +57,39 @@ const bodies = [
 
     const start = performance.now();
     const draw = (now: number) => {
-      // How far the hero has scrolled away, 0 to 1.
-      const scrolled = Math.min(1, Math.max(0, scrollY / Math.max(1, system.offsetHeight)));
+      // How far the page has scrolled through the hero, 0 to 1: while it's
+      // pinned on a wide screen, or until it's gone on a phone.
+      const travel = hero.offsetHeight - (hero.offsetHeight > innerHeight * 1.5 ? innerHeight : 0);
+      const scrolled = Math.min(1, Math.max(0, (scrollY - hero.offsetTop) / Math.max(1, travel)));
       const time = still.matches ? 0 : (now - start) / 1000;
-      // Seen nearly edge-on, opening up a little as the page scrolls.
-      const flat = 0.2 + 0.16 * scrolled;
-      const reach = Math.min(width * 0.5, height * 1.1);
+      // Seen nearly edge-on, opening up as the page scrolls.
+      const flat = 0.15 + 0.4 * scrolled;
+      const reach = Math.min(width * 0.55, height * 1.5);
       const cx = width / 2;
       const cy = height / 2;
-      plane.style.transform = `translateY(${scrolled * height * 0.18}px) rotate(${-12 + 8 * scrolled}deg) scale(${1 + 0.12 * scrolled})`;
+      plane.style.transform = `translate(${-scrolled * width * 0.15}px, ${-scrolled * height * 0.08}px) rotate(${-16 + 30 * scrolled}deg) scale(${1 + 0.6 * scrolled})`;
 
-      const sunSize = reach * 0.3;
+      const sunSize = reach * 0.36;
       sun.style.cssText = `width:${sunSize}px;height:${sunSize}px;left:${cx - sunSize / 2}px;top:${cy - sunSize / 2}px;z-index:100`;
 
       planets.forEach((planet, i) => {
         const r = planet.orbit * reach;
-        const ring = rings[i];
-        ring.setAttribute("cx", String(cx));
-        ring.setAttribute("cy", String(cy));
-        ring.setAttribute("rx", String(r));
-        ring.setAttribute("ry", String(r * flat));
-        const angle = planet.angle + time * planet.speed + scrolled * 1.4 * planet.speed * 20;
+        const orbit = orbits[i];
+        orbit.setAttribute("cx", String(cx));
+        orbit.setAttribute("cy", String(cy));
+        orbit.setAttribute("rx", String(r));
+        orbit.setAttribute("ry", String(r * flat));
+        const angle = planet.angle + time * planet.speed + scrolled * (1.4 + planet.speed * 25);
         const depth = Math.sin(angle); // 1 in front of the sun, -1 behind it
-        const size = planet.size * reach * 2 * (1 + 0.28 * depth);
+        const size = planet.size * reach * 2 * (1 + 0.35 * depth);
         const x = cx + Math.cos(angle) * r;
         const y = cy + depth * r * flat;
-        planet.el.style.cssText = `width:${size}px;height:${size}px;left:${x - size / 2}px;top:${y - size / 2}px;z-index:${100 + Math.round(depth * 50)};opacity:${0.72 + 0.28 * (depth + 1) / 2}`;
+        // The lit side faces the sun; in front of it, we see mostly night.
+        const toSun = Math.atan2(cy - y, cx - x);
+        const night = (depth + 1) / 2;
+        planet.el.style.cssText =
+          `width:${size}px;height:${size}px;left:${x - size / 2}px;top:${y - size / 2}px;z-index:${100 + Math.round(depth * 50)};` +
+          `--lx:${50 + Math.cos(toSun) * 38}%;--ly:${50 + Math.sin(toSun) * 38}%;--lit:${58 - 40 * night}%;--flat:${flat}`;
       });
       if (!still.matches) requestAnimationFrame(draw);
     };
@@ -83,27 +100,86 @@ const bodies = [
 </script>
 
 <style>
-  .system { position: absolute; inset: 0 -8% 0 38%; z-index: 0; pointer-events: none; }
+  .system { position: absolute; inset: 0 -48% 0 28%; z-index: 0; pointer-events: none; }
   .plane { position: absolute; inset: 0; transform-origin: 50% 50%; }
   .rings { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .rings ellipse { fill: none; stroke: rgba(244, 241, 234, 0.09); stroke-width: 1; }
+  .rings ellipse { fill: none; stroke: rgba(244, 241, 234, 0.07); stroke-width: 1; }
   .body { position: absolute; border-radius: 50%; }
-  /* Light from the upper left, the night side dark. */
+
+  /* The sun: white hot at the core, darker at the limb, a soft corona. */
   .sun {
-    background: radial-gradient(circle at 38% 34%, #fff6e0 0%, #f6c177 34%, #c9782f 78%, #7a3f14 100%);
-    box-shadow: 0 0 60px 10px rgba(246, 193, 119, 0.35), 0 0 160px 40px rgba(246, 193, 119, 0.14);
+    background:
+      radial-gradient(circle at 46% 44%, rgba(255, 255, 240, 0.9) 0%, rgba(255, 245, 210, 0) 38%),
+      radial-gradient(circle at 70% 68%, rgba(200, 90, 20, 0.35) 0%, rgba(200, 90, 20, 0) 30%),
+      radial-gradient(circle at 30% 70%, rgba(255, 200, 120, 0.25) 0%, rgba(255, 200, 120, 0) 25%),
+      radial-gradient(circle, #ffe9a8 0%, #ffc457 45%, #f39a35 75%, #c8601c 100%);
   }
-  .planet { box-shadow: inset -0.35em -0.45em 0.9em rgba(0, 0, 0, 0.65); font-size: 1rem; }
-  .is-songverse { background: radial-gradient(circle at 32% 28%, #c7c2ff 0%, #6d5ef5 38%, #2b2170 100%); }
-  .is-plan { background: radial-gradient(circle at 32% 28%, #b5f5e8 0%, #20a99a 40%, #0b4a44 100%); }
-  .is-screen { background: radial-gradient(circle at 32% 28%, #ffd9b8 0%, #ef7d3a 40%, #6e2b0c 100%); }
-  .is-slideverse { background: radial-gradient(circle at 32% 28%, #6b6a72 0%, #34333b 50%, #16151b 100%); opacity: 0.6; }
+  /* The glow, drawn as a gradient: wide shadows band into squares on some screens. */
+  .corona { position: absolute; inset: -150%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, rgba(255, 200, 110, 0.55) 15%, rgba(255, 170, 70, 0.22) 21%, rgba(255, 150, 60, 0.08) 33%, rgba(255, 140, 50, 0) 50%); }
+
+  .planet > span { position: absolute; border-radius: 50%; }
+  .surface, .shade { inset: 0; }
+  .surface { overflow: hidden; }
+  /* Light from the sun's side, night on the other, a thin atmosphere at the edge. */
+  .shade {
+    background: radial-gradient(circle at var(--lx) var(--ly), rgba(255, 245, 225, 0.18) 0%, rgba(0, 0, 0, 0) var(--lit), rgba(3, 3, 8, 0.93) calc(var(--lit) + 34%));
+    box-shadow: inset 0 0 0.15em rgba(255, 255, 255, 0.12);
+  }
+
+  /* Songverse: a banded giant with rings. */
+  .is-songverse .surface {
+    background:
+      radial-gradient(ellipse 18% 10% at 62% 64%, #b5643e 0%, rgba(181, 100, 62, 0) 100%),
+      repeating-linear-gradient(176deg, #d9c7a6 0%, #c9a77d 4%, #e6d8bf 7%, #a77f58 10%, #d2b48d 13%, #8f6b4c 15%, #dccbb0 19%);
+  }
+  .ring { left: -42%; right: -42%; top: calc(50% - 115% * var(--flat) - 3%); bottom: calc(50% - 115% * var(--flat) - 3%); border-radius: 50%; border: 0.09em solid rgba(214, 196, 160, 0.55); box-shadow: 0 0 0 0.12em rgba(170, 150, 120, 0.25), inset 0 0 0 0.12em rgba(170, 150, 120, 0.2); font-size: 40px; transform: rotate(-8deg); }
+  .ring.back { z-index: -1; }
+  .ring.front { clip-path: inset(50% 0 0 0); }
+
+  /* Plan: blue oceans, land and clouds. */
+  .is-plan .surface {
+    background:
+      radial-gradient(ellipse 30% 14% at 35% 30%, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 100%),
+      radial-gradient(ellipse 26% 9% at 66% 72%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 100%),
+      radial-gradient(ellipse 28% 22% at 58% 42%, #4d6b3a 0%, #6b7f45 55%, rgba(107, 127, 69, 0) 72%),
+      radial-gradient(ellipse 16% 24% at 28% 62%, #5e6e3c 0%, rgba(94, 110, 60, 0) 75%),
+      radial-gradient(circle at 50% 50%, #2a6496 0%, #1b4a78 60%, #10304f 100%);
+  }
+  /* Screen: a rusty desert with a polar cap. */
+  .is-screen .surface {
+    background:
+      radial-gradient(ellipse 30% 9% at 50% 4%, rgba(255, 250, 245, 0.85) 0%, rgba(255, 250, 245, 0) 100%),
+      radial-gradient(ellipse 24% 14% at 38% 46%, #7d3a1d 0%, rgba(125, 58, 29, 0) 100%),
+      radial-gradient(ellipse 18% 20% at 70% 64%, #8a4322 0%, rgba(138, 67, 34, 0) 100%),
+      radial-gradient(circle, #c96b3c 0%, #b05a30 60%, #7e3b1c 100%);
+  }
+  /* Two outer worlds: a blue ice giant and a small rock. */
+  .is-ice .surface {
+    background:
+      repeating-linear-gradient(178deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.06) 6%, rgba(255, 255, 255, 0) 11%),
+      radial-gradient(ellipse 14% 8% at 40% 58%, #1d3a8a 0%, rgba(29, 58, 138, 0) 100%),
+      radial-gradient(circle, #6f9fe0 0%, #3f6fc4 55%, #213f86 100%);
+  }
+  .is-rock .surface {
+    background:
+      radial-gradient(circle at 60% 40%, #5f5650 0%, #5f5650 8%, rgba(0, 0, 0, 0) 11%),
+      radial-gradient(circle at 35% 65%, #6a6058 0%, #6a6058 6%, rgba(0, 0, 0, 0) 9%),
+      radial-gradient(circle, #9a8f84 0%, #7d7268 60%, #4f4740 100%);
+  }
+  /* Slideverse, still to come: a grey moon with craters. */
+  .is-slideverse .surface {
+    background:
+      radial-gradient(circle at 30% 35%, #77767c 0%, #77767c 7%, rgba(0, 0, 0, 0) 9%),
+      radial-gradient(circle at 62% 60%, #6c6b71 0%, #6c6b71 10%, rgba(0, 0, 0, 0) 12%),
+      radial-gradient(circle at 70% 28%, #85848a 0%, #85848a 5%, rgba(0, 0, 0, 0) 7%),
+      radial-gradient(circle, #a3a2a7 0%, #8c8b91 60%, #5f5e64 100%);
+  }
 
   @media (max-width: 960px) {
-    .system { inset: 0 -30% 0 10%; opacity: 0.4; }
+    .system { left: 5%; right: -60%; opacity: 0.5; }
   }
   @media (max-width: 640px) {
     /* On a phone the system gets its own space above the words. */
-    .system { position: relative; inset: auto; height: 15rem; margin: 0 -1rem 0; opacity: 1; }
+    .system { position: relative; inset: auto; height: 17rem; margin: 0 -1rem; opacity: 1; overflow: hidden; }
   }
 </style>
