@@ -22,7 +22,8 @@ seed`) - some suites use the built-in global tags.
      DEEZER_API_URL=http://localhost:3999/deezer APPLE_MUSIC_API_URL=http://localhost:3999/applemusic \
      WIKIDATA_API_URL=http://localhost:3999/wikidata/w/api.php WIKIPEDIA_URL='http://localhost:3999/wikipedia/{lang}' \
      SPOTIFY_API_URL=http://localhost:3999/spotify SPOTIFY_ACCOUNTS_URL=http://localhost:3999/spotify-accounts \
-     YOUTUBE_API_URL=http://localhost:3999/youtube YOUVERSION_API_URL=http://localhost:3999/youversion
+     YOUTUBE_API_URL=http://localhost:3999/youtube YOUVERSION_API_URL=http://localhost:3999/youversion \
+     BAN_URL=http://localhost:3999/ban
    # Push notifications go to a stand-in push service (lib/fake-push.mjs, port 3997) besides the real ones.
    # The Worker reads the notification emails' and pushes' outcomes; the email suites read its log, /tmp/worker.log.
    export PUSH_TEST_ORIGINS=http://localhost:3997

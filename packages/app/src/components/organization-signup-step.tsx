@@ -1,5 +1,5 @@
-import type { OrganizationLookalike } from "@oneverse/core";
-import { useState } from "react";
+import type { AddressSuggestion, OrganizationLookalike } from "@oneverse/core";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { FieldError } from "@oneverse/ui/components/field";
@@ -12,8 +12,9 @@ import { getApiUrl } from "../public-env";
  * the account made next (in a cookie, as an invitation's pass). Then the
  * account, by email or Google; it waits for a global admin's approval.
  */
-export function OrganizationSignupStep({ draft, onDraftChange, onKept }: { draft: OrganizationDraft; onDraftChange: (draft: OrganizationDraft) => void; onKept: () => void }) {
-  const { t } = useTranslation();
+export function OrganizationSignupStep({ draft, onDraftChange, onKept, addressSuggestions = false }: { draft: OrganizationDraft; onDraftChange: (draft: OrganizationDraft) => void; onKept: () => void; addressSuggestions?: boolean }) {
+  const { t, i18n } = useTranslation();
+  const suggest = useMemo(() => (addressSuggestions ? addressSuggester(i18n.language) : undefined), [addressSuggestions, i18n.language]);
   const [looksLike, setLooksLike] = useState<OrganizationLookalike[] | null>(null);
   const [duplicateNote, setDuplicateNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -53,13 +54,22 @@ export function OrganizationSignupStep({ draft, onDraftChange, onKept }: { draft
   return (
     <div className="flex flex-col gap-4" data-testid="organization-signup-step">
       <p className="text-sm text-muted-foreground">{t("organizations.signup.hint")}</p>
-      <OrganizationFields value={draft} onChange={change} idPrefix="signup-organization" looksLike={looksLike} duplicateNote={duplicateNote} onDuplicateNoteChange={setDuplicateNote} />
+      <OrganizationFields value={draft} onChange={change} idPrefix="signup-organization" looksLike={looksLike} duplicateNote={duplicateNote} onDuplicateNoteChange={setDuplicateNote} suggest={suggest} />
       {error ? <FieldError>{error}</FieldError> : null}
       <Button type="button" disabled={busy || !ready} onClick={() => void next()} data-testid="organization-signup-next">
         {busy ? t("organizations.signup.checking") : t("organizations.signup.next")}
       </Button>
     </div>
   );
+}
+
+/** Addresses like what's typed, from the API's lookup (issue #533), signed in or not; none when it doesn't answer. */
+export function addressSuggester(language: string | undefined) {
+  return async (q: string, country: string): Promise<AddressSuggestion[]> => {
+    const params = new URLSearchParams({ q, ...(country ? { country } : {}), ...(language ? { lang: language.split("-")[0]! } : {}) });
+    const response = await fetch(`${getApiUrl().replace(/\/$/, "")}/auth/address-suggestions?${params}`);
+    return response.ok ? ((await response.json()) as AddressSuggestion[]) : [];
+  };
 }
 
 /** A new draft, its country guessed from the browser's language. */

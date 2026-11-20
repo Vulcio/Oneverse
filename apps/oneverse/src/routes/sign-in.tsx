@@ -41,9 +41,9 @@ export const Route = createFileRoute("/sign-in")({
     const pass = passOf(search.pass);
     const session = await getSession();
     if (session) throw redirect({ href: continueTo, reloadDocument: true });
-    const [{ hasGoogleAuth, signupInviteOnly, signupOrganizationRequests }, locale] = await Promise.all([apiClient.getAuthPublicConfig(), getVisitorLocale()]);
+    const [{ hasGoogleAuth, signupInviteOnly, signupOrganizationRequests, addressSuggestions }, locale] = await Promise.all([apiClient.getAuthPublicConfig(), getVisitorLocale()]);
     const email = typeof search.email === "string" ? search.email : undefined;
-    return { continueTo, pass, email, hasGoogleAuth, signupInviteOnly, signupOrganizationRequests: !!signupOrganizationRequests, locale: await loadLocale(locale) };
+    return { continueTo, pass, email, hasGoogleAuth, signupInviteOnly, signupOrganizationRequests: !!signupOrganizationRequests, addressSuggestions: !!addressSuggestions, locale: await loadLocale(locale) };
   },
   component: SignInPage,
 });
@@ -59,7 +59,7 @@ function SignInPage() {
 
 function SignInContent() {
   const { t } = useTranslation();
-  const { continueTo, pass, email, hasGoogleAuth, signupInviteOnly, signupOrganizationRequests } = Route.useRouteContext();
+  const { continueTo, pass, email, hasGoogleAuth, signupInviteOnly, signupOrganizationRequests, addressSuggestions } = Route.useRouteContext();
   return (
     <AuthPage brand={<OneverseBrand />} actions={<ThemeSwitch />}>
       {pass ? (
@@ -67,7 +67,7 @@ function SignInContent() {
           {t(PROMPTS[pass.kind], { email: email ?? "" })}
         </p>
       ) : null}
-      <AuthCard redirectTo={continueTo} hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} signupOrganizationRequests={signupOrganizationRequests} invitePass={pass} email={email} />
+      <AuthCard redirectTo={continueTo} hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} signupOrganizationRequests={signupOrganizationRequests} addressSuggestions={addressSuggestions} invitePass={pass} email={email} />
       <SourceCodeLink />
     </AuthPage>
   );

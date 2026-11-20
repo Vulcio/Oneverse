@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_protected")({
       throw redirect({ to: "/", search: { next: location.href } });
     }
     // Waiting for their organisation's approval (issue #533): Oneverse shows where it stands.
-    if (data.session.awaitingApproval) throw redirect({ href: `${oneverseUrl()}/`, reloadDocument: true });
+    if (data.session.awaitingApproval) throw redirect({ href: `${oneverseUrl()}/account`, reloadDocument: true });
     await loadLocale(data.session.locale);
     return data;
   },

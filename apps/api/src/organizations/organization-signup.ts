@@ -1,6 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { prisma, type PrismaClient } from "@oneverse/db";
-import type { OrganizationLookalike, OrganizationSignupRequest } from "@oneverse/core";
+import { readPhone, type OrganizationLookalike, type OrganizationSignupRequest } from "@oneverse/core";
+import { checkAddress } from "./address-lookup.js";
+
+/** What a draft keeps: the request, its phone as +33612345678, and what the address lookup found. */
+type SignupDraftData = OrganizationSignupRequest & { addressFound?: boolean | null; addressFoundAs?: string | null };
 
 /** How long a request made before its account waits for that account: the pass's life (signup-gate.ts). */
 const DRAFT_MS = 60 * 60 * 1000;
@@ -60,7 +64,9 @@ export async function keepSignupDraft(data: OrganizationSignupRequest): Promise<
   // Those nobody signed up with are gone after an hour.
   await prisma.organizationSignupDraft.deleteMany({ where: { expiresAt: { lt: now } } });
   const token = randomBytes(24).toString("base64url");
-  await prisma.organizationSignupDraft.create({ data: { token, data: data as object, expiresAt: new Date(now.getTime() + DRAFT_MS) } });
+  const found = await checkAddress(data);
+  const kept: SignupDraftData = { ...data, phone: readPhone(data.phone, data.country)?.e164 ?? data.phone, addressFound: found?.found ?? null, addressFoundAs: found?.as ?? null };
+  await prisma.organizationSignupDraft.create({ data: { token, data: kept as object, expiresAt: new Date(now.getTime() + DRAFT_MS) } });
   return token;
 }
 
@@ -73,7 +79,7 @@ export async function keepSignupDraft(data: OrganizationSignupRequest): Promise<
 export async function takeSignupDraft(user: { id: string; email: string; name: string }, token: string): Promise<void> {
   const draft = await prisma.organizationSignupDraft.findUnique({ where: { token } });
   if (!draft || draft.expiresAt <= new Date()) return;
-  const data = draft.data as unknown as OrganizationSignupRequest;
+  const data = draft.data as unknown as SignupDraftData;
   await prisma.$transaction([
     prisma.organizationRequest.create({
       data: {
@@ -87,6 +93,9 @@ export async function takeSignupDraft(user: { id: string; email: string; name: s
         country: data.country,
         responsibleFirstName: data.responsibleFirstName,
         responsibleLastName: data.responsibleLastName,
+        phone: data.phone ?? null,
+        addressFound: data.addressFound ?? null,
+        addressFoundAs: data.addressFoundAs ?? null,
         contactName: user.name || `${data.responsibleFirstName} ${data.responsibleLastName}`,
         contactEmail: user.email.toLowerCase(),
         website: data.website ?? null,

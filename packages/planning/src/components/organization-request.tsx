@@ -1,5 +1,5 @@
 import { ApiError, type OrganizationLookalike, type OrganizationRequestView } from "@oneverse/core";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
@@ -20,6 +20,7 @@ import { FieldError } from "@oneverse/ui/components/field";
 export function RequestOrganizationCard({ initial }: { initial: OrganizationRequestView[] }) {
   const { api } = usePlanning();
   const { t, i18n } = useTranslation();
+  const suggest = useCallback((q: string, country: string) => api.addressSuggestions(q, country || undefined, i18n.language?.split("-")[0]), [api, i18n.language]);
   const [requests, setRequests] = useState(initial);
   // Its address and the person responsible too (issue #533).
   const [draft, setDraft] = useState<OrganizationDraft>(() => emptyOrganizationDraft(countryFromLocale(typeof navigator === "undefined" ? i18n.language : navigator.language)));
@@ -109,7 +110,7 @@ export function RequestOrganizationCard({ initial }: { initial: OrganizationRequ
           <CardDescription>{t("organizations.requests.hint")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <OrganizationFields value={draft} onChange={change} idPrefix="request" looksLike={looksLike} duplicateNote={duplicateNote} onDuplicateNoteChange={setDuplicateNote} />
+          <OrganizationFields value={draft} onChange={change} idPrefix="request" looksLike={looksLike} duplicateNote={duplicateNote} onDuplicateNoteChange={setDuplicateNote} suggest={suggest} />
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="request-contact-name">{t("organizations.requests.contactName")}</Label>

@@ -1,4 +1,5 @@
 import { postcodeValidator, postcodeValidatorExistsForCountry } from "postcode-validator";
+import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js/min";
 
 /**
  * Postal addresses (issue #533): an organisation's, checked where it's typed
@@ -71,4 +72,24 @@ export function countryName(code: string, locale: string): string {
 export function addressLine(address: { street?: string | null; postalCode?: string | null; city?: string | null; country?: string | null }, locale: string): string {
   const town = [address.postalCode, address.city].filter(Boolean).join(" ");
   return [address.street, town, address.country ? countryName(address.country, locale) : null].filter(Boolean).join(", ");
+}
+
+/**
+ * A phone number (issue #533), checked offline against its country's
+ * numbering plan (libphonenumber-js, MIT): one written with its "+" and
+ * country code, or one written as at home, read in `country` (the
+ * address's). No SMS: it's only checked to be a number that can exist.
+ */
+export function readPhone(raw: string, country?: string | null): { e164: string; international: string } | null {
+  const text = raw.trim();
+  if (!text) return null;
+  const region = country && isCountryCode(country) ? (country as CountryCode) : undefined;
+  const phone = parsePhoneNumberFromString(text, region);
+  if (!phone || !phone.isValid()) return null;
+  return { e164: phone.number, international: phone.formatInternational() };
+}
+
+/** A phone number kept as E.164 ("+33612345678"), as people read it ("+33 6 12 34 56 78"). */
+export function formatPhone(e164: string): string {
+  return parsePhoneNumberFromString(e164)?.formatInternational() ?? e164;
 }

@@ -22,8 +22,9 @@
     "song-provider-api": "tsc -p tsconfig.json && node scripts/song-provider-api.mjs"
   },
   "dependencies": {
+    "libphonenumber-js": "^1.13.17",
     "nanoid": "^5.0.9",
-    "postcode-validator": "3.10.33",
+    "postcode-validator": "^3.10.33",
     "zod": "^4.6.7"
   },
   "devDependencies": {

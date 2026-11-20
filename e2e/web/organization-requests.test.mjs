@@ -31,6 +31,7 @@ async function fill(page, city) {
   await form.locator("#request-country").selectOption("FR");
   await form.locator("#request-first-name").fill("Alice");
   await form.locator("#request-last-name").fill("Le Gall");
+  await form.locator("#request-phone").fill("+33 2 98 00 00 00");
   await form.getByLabel("Contact person").fill("Alice Le Gall");
   await form.getByLabel("Contact email").fill("alice@example.org");
 }

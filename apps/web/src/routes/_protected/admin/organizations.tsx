@@ -1,4 +1,4 @@
-import { addressLine, type AdminOrganizationRequest, type OrganizationMode } from "@oneverse/core";
+import { addressLine, formatPhone, type AdminOrganizationRequest, type OrganizationMode } from "@oneverse/core";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,6 +30,13 @@ function AdminOrganizationsPage() {
   const router = useRouter();
   const summary = Route.useLoaderData();
   const { mode: modeSetting, anyoneCreates: anyoneSetting, ownStorage: ownStorageSetting, reviewRequests: reviewSetting } = summary.settings;
+  // Older APIs don't have them: off, komoot's Photon, France's base.
+  const lookupSetting = summary.settings.addressLookup ?? { value: false, source: "default" as const, env: "ADDRESS_LOOKUP" };
+  const photonSetting = summary.settings.photonUrl ?? { value: "https://photon.komoot.io", source: "default" as const, env: "PHOTON_URL" };
+  const franceSetting = summary.settings.addressLookupFrance ?? { value: true, source: "default" as const, env: "ADDRESS_LOOKUP_FRANCE" };
+  const [addressLookup, setAddressLookup] = useState(lookupSetting.value);
+  const [photonUrl, setPhotonUrl] = useState(photonSetting.value);
+  const [addressLookupFrance, setAddressLookupFrance] = useState(franceSetting.value);
   const [ownStorage, setOwnStorage] = useState(ownStorageSetting.value);
   const [reviewRequests, setReviewRequests] = useState(reviewSetting.value);
   const [mode, setMode] = useState<OrganizationMode>(modeSetting.value);
@@ -38,6 +45,9 @@ function AdminOrganizationsPage() {
     setMode(modeSetting.value);
     setAnyoneCreates(anyoneSetting.value);
     setReviewRequests(reviewSetting.value);
+    setAddressLookup(lookupSetting.value);
+    setPhotonUrl(photonSetting.value);
+    setAddressLookupFrance(franceSetting.value);
   }, [summary]);
   const [name, setName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -118,6 +128,36 @@ function AdminOrganizationsPage() {
               </span>
             </label>
           ) : null}
+          {mode === "MULTI" ? (
+            <>
+              <label className="flex items-start gap-3">
+                <input type="checkbox" className="mt-1 size-4" checked={addressLookup} onChange={(event) => setAddressLookup(event.target.checked)} data-testid="organization-address-lookup" />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium">{t("organizations.addressLookup")}</span>
+                  <span className="text-xs text-muted-foreground">{t("organizations.addressLookupHint")}</span>
+                  <span className="text-xs text-muted-foreground">{sourceOf(lookupSetting)}</span>
+                </span>
+              </label>
+              {addressLookup ? (
+                <div className="flex flex-col gap-3 pl-7">
+                  <label className="flex items-start gap-3">
+                    <input type="checkbox" className="mt-1 size-4" checked={addressLookupFrance} onChange={(event) => setAddressLookupFrance(event.target.checked)} data-testid="organization-address-lookup-france" />
+                    <span className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium">{t("organizations.addressLookupFrance")}</span>
+                      <span className="text-xs text-muted-foreground">{t("organizations.addressLookupFranceHint")}</span>
+                      <span className="text-xs text-muted-foreground">{sourceOf(franceSetting)}</span>
+                    </span>
+                  </label>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="organization-photon-url">{t("organizations.photonUrl")}</Label>
+                    <Input id="organization-photon-url" type="url" value={photonUrl} maxLength={300} onChange={(event) => setPhotonUrl(event.target.value)} />
+                    <span className="text-xs text-muted-foreground">{t("organizations.photonUrlHint")}</span>
+                    <span className="text-xs text-muted-foreground">{sourceOf(photonSetting)}</span>
+                  </div>
+                </div>
+              ) : null}
+            </>
+          ) : null}
           {mode !== "NONE" ? (
             <label className="flex items-start gap-3">
               <input type="checkbox" className="mt-1 size-4" checked={ownStorage} onChange={(event) => setOwnStorage(event.target.checked)} data-testid="organization-own-storage" />
@@ -141,6 +181,9 @@ function AdminOrganizationsPage() {
                 ...(anyoneCreates !== anyoneSetting.value ? { anyoneCreates } : {}),
                 ...(ownStorage !== ownStorageSetting.value ? { ownStorage } : {}),
                 ...(reviewRequests !== reviewSetting.value ? { reviewRequests } : {}),
+                ...(addressLookup !== lookupSetting.value ? { addressLookup } : {}),
+                ...(addressLookupFrance !== franceSetting.value ? { addressLookupFrance } : {}),
+                ...(photonUrl.trim() !== photonSetting.value ? { photonUrl: photonUrl.trim() } : {}),
               }),
             )
           }
@@ -286,13 +329,35 @@ function PendingRequest({ request, busy, run }: { request: AdminOrganizationRequ
         {request.street ? (
           <>
             <dt className="text-muted-foreground">{t("organizations.address.title")}</dt>
-            <dd data-testid="request-address">{addressLine({ street: request.street, postalCode: request.postalCode, city: request.city, country: request.country }, i18n.language || "en")}</dd>
+            <dd data-testid="request-address">
+              {addressLine({ street: request.street, postalCode: request.postalCode, city: request.city, country: request.country }, i18n.language || "en")}
+              {/* What the address lookup found when it was sent (issue #533): a hint, never a verdict. */}
+              {request.addressFound === true ? (
+                <span className="block text-success" data-testid="request-address-found">
+                  {t("organizations.requests.addressFound", { as: request.addressFoundAs ?? "" })}
+                </span>
+              ) : request.addressFound === false ? (
+                <span className="block text-warning" data-testid="request-address-not-found">
+                  {t("organizations.requests.addressNotFound")}
+                </span>
+              ) : null}
+            </dd>
           </>
         ) : null}
         {request.responsibleFirstName ? (
           <>
             <dt className="text-muted-foreground">{t("organizations.address.responsible")}</dt>
             <dd>{`${request.responsibleFirstName} ${request.responsibleLastName ?? ""}`.trim()}</dd>
+          </>
+        ) : null}
+        {request.phone ? (
+          <>
+            <dt className="text-muted-foreground">{t("organizations.requests.phone")}</dt>
+            <dd>
+              <a href={`tel:${request.phone}`} className="hover:text-primary" data-testid="request-phone">
+                {formatPhone(request.phone)}
+              </a>
+            </dd>
           </>
         ) : null}
         <dt className="text-muted-foreground">{t("organizations.requests.kind")}</dt>

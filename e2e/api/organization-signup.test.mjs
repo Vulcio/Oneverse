@@ -3,7 +3,11 @@
 // sign up by asking for theirs. The organisation comes first - its address
 // checked, look-alikes refused - and is kept for the account made next (a
 // pass in a cookie); the account only sees where its request stands until
-// a global admin approves it. Invite links still let people in.
+// a global admin approves it. Invite links still let people in. A phone
+// number is asked for, checked as one that can exist (no text sent); the
+// address is suggested as it's typed and looked up when it's sent, from
+// stand-ins for France's address base and Photon, when Admin turns it on.
+import { FAKE_PROVIDERS_URL, addressLookups, startFakeProviders } from "../lib/fake-providers.mjs";
 import { API, ORIGIN, VERIFY_LINK_PATTERN, call, check, finish, logOffset, sql, stamp, user, waitForLog } from "../lib/harness.mjs";
 
 const admin = await user("orgsignup global admin");
@@ -22,6 +26,7 @@ const details = (extra = {}) => ({
   country: "FR",
   responsibleFirstName: "Marie",
   responsibleLastName: "Curie",
+  phone: "+33 1 42 60 00 00",
   ...extra,
 });
 
@@ -53,6 +58,7 @@ async function signUp(address, cookie = "") {
 sql(`delete from "OrganizationRequest" where street = '12 rue de la Paix' or street = '12, Rue de la Paix'`);
 sql(`delete from "Organization" where street = '12 rue de la Paix'`);
 
+const providers = await startFakeProviders();
 try {
   await call(admin, "DELETE", "/admin/organizations/settings");
   await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI" });
@@ -81,6 +87,34 @@ try {
   r = await ask(details({ country: "HK", postalCode: undefined, city: "Hong Kong" }));
   check("no postal code where a country has none", r.status === 204, JSON.stringify(r.body));
 
+  // --- a phone number, checked (never texted)
+  r = await ask(details({ phone: undefined }));
+  check("a phone number is needed", r.status === 400 && r.body.message.some((line) => line.startsWith("phone")), JSON.stringify(r.body));
+  r = await ask(details({ phone: "01 42 60" }));
+  check("…one that can exist", r.status === 400 && r.body.message.some((line) => line.startsWith("phone")), JSON.stringify(r.body));
+  r = await ask(details({ phone: "06 12 34 56 78", name: `Phone ${stamp}`, street: "5 rue Oberkampf", postalCode: "75011" }));
+  check("…read in the address's country, kept with its code", r.status === 204 && sql(`select data->>'phone' from "OrganizationSignupDraft" where data->>'name'='Phone ${stamp}'`) === "+33612345678", JSON.stringify(r.body));
+  r = await ask(details({ phone: "020 7946 0018", name: `Phone UK ${stamp}`, street: "5 rue Oberkampf", postalCode: "75011" }));
+  check("…a number from another country needs its code", r.status === 400 && r.body.message.some((line) => line.startsWith("phone")), JSON.stringify(r.body));
+
+  // --- addresses suggested and looked up (off by default)
+  config = await (await fetch(`${API}/auth/public-config`)).json();
+  r = await fetch(`${API}/auth/address-suggestions?${new URLSearchParams({ q: "8 quai des chartrons", country: "FR" })}`).then((res) => res.json());
+  check("address lookup off: nothing suggested, nothing asked", config.addressSuggestions === false && Array.isArray(r) && r.length === 0 && addressLookups.ban.length === 0, JSON.stringify(r));
+  r = await call(admin, "PUT", "/admin/organizations/settings", { addressLookup: true, photonUrl: `${FAKE_PROVIDERS_URL}/photon` });
+  r = await call(admin, "GET", "/admin/organizations");
+  check("Admin: switched on, Photon's address saved, France's base by default", r.body.settings.addressLookup.value === true && r.body.settings.addressLookup.env === "ADDRESS_LOOKUP" && r.body.settings.photonUrl.value === `${FAKE_PROVIDERS_URL}/photon` && r.body.settings.addressLookupFrance.value === true && r.body.settings.addressLookupFrance.source === "default", JSON.stringify(r.body.settings));
+  config = await (await fetch(`${API}/auth/public-config`)).json();
+  check("…the sign-in page is told", config.addressSuggestions === true, JSON.stringify(config));
+  r = await fetch(`${API}/auth/address-suggestions?${new URLSearchParams({ q: "8 quai des chartrons", country: "FR" })}`).then((res) => res.json());
+  check("France: from the Base Adresse Nationale, signed out", r.length === 1 && r[0].street === "8 Quai des Chartrons" && r[0].postalCode === "33000" && r[0].city === "Bordeaux" && r[0].country === "FR" && r[0].source === "ban", JSON.stringify(r));
+  r = await fetch(`${API}/auth/address-suggestions?${new URLSearchParams({ q: "unter den linden 1", country: "DE", lang: "de" })}`).then((res) => res.json());
+  check("elsewhere: from Photon, the number after the street in Germany", r.length === 1 && r[0].street === "Unter den Linden 1" && r[0].postalCode === "10117" && r[0].country === "DE" && r[0].source === "photon", JSON.stringify(r));
+  r = await fetch(`${API}/auth/address-suggestions?${new URLSearchParams({ q: "unter den linden 1", country: "FR" })}`).then((res) => res.json());
+  check("…only the country's", r.length === 0, JSON.stringify(r));
+  r = await ask(details({ name: `Port ${stamp}`, street: "8 quai des Chartrons", postalCode: "33000", city: "Bordeaux" }));
+  check("sent: the address looked up, and found", r.status === 204 && sql(`select (data->>'addressFound') || '|' || (data->>'addressFoundAs') from "OrganizationSignupDraft" where data->>'name'='Port ${stamp}'`) === "true|8 Quai des Chartrons 33000 Bordeaux · BAN", JSON.stringify(r.body));
+
   // --- kept for the account made next
   r = await ask(details({ country: "fr", postalCode: " 75002 " }));
   check("asked: kept in a cookie for sign-up", r.status === 204 && /HttpOnly/i.test(r.raw) && /Path=\/api\/auth/i.test(r.raw) && r.cookie.includes("request%3A"), r.raw);
@@ -96,6 +130,7 @@ try {
   check("with it, the account is made", marie.status === 200 && exists(email("marie")), JSON.stringify(marie));
   const request = JSON.parse(sql(`select row_to_json(r) from "OrganizationRequest" r where "requestedById"='${marie.id}'`));
   check("…and the request is theirs, with its address and the person responsible", request.name === name && request.street === "12 rue de la Paix" && request.postalCode === "75002" && request.country === "FR" && request.responsibleFirstName === "Marie" && request.responsibleLastName === "Curie" && request.contactEmail === email("marie") && request.atSignup === true, JSON.stringify(request));
+  check("…its phone number, and the address the lookup didn't find", request.phone === "+33142600000" && request.addressFound === false && request.addressFoundAs === null, JSON.stringify(request));
   check("…the draft gone", sql(`select count(*) from "OrganizationSignupDraft" where token='${draftToken}'`) === "0");
   check("admins aren't told before the account is signed in", sql(`select count(*) from "Notification" where "userId"='${admin.id}' and kind='ORGANIZATION_REQUESTED' and data->>'organization'='${name}'`) === "0");
 
@@ -137,13 +172,14 @@ try {
   r = await call(admin, "GET", "/admin/organizations/requests");
   const pending = r.body.pending.find((one) => one.id === again.id);
   check("Admin: the request with its address, made at sign-up, email verified", pending?.street === "12 rue de la Paix" && pending.atSignup === true && pending.requestedBy.emailVerified === true, JSON.stringify(pending));
+  check("…its phone, and whether the address was found", pending?.phone === "+33142600000" && pending.addressFound === false, JSON.stringify(pending));
   r = await call(admin, "POST", `/admin/organizations/requests/${again.id}/approve`);
   const organizationId = r.body.organizationId;
   check("approved", r.status === 201 && typeof organizationId === "string", JSON.stringify(r.body));
   r = await call(marie, "GET", "/users/me");
   check("their account is open", r.body.awaitingApproval === false, JSON.stringify(r.body.awaitingApproval));
   r = await call(marie, "GET", `/organizations/${organizationId}`);
-  check("…they run it, with its address and the person responsible", r.status === 200 && r.body.currentUserRole === "ADMIN" && r.body.street === "12 rue de la Paix" && r.body.postalCode === "75002" && r.body.country === "FR" && r.body.responsibleLastName === "Curie", JSON.stringify(r.body));
+  check("…they run it, with its address and the person responsible", r.status === 200 && r.body.currentUserRole === "ADMIN" && r.body.street === "12 rue de la Paix" && r.body.postalCode === "75002" && r.body.country === "FR" && r.body.responsibleLastName === "Curie" && r.body.phone === "+33142600000", JSON.stringify(r.body));
   r = await call(marie, "GET", "/teams");
   check("…and everything else", r.status === 200, String(r.status));
   r = await ask(details({ name: `Grace Chapel ${stamp}` }));
@@ -168,5 +204,6 @@ try {
   await call(admin, "PUT", "/admin/security", { signupInviteOnly: null, signupOrganizationRequests: null });
   await call(admin, "DELETE", "/admin/organizations/settings");
   sql(`delete from "OrganizationRequest" where street in ('12 rue de la Paix', '12, Rue de la Paix', '40 avenue Jean Jaurès', '3 place Bellecour')`);
+  providers.close();
 }
 finish();

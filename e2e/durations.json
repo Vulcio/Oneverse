@@ -217,7 +217,7 @@
 "web/opus-fallback": 8,
 "web/organization-events": 8,
 "web/organization-requests": 10,
-"web/organization-signup": 25,
+"web/organization-signup": 32,
 "web/organizations": 11,
 "web/own-storage": 5,
 "web/passkeys": 6,

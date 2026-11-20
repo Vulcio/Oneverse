@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { slugify, type OrganizationLookalike, type CreateOrganizationRequest, type DeclineOrganizationRequestRequest, type RequestOrganizationRequest, type TeamRoleValue } from "@oneverse/core";
+import { readPhone, slugify, type OrganizationLookalike, type CreateOrganizationRequest, type DeclineOrganizationRequestRequest, type RequestOrganizationRequest, type TeamRoleValue } from "@oneverse/core";
 import type { Prisma, PrismaClient } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
@@ -10,6 +10,7 @@ import { ownServersPolicy } from "../stem-separation/sonic-servers.js";
 import { getEffectiveOrganizationSettings } from "./organization-settings.js";
 import { leaveTeams } from "../teams/leave-teams.js";
 import { findLookalikes } from "./organization-signup.js";
+import { checkAddress } from "./address-lookup.js";
 
 type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin" | "awaitingApproval">;
 type Db = PrismaClient | Prisma.TransactionClient;
@@ -156,6 +157,9 @@ export class OrganizationsService {
     country: true,
     responsibleFirstName: true,
     responsibleLastName: true,
+    phone: true,
+    addressFound: true,
+    addressFoundAs: true,
     atSignup: true,
     contactName: true,
     contactEmail: true,
@@ -191,6 +195,8 @@ export class OrganizationsService {
     if (waiting >= OrganizationsService.MAX_PENDING_REQUESTS) throw new ConflictException(`You already have ${waiting} requests waiting for review`);
     const looksLike = await this.lookalikes(dto);
     assertNotLookalike(looksLike, dto.duplicateNote);
+    // For the reviewer: whether the address exists (when the lookup is on); never a reason to refuse.
+    const found = await checkAddress(dto);
     const request = await this.prisma.client.organizationRequest.create({
       data: {
         requestedById: viewer.id,
@@ -203,6 +209,9 @@ export class OrganizationsService {
         country: dto.country ?? null,
         responsibleFirstName: dto.responsibleFirstName ?? null,
         responsibleLastName: dto.responsibleLastName ?? null,
+        phone: dto.phone ? (readPhone(dto.phone, dto.country)?.e164 ?? null) : null,
+        addressFound: found?.found ?? null,
+        addressFoundAs: found?.as ?? null,
         atSignup: !!viewer.awaitingApproval,
         announcedAt: new Date(),
         contactName: dto.contactName,
@@ -292,6 +301,7 @@ export class OrganizationsService {
           country: request.country,
           responsibleFirstName: request.responsibleFirstName,
           responsibleLastName: request.responsibleLastName,
+          phone: request.phone,
           contactName: request.contactName,
           contactEmail: request.contactEmail,
           website: request.website,
@@ -373,6 +383,7 @@ export class OrganizationsService {
       country: organization.country,
       responsibleFirstName: organization.responsibleFirstName,
       responsibleLastName: organization.responsibleLastName,
+      phone: organization.phone,
       contactName: organization.contactName,
       contactEmail: organization.contactEmail,
       website: organization.website,
@@ -432,6 +443,7 @@ export class OrganizationsService {
         ...(dto.country !== undefined && { country: dto.country || null }),
         ...(dto.responsibleFirstName !== undefined && { responsibleFirstName: dto.responsibleFirstName }),
         ...(dto.responsibleLastName !== undefined && { responsibleLastName: dto.responsibleLastName }),
+        ...(dto.phone !== undefined && { phone: dto.phone ? (readPhone(dto.phone, dto.country || undefined)?.e164 ?? null) : null }),
         ...(dto.contactName !== undefined && { contactName: dto.contactName }),
         ...(dto.contactEmail !== undefined && { contactEmail: dto.contactEmail || null }),
         ...(dto.website !== undefined && { website: dto.website || null }),

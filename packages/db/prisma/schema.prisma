@@ -775,6 +775,8 @@ model Organization {
   // The person responsible for it (issue #533), not always who asked.
   responsibleFirstName  String?
   responsibleLastName   String?
+  // E.164, checked with libphonenumber (issue #533).
+  phone                 String?
   website               String?
   kind                  String?
   // Its admins' setup checklist (issue #364), put away.
@@ -857,6 +859,12 @@ model OrganizationSettings {
   ownStorage     Boolean?
   // With anyone creating: each is a request a global admin reviews (issue #364; ORGANIZATIONS_REVIEWED, default on).
   reviewRequests Boolean?
+  // Addresses suggested as typed and looked up when a request is sent (issue #533; ADDRESS_LOOKUP, default off).
+  addressLookup       Boolean?
+  // The Photon server for addresses outside France (PHOTON_URL).
+  photonUrl           String?
+  // French addresses from the Base Adresse Nationale (ADDRESS_LOOKUP_FRANCE, default on).
+  addressLookupFrance Boolean?
   updatedAt      DateTime @updatedAt
 }
 
@@ -883,6 +891,10 @@ model OrganizationRequest {
   contactEmail   String
   responsibleFirstName String?
   responsibleLastName  String?
+  phone          String?
+  // Whether the address lookup found the address when it was sent, and as what (null: not looked up).
+  addressFound   Boolean?
+  addressFoundAs String?
   // Sent with the account, at sign-up (issue #533): its approval lets them in.
   atSignup       Boolean                   @default(false)
   // When global admins were told: a request made at sign-up waits for the

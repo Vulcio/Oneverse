@@ -1,5 +1,5 @@
 import { ApiError, addressLine, type ApiClient, type OrganizationLookalike, type OrganizationRequestView, type UserProfile } from "@oneverse/core";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
@@ -16,6 +16,7 @@ import { OrganizationFields, countryFromLocale, emptyOrganizationDraft, organiza
  */
 export function AwaitingApprovalCard({ api, profile }: { api: ApiClient; profile: Pick<UserProfile, "displayName" | "email"> }) {
   const { t, i18n } = useTranslation();
+  const suggest = useCallback((q: string, country: string) => api.addressSuggestions(q, country || undefined, i18n.language?.split("-")[0]), [api, i18n.language]);
   const [requests, setRequests] = useState<OrganizationRequestView[] | null>(null);
   const [draft, setDraft] = useState<OrganizationDraft>(() => emptyOrganizationDraft(countryFromLocale(typeof navigator === "undefined" ? undefined : navigator.language)));
   const [looksLike, setLooksLike] = useState<OrganizationLookalike[] | null>(null);
@@ -104,7 +105,7 @@ export function AwaitingApprovalCard({ api, profile }: { api: ApiClient; profile
         ) : null}
         {requests && waiting.length === 0 ? (
           <div className="flex flex-col gap-4" data-testid="awaiting-approval-ask-again">
-            <OrganizationFields value={draft} onChange={change} idPrefix="ask-again" looksLike={looksLike} duplicateNote={duplicateNote} onDuplicateNoteChange={setDuplicateNote} />
+            <OrganizationFields value={draft} onChange={change} idPrefix="ask-again" looksLike={looksLike} duplicateNote={duplicateNote} onDuplicateNoteChange={setDuplicateNote} suggest={suggest} />
             <Button className="self-start" disabled={busy || !ready} onClick={() => void send()} data-testid="awaiting-approval-send">
               {busy ? t("organizations.requests.sending") : t("organizations.requests.send")}
             </Button>

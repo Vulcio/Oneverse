@@ -8,7 +8,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { OneverseBrand } from "#/components/brand";
 
 /** Oneverse's name, leading home (issue #538); the bell, the account, light or dark (issue #422), and signing out. */
-export function AppHeader() {
+export function AppHeader({ awaitingApproval = false }: { awaitingApproval?: boolean }) {
   const { t } = useTranslation();
   return (
     <header className="border-b">
@@ -17,7 +17,8 @@ export function AppHeader() {
           <OneverseBrand />
         </Link>
         <div className="flex items-center gap-2">
-        <NotificationBell />
+        {/* Waiting for their organisation's approval (issue #533): nothing to be told of here yet. */}
+        {awaitingApproval ? null : <NotificationBell />}
         <Button variant="ghost" size="sm" aria-label={t("nav.account")} render={<Link to="/account" data-testid="account-link" />}>
           <UserRound />
           <span className="hidden sm:inline">{t("nav.account")}</span>

@@ -25,6 +25,8 @@ interface AuthCardProps {
   signupInviteOnly?: boolean;
   /** Besides invitations, sign-up by asking for an organisation (issue #533): its step comes first. */
   signupOrganizationRequests?: boolean;
+  /** Addresses suggested as they're typed in the organisation's (issue #533). */
+  addressSuggestions?: boolean;
   /** The invitation this page came with (an invitation's link, a team's invite link, a set's share link): it lets them sign up. */
   invitePass?: SignupPassRequest;
   /** Filled in, and the sign-up tab open: an invitation's page. */
@@ -71,7 +73,7 @@ interface SocialProvider {
 }
 const SOCIAL_PROVIDERS: SocialProvider[] = [{ id: "google", label: "auth.continueWithGoogle", Logo: GoogleLogo }];
 
-export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = false, signupOrganizationRequests = false, invitePass, email: invitedEmail }: AuthCardProps) {
+export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = false, signupOrganizationRequests = false, addressSuggestions = false, invitePass, email: invitedEmail }: AuthCardProps) {
   const { t } = useTranslation();
   const errorText = useAuthErrorText();
   const [view, setView] = useState<View>("auth");
@@ -318,7 +320,7 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
 
           <TabsContent value="signup" className="mt-4">
             {!canSignUp && signupOrganizationRequests ? (
-              <OrganizationSignupStep draft={organizationDraft} onDraftChange={setOrganizationDraft} onKept={() => setOrganizationKept(true)} />
+              <OrganizationSignupStep addressSuggestions={addressSuggestions} draft={organizationDraft} onDraftChange={setOrganizationDraft} onKept={() => setOrganizationKept(true)} />
             ) : !canSignUp ? (
               <p className="text-sm text-muted-foreground" data-testid="signup-invite-only">
                 {t("auth.inviteOnly")}

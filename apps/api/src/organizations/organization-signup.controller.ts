@@ -1,5 +1,6 @@
-import { Body, Controller, ForbiddenException, HttpCode, HttpStatus, Post, Res } from "@nestjs/common";
-import { ApiNoContentResponse, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Post, Query, Res } from "@nestjs/common";
+import { ApiNoContentResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import type { AddressSuggestion } from "@oneverse/core";
 import type { Response } from "express";
 import { Public } from "../common/decorators/public.decorator.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -7,6 +8,9 @@ import { organizationSignupOpen, passCookie } from "../invitations/signup-gate.j
 import { RateLimit } from "../security/rate-limit.decorator.js";
 import { OrganizationSignupDto } from "./dto/organization-request.dto.js";
 import { findLookalikes, keepSignupDraft } from "./organization-signup.js";
+import { suggestAddresses } from "./address-lookup.js";
+import { AddressSuggestionsQueryDto } from "./dto/organization-request.dto.js";
+import { getEffectiveOrganizationSettings } from "./organization-settings.js";
 import { assertNotLookalike } from "./organizations.service.js";
 
 /**
@@ -30,5 +34,14 @@ export class OrganizationSignupController {
     assertNotLookalike(await findLookalikes(this.prisma.client, dto), dto.duplicateNote);
     const token = await keepSignupDraft(dto);
     res.cookie(...passCookie({ kind: "request", token }));
+  }
+
+  /** Addresses like what's typed, for an organisation's address (signed in or not); none when the lookup is off (Admin > Organisations). */
+  @Public()
+  @Get("address-suggestions")
+  @ApiOkResponse({ description: "Up to 5 addresses: France's from the Base Adresse Nationale, elsewhere OpenStreetMap's through Photon. Empty when the lookup is off or doesn't answer." })
+  async addressSuggestions(@Query() query: AddressSuggestionsQueryDto): Promise<AddressSuggestion[]> {
+    if ((await getEffectiveOrganizationSettings()).mode !== "MULTI") return [];
+    return suggestAddresses(query.q, query.country, query.lang);
   }
 }

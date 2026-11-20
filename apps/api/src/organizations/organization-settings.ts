@@ -14,6 +14,12 @@ export interface EffectiveOrganizationSettings {
   ownStorage: boolean;
   /** With anyone creating: each is a request a global admin reviews (issue #364). */
   reviewRequests: boolean;
+  /** Addresses suggested as they're typed and looked up when a request is sent (issue #533). */
+  addressLookup: boolean;
+  /** The Photon server asked for addresses outside France (OpenStreetMap; komoot's public one, or your own). */
+  photonUrl: string;
+  /** French addresses from the Base Adresse Nationale, through IGN's Géoplateforme. */
+  addressLookupFrance: boolean;
 }
 
 type Key = keyof EffectiveOrganizationSettings;
@@ -25,7 +31,12 @@ const FIELDS: { [K in Key]: { env: string; parse: (raw: string) => EffectiveOrga
   anyoneCreates: { env: "ORGANIZATIONS_OPEN", parse: flag, fallback: false },
   ownStorage: { env: "ORGANIZATIONS_OWN_STORAGE", parse: flag, fallback: false },
   reviewRequests: { env: "ORGANIZATIONS_REVIEWED", parse: flag, fallback: true },
+  addressLookup: { env: "ADDRESS_LOOKUP", parse: flag, fallback: false },
+  photonUrl: { env: "PHOTON_URL", parse: (raw) => (/^https?:\/\/\S+$/.test(raw.trim()) ? raw.trim().replace(/\/+$/, "") : undefined), fallback: "https://photon.komoot.io" },
+  addressLookupFrance: { env: "ADDRESS_LOOKUP_FRANCE", parse: flag, fallback: true },
 };
+
+const KEYS = Object.keys(FIELDS) as Key[];
 
 function resolve<K extends Key>(key: K, stored: EffectiveOrganizationSettings[K] | null | undefined): { value: EffectiveOrganizationSettings[K]; source: OrganizationSettingSource } {
   if (stored !== null && stored !== undefined) return { value: stored, source: "database" };
@@ -37,7 +48,16 @@ function resolve<K extends Key>(key: K, stored: EffectiveOrganizationSettings[K]
 
 async function row() {
   const stored = await prisma.organizationSettings.findUnique({ where: { id: SINGLETON_ID } });
-  return { mode: (ORGANIZATION_MODES as readonly string[]).includes(stored?.mode ?? "") ? (stored!.mode as OrganizationMode) : null, anyoneCreates: stored?.anyoneCreates ?? null, ownStorage: stored?.ownStorage ?? null, reviewRequests: stored?.reviewRequests ?? null, exists: !!stored };
+  return {
+    mode: (ORGANIZATION_MODES as readonly string[]).includes(stored?.mode ?? "") ? (stored!.mode as OrganizationMode) : null,
+    anyoneCreates: stored?.anyoneCreates ?? null,
+    ownStorage: stored?.ownStorage ?? null,
+    reviewRequests: stored?.reviewRequests ?? null,
+    addressLookup: stored?.addressLookup ?? null,
+    photonUrl: stored?.photonUrl ? stored.photonUrl.replace(/\/+$/, "") : null,
+    addressLookupFrance: stored?.addressLookupFrance ?? null,
+    exists: !!stored,
+  };
 }
 
 /**
@@ -47,17 +67,14 @@ async function row() {
  */
 export async function getEffectiveOrganizationSettings(): Promise<EffectiveOrganizationSettings> {
   const stored = await row();
-  return { mode: resolve("mode", stored.mode).value, anyoneCreates: resolve("anyoneCreates", stored.anyoneCreates).value, ownStorage: resolve("ownStorage", stored.ownStorage).value, reviewRequests: resolve("reviewRequests", stored.reviewRequests).value };
+  return Object.fromEntries(KEYS.map((key) => [key, resolve(key, stored[key]).value])) as unknown as EffectiveOrganizationSettings;
 }
 
 /** For Admin > Organisations: each setting's value and where it comes from. */
 export async function getOrganizationSettingsSummary() {
   const stored = await row();
-  const settings = {
-    mode: { ...resolve("mode", stored.mode), env: FIELDS.mode.env },
-    anyoneCreates: { ...resolve("anyoneCreates", stored.anyoneCreates), env: FIELDS.anyoneCreates.env },
-    ownStorage: { ...resolve("ownStorage", stored.ownStorage), env: FIELDS.ownStorage.env },
-    reviewRequests: { ...resolve("reviewRequests", stored.reviewRequests), env: FIELDS.reviewRequests.env },
+  const settings = Object.fromEntries(KEYS.map((key) => [key, { ...resolve(key, stored[key]), env: FIELDS[key].env }])) as {
+    [K in Key]: { value: EffectiveOrganizationSettings[K]; source: OrganizationSettingSource; env: string };
   };
   const sources = Object.values(settings).map((setting) => setting.source);
   return { source: (stored.exists && sources.includes("database") ? "database" : sources.includes("env") ? "env" : "none") as "database" | "env" | "none", settings };
@@ -65,7 +82,8 @@ export async function getOrganizationSettingsSummary() {
 
 /** Saves what's given: left out keeps its value, null clears it (back to the env var or default). */
 export async function saveOrganizationSettings(input: SaveOrganizationSettingsRequest): Promise<void> {
-  const data = Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
+  // An empty address clears it, like null.
+  const data = Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined).map(([key, value]) => [key, value === "" ? null : value]));
   await prisma.organizationSettings.upsert({ where: { id: SINGLETON_ID }, create: { id: SINGLETON_ID, ...data }, update: data });
 }
 

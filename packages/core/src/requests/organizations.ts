@@ -2,7 +2,7 @@ import "../zod-config.js";
 import { z } from "zod";
 import { ENTITY_COLORS } from "../constants/index.js";
 import { clearableInt, clearableText, optional, queryBoolean } from "./fields.js";
-import { countryHasPostalCodes, isCountryCode, postalCodeFits, tidyPostalCode } from "../addresses/index.js";
+import { countryHasPostalCodes, isCountryCode, postalCodeFits, readPhone, tidyPostalCode } from "../addresses/index.js";
 
 /**
  * Organisations (issue #241, Planiverse): whether an instance has none
@@ -17,6 +17,9 @@ export const SaveOrganizationSettingsSchema = z.strictObject({
   anyoneCreates: z.boolean().nullable().optional().describe("With several, anyone may create one, not only global admins (ORGANIZATIONS_OPEN)"),
   ownStorage: z.boolean().nullable().optional().describe("Organisations may keep their teams' files in their own bucket, set up by an admin with a role that allows it (ORGANIZATIONS_OWN_STORAGE, issue #206)"),
   reviewRequests: z.boolean().nullable().optional().describe("With anyone allowed, people ask for an organisation and a global admin approves it (ORGANIZATIONS_REVIEWED, issue #364)"),
+  addressLookup: z.boolean().nullable().optional().describe("Suggest addresses as they're typed and look them up when a request is sent (ADDRESS_LOOKUP, issue #533)"),
+  photonUrl: z.union([z.literal(""), z.string().trim().max(300).pipe(z.url({ protocol: /^https?$/ }))]).nullable().optional().describe("The Photon server for addresses outside France (PHOTON_URL; default https://photon.komoot.io)"),
+  addressLookupFrance: z.boolean().nullable().optional().describe("French addresses from the Base Adresse Nationale (ADDRESS_LOOKUP_FRANCE; default on)"),
 });
 
 /**
@@ -70,7 +73,11 @@ const postalCodeField = z.string().trim().max(20).transform(tidyPostalCode);
 const streetField = z.string().trim().min(3).max(200).describe("Number and street, as on a letter");
 const personName = z.string().trim().min(1).max(100);
 
-function checkPostalCode(value: { country?: string; postalCode?: string }, ctx: z.RefinementCtx) {
+const phoneField = z.string().trim().min(3).max(40).describe("With its + and country code, or as written in the address's country; checked to be a number that can exist, kept as +33612345678");
+
+function checkPostalCode(value: { country?: string; postalCode?: string; phone?: string }, ctx: z.RefinementCtx) {
+  // A phone number that can exist (issue #533), read in the address's country unless it has its own code.
+  if (value.phone && !readPhone(value.phone, value.country)) ctx.addIssue({ code: "custom", path: ["phone"], message: "phone isn't a phone number that can exist (add its country code, like +33)" });
   if (!value.country) return;
   if (!countryHasPostalCodes(value.country)) return;
   if (!value.postalCode) ctx.addIssue({ code: "custom", path: ["postalCode"], message: "postalCode is needed in that country" });
@@ -106,6 +113,7 @@ export const RequestOrganizationSchema = z
     country: optional(countryField),
     responsibleFirstName: optional(personName).describe("The person responsible for it (issue #533)"),
     responsibleLastName: optional(personName),
+    phone: optional(phoneField),
   })
   .superRefine(checkPostalCode);
 export type RequestOrganizationRequest = z.input<typeof RequestOrganizationSchema>;
@@ -124,6 +132,7 @@ export const OrganizationSignupSchema = z
     country: countryField,
     responsibleFirstName: personName.describe("The person responsible for it"),
     responsibleLastName: personName,
+    phone: phoneField.describe("A phone number to reach it or the person responsible: checked, never texted"),
   })
   .superRefine(checkPostalCode);
 export type OrganizationSignupRequest = z.input<typeof OrganizationSignupSchema>;
@@ -133,6 +142,14 @@ export const DeclineOrganizationRequestSchema = z.strictObject({
   reason: optional(z.string().trim().max(500)),
 });
 export type DeclineOrganizationRequestRequest = z.input<typeof DeclineOrganizationRequestSchema>;
+
+/** GET /auth/address-suggestions (issue #533): what's typed of an address, in a country. */
+export const AddressSuggestionsQuerySchema = z.strictObject({
+  q: z.string().max(200).describe("What's typed of the address"),
+  country: optional(countryField),
+  lang: optional(z.string().trim().max(10).describe("The language to name places in (en, fr, de, it)")),
+});
+export type AddressSuggestionsQuery = z.input<typeof AddressSuggestionsQuerySchema>;
 
 /** PATCH /organizations/:id (its admins): a field left out keeps its value. */
 export const UpdateOrganizationSchema = z.strictObject({
@@ -146,10 +163,13 @@ export const UpdateOrganizationSchema = z.strictObject({
   country: z.union([z.literal(""), countryField]).nullable().optional().describe("null or \"\" clears it"),
   responsibleFirstName: clearableText(100),
   responsibleLastName: clearableText(100),
+  phone: z.union([z.literal(""), phoneField]).nullable().optional().describe("null or \"\" clears it"),
   contactName: clearableText(100),
   contactEmail: z.union([z.literal(""), z.string().trim().toLowerCase().max(320).pipe(z.email())]).nullable().optional().describe("null or \"\" clears it"),
   website: z.union([z.literal(""), z.string().trim().max(300).pipe(z.url({ protocol: /^https?$/ }))]).nullable().optional(),
   onboardingDone: optional(z.boolean().describe("Its admins put the setup checklist away (true) or bring it back")),
+}).superRefine((value, ctx) => {
+  if (value.phone && !readPhone(value.phone, value.country || undefined)) ctx.addIssue({ code: "custom", path: ["phone"], message: "phone isn't a phone number that can exist (add its country code, like +33)" });
 });
 export type UpdateOrganizationRequest = z.input<typeof UpdateOrganizationSchema>;
 
