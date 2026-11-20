@@ -267,7 +267,7 @@ That's it — the web app no longer talks to Postgres or BetterAuth directly (se
 
 **Old links keep working.** Links already sent out (emails, set share links, claim links, bookmarks) point at `app.songverse.one` or `songverse.one`. The website at `songverse.one` sends any path that isn't one of its pages to the same path on the app (see "Site app" below).
 
-Since #303 the app is at `songverse.top`, and links sent before point at `app.songverse.one`: keep that domain on the Songverse app too, and set `REDIRECT_HOSTS=app.songverse.one` on it. A request for a listed host is redirected to the same page on `WEB_URL` (see `apps/web/redirect-hosts.mjs`). The website's `APP_URL` (below) sends old `songverse.one` links straight to `songverse.top`.
+Since #303 the app is at `songverse.top`, and links sent before point at `app.songverse.one`: keep that domain on the Songverse app too, and set `REDIRECT_HOSTS=app.songverse.one` on it. A request for a listed host is redirected to the same page on `WEB_URL` (see `packages/app/server/redirect-hosts.mjs`). The website's `APP_URL` (below) sends old `songverse.one` links straight to `songverse.top`.
 
 ### Oneverse Plan app
 
