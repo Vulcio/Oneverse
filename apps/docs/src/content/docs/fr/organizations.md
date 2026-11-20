@@ -112,6 +112,10 @@ Ses administrateurs créent des rôles à elle sous **Rôles** sur sa page, avec
 
 Cochez qui a chacun sous le rôle. Un rôle qui garde des fichiers peut aussi être donné à des **équipes entières** : leurs membres l'ont, et son palier de stockage est la part de l'équipe. Ses noms sont les siens ; les administrateurs de ce serveur ne les voient pas dans Administration > Rôles, et ils ne valent nulle part ailleurs. Les administrateurs d'une équipe créent aussi des rôles à elle, pour son propre serveur Sonic et ses écrans (voir [Équipes](/fr/teams/#rôles-dans-léquipe)).
 
+## Annonces
+
+Les administrateurs d'une organisation envoient des nouvelles à ses membres depuis sa page : **Annonces**, puis **Nouvelle annonce** - un **Titre**, un **Texte** et, si vous voulez, un **Lien** (une page de l'application comme `/calendar`, ou une adresse web). **Sous la cloche** montre à quoi elle ressemblera ; elle reste un **Brouillon** jusqu'à **Envoyer**, qui dit à combien de membres elle part. Les membres la reçoivent sous la cloche avec le nom de l'organisation, et sur leurs appareils ; par e-mail seulement s'ils l'activent. Une annonce envoyée peut encore être corrigée pour tout le monde (**Enregistrer : corrigée pour tout le monde**) ou retirée (**Retirer**).
+
 ## Son propre stockage
 
 Une organisation peut garder les fichiers des chants de ses équipes - enregistrements, pistes, PDF et autres pièces jointes - dans un bucket à elle plutôt que sur ce serveur : son espace, sa facture. Ses administrateurs voient **Stockage propre** sur sa page quand l'administrateur du serveur a coché **Les organisations peuvent utiliser leur propre stockage** (voir [Administration](/fr/admin/#organisations)) et qu'un de leurs rôles permet le **Stockage propre des organisations** (voir [Administration](/fr/admin/#rôles)) ; sinon la carte dit à qui le demander.

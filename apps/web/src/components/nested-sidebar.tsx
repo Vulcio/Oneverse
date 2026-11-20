@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   AudioWaveform,
   Bell,
+  Megaphone,
   BadgeCheck,
   Guitar,
   Bug,
@@ -273,6 +274,7 @@ function SectionPanel({
           { to: "/admin/auth", label: t("nav.adminAuth"), icon: <KeyRound /> },
           { to: "/admin/security", label: t("nav.adminSecurity"), icon: <ShieldCheck /> },
           { to: "/admin/notifications", label: t("nav.adminNotifications"), icon: <Bell /> },
+          { to: "/admin/announcements", label: t("nav.adminAnnouncements"), icon: <Megaphone /> },
           { to: "/admin/collaboration", label: t("nav.adminCollaboration"), icon: <Handshake /> },
           { to: "/admin/error-reporting", label: t("nav.adminErrorReporting"), icon: <Bug /> },
           { to: "/admin/storage", label: t("nav.adminStorage"), icon: <Database /> },
@@ -982,7 +984,7 @@ function PeoplePanel({ title }: { title: string }) {
   );
 }
 
-function LinksPanel({ title, pathname, links, footer }: { title: string; pathname: string; footer?: ReactNode; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/error-reporting" | "/admin/storage" | "/admin/server" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles" | "/admin/plugins"; label: string; icon: ReactNode }[] }) {
+function LinksPanel({ title, pathname, links, footer }: { title: string; pathname: string; footer?: ReactNode; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/announcements" | "/admin/collaboration" | "/admin/error-reporting" | "/admin/storage" | "/admin/server" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles" | "/admin/plugins"; label: string; icon: ReactNode }[] }) {
   return (
     <>
       <PanelHeader title={title} />

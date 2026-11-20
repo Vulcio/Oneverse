@@ -1,10 +1,11 @@
 import type { OrganizationTeam, TeamRole } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { CalendarDays } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
+import { AnnouncementsCard, type AnnouncementsActions } from "../components/announcements-card";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
 import { OrganizationSetupCard } from "../components/organization-setup";
@@ -278,11 +279,30 @@ export function OrganizationPage({
               onChanged={() => router.invalidate()}
               onError={setError}
             />
+            {/* News for its members (issue #536). */}
+            <OrganizationAnnouncements organizationId={organization.id} />
           </div>
         ) : null}
       </div>
     </div>
   );
+}
+
+/** An organisation's announcements to its members (issue #536), written in its admin's language. */
+function OrganizationAnnouncements({ organizationId }: { organizationId: string }) {
+  const { api } = usePlanning();
+  const { t, i18n } = useTranslation();
+  const actions = useMemo<AnnouncementsActions>(
+    () => ({
+      list: () => api.listOrganizationAnnouncements(organizationId),
+      create: (draft) => api.createOrganizationAnnouncement(organizationId, { texts: draft.texts }),
+      update: (id, draft) => api.updateOrganizationAnnouncement(organizationId, id, { texts: draft.texts }),
+      send: (id) => api.sendOrganizationAnnouncement(organizationId, id),
+      remove: (id) => api.deleteOrganizationAnnouncement(organizationId, id),
+    }),
+    [api, organizationId],
+  );
+  return <AnnouncementsCard actions={actions} languages={[i18n.language.startsWith("fr") ? "fr" : "en"]} title={t("announcements.organizationTitle")} description={t("announcements.organizationDescription")} />;
 }
 
 /**

@@ -48,7 +48,13 @@ check("…or change it", r.status === 403, String(r.status));
 
 // --- one's own choices
 r = await call(singer, "GET", "/users/me/notifications/settings");
-check("each kind by email until one chooses; the server doesn't email yet", r.status === 200 && Object.values(r.body.kinds).every((kind) => kind.email === true) && r.body.emailAvailable === false, JSON.stringify(r.body));
+// Announcements (issue #536) are pushed, not emailed, until one chooses.
+const announcementKinds = ["ANNOUNCEMENT", "ORGANIZATION_ANNOUNCEMENT"];
+check(
+  "each kind by email until one chooses, but announcements; the server doesn't email yet",
+  r.status === 200 && Object.entries(r.body.kinds).every(([kind, on]) => on.email === !announcementKinds.includes(kind) && on.push === true) && r.body.emailAvailable === false,
+  JSON.stringify(r.body),
+);
 r = await call(singer, "PUT", "/users/me/notifications/settings", { kinds: { EVENT_DATE_CHANGED: { email: false } } });
 check("one kind off by email, the rest kept", r.status === 200 && r.body.kinds.EVENT_DATE_CHANGED.email === false && r.body.kinds.EVENT_DATE_CANCELLED.email === true, JSON.stringify(r.body));
 r = await call(singer, "PUT", "/users/me/notifications/settings", { kinds: { NOPE: { email: false } } });

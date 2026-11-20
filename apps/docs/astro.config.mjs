@@ -39,6 +39,7 @@ export default defineConfig({
           translations: { fr: "Pour commencer" },
           items: [
             { slug: "getting-started" },
+            { slug: "whats-new" },
             { slug: "account" },
             { slug: "backups" },
           ],

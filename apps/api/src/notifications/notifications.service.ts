@@ -169,7 +169,7 @@ export class NotificationsService {
 export const NOTIFICATIONS_CHANNEL = "songverse:notifications:changed";
 
 /** A Redis that's down mustn't fail what changed them. */
-async function announceNotifications(userIds: string[]): Promise<void> {
+export async function announceNotifications(userIds: string[]): Promise<void> {
   if (userIds.length === 0) return;
   await redis()
     .publish(NOTIFICATIONS_CHANNEL, JSON.stringify(userIds))

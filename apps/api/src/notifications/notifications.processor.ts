@@ -1,6 +1,7 @@
 import { InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { NOTIFICATIONS_KEPT_DAYS, notificationEmail, notificationPreferences, notificationPush, quietHoursEnd, quietHoursOf, type Messages, type NotificationData, type NotificationKind } from "@oneverse/core";
+import { announcementText, NOTIFICATIONS_KEPT_DAYS, notificationEmail, notificationPreferences, notificationPush, notificationUrl, quietHoursEnd, quietHoursOf, type AnnouncementTexts, type Messages, type NotificationData, type NotificationKind } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import en from "@oneverse/core/i18n/locales/en";
 import fr from "@oneverse/core/i18n/locales/fr";
 import type { Job, Queue } from "bullmq";
@@ -8,10 +9,20 @@ import { sendNotificationEmail } from "../auth/email.js";
 import { JOB_WORKER_OPTIONS, NOTIFICATIONS_QUEUE } from "../jobs/jobs.constants.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { getEffectiveNotificationSettings, getPushConfigOrError, type PushConfig } from "./notification-settings.js";
-import type { DeliverJob, TestPushJob } from "./notifications.service.js";
+import { announceNotifications, type DeliverJob, type TestPushJob } from "./notifications.service.js";
 import { pushSubject, sendPush, type PushPayload } from "./push-sender.js";
+import { announcementApp, announcementRecipients } from "../announcements/announcement-recipients.js";
+import type { AnnounceJob } from "../announcements/announcements.service.js";
 
 const MESSAGES: Record<string, Messages> = { en, fr };
+
+/** People given an announcement's notifications at a time (issue #536). */
+const ANNOUNCE_BATCH = 500;
+
+/** Where a notification leads, whole: a web address as it is, a page in its app. */
+function linkOf(job: DeliverJob, app: string | null, url: string): string {
+  return /^https?:\/\//.test(url) ? url : `${appUrl(job, app)}${url}`;
+}
 
 /** Old notifications deleted once a day (issue #149). */
 export const CLEAN_UP_SCHEDULER_ID = "clean-up-notifications";
@@ -48,8 +59,9 @@ export class NotificationsProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<DeliverJob | TestPushJob>): Promise<{ emailed: number; pushed: number } | { deleted: number }> {
+  async process(job: Job<DeliverJob | TestPushJob | AnnounceJob>): Promise<{ emailed: number; pushed: number } | { deleted: number } | { announced: number }> {
     if (job.name === CLEAN_UP_SCHEDULER_ID) return { deleted: await this.cleanUp() };
+    if (job.name === "announce") return { announced: await this.announce(job.data as AnnounceJob) };
     if (job.name === "test") return { emailed: 0, pushed: await this.test(job.data as TestPushJob) };
     const data = job.data as DeliverJob;
     const emailed = job.name === "deliver" ? await this.email(data) : 0;
@@ -66,6 +78,44 @@ export class NotificationsProcessor extends WorkerHost {
     });
     if (count > 0) this.logger.log(`Deleted ${count} old notification(s)`);
     return count;
+  }
+
+  /**
+   * An announcement sent (issue #536): a notification for each person in its
+   * audience who has none of it yet - a retried job carries on where it
+   * stopped - in batches, each delivered like any other.
+   */
+  private async announce(job: AnnounceJob): Promise<number> {
+    const announcement = await this.prisma.client.announcement.findUnique({ where: { id: job.announcementId }, include: { organization: { select: { name: true } } } });
+    // Taken back, or never sent: nothing to do.
+    if (!announcement?.sentAt) return 0;
+    const kind: NotificationKind = announcement.audience === "ORGANIZATION" ? "ORGANIZATION_ANNOUNCEMENT" : "ANNOUNCEMENT";
+    const data = { texts: announcement.texts, ...(announcement.organization ? { organization: announcement.organization.name } : {}) } as Prisma.InputJsonValue;
+    // Its link in English, else in its first language: each reader gets theirs (notificationUrl).
+    const english = announcementText(announcement.texts as AnnouncementTexts, "en")?.url ?? null;
+    const app = announcementApp(announcement.audience);
+    let made = 0;
+    for (;;) {
+      const users = await this.prisma.client.user.findMany({
+        where: { ...announcementRecipients(announcement), notifications: { none: { announcementId: announcement.id } } },
+        select: { id: true },
+        orderBy: { id: "asc" },
+        take: ANNOUNCE_BATCH,
+      });
+      if (users.length === 0) break;
+      const rows = await this.prisma.client.notification.createManyAndReturn({
+        data: users.map((user) => ({ userId: user.id, kind, data, url: english, app, announcementId: announcement.id })),
+        select: { id: true },
+      });
+      made += rows.length;
+      await announceNotifications(users.map((user) => user.id));
+      await this.queue.add("deliver", { ids: rows.map((row) => row.id), webUrl: job.webUrl, planiverseUrl: job.planiverseUrl ?? null } satisfies DeliverJob, { removeOnComplete: 100, removeOnFail: 100 });
+      if (users.length < ANNOUNCE_BATCH) break;
+    }
+    const recipients = await this.prisma.client.notification.count({ where: { announcementId: announcement.id } });
+    await this.prisma.client.announcement.update({ where: { id: announcement.id }, data: { recipients } });
+    this.logger.log(`Announcement ${announcement.id}: ${made} notification(s) made, ${recipients} in all`);
+    return made;
   }
 
   private load(ids: string[], where: { emailedAt: null } | { pushedAt: null }) {
@@ -95,12 +145,13 @@ export class NotificationsProcessor extends WorkerHost {
         const messages = MESSAGES[user.locale] ?? en;
         const email = notificationEmail(wanted.map((row) => ({ kind: row.kind as NotificationKind, data: row.data as NotificationData })), messages, user.locale);
         // One link: the first one's (they're about the same thing), else My calendar - in its app (issue #241).
-        const first = wanted.find((row) => row.url) ?? wanted[0]!;
-        const path = first.url ?? "/calendar";
+        const linkFor = (row: (typeof wanted)[number]) => notificationUrl({ kind: row.kind as NotificationKind, data: row.data as NotificationData, url: row.url }, user.locale);
+        const first = wanted.find((row) => linkFor(row)) ?? wanted[0]!;
+        const path = linkFor(first) ?? "/calendar";
         await sendNotificationEmail(user.email, {
           ...email,
           open: messages.notifications.email.open.replace("{{app}}", first.app === "planiverse" && job.planiverseUrl ? "Planiverse" : "Songverse"),
-          url: `${appUrl(job, first.app)}${path}`,
+          url: linkOf(job, first.app, path),
           why: messages.notifications.email.why,
           settingsUrl: `${appUrl(job, first.app)}/account`,
         });
@@ -122,7 +173,8 @@ export class NotificationsProcessor extends WorkerHost {
       const wanted = config || error ? list.filter((row) => choices[row.kind as NotificationKind]?.push) : [];
       const all = wanted.length > 0 ? await this.prisma.client.pushSubscription.findMany({ where: { userId: list[0]!.userId } }) : [];
       // Its app's devices (issue #241: Planiverse's, Songverse's), or every one when they have none of that app's.
-      const first = wanted.find((row) => row.url) ?? wanted[0];
+      const linkFor = (row: (typeof wanted)[number]) => notificationUrl({ kind: row.kind as NotificationKind, data: row.data as NotificationData, url: row.url }, user.locale);
+      const first = wanted.find((row) => linkFor(row)) ?? wanted[0];
       const theirs = all.filter((device) => (device.app ?? null) === (first?.app ?? null));
       const devices = theirs.length > 0 ? theirs : all;
       // Set up, but this Worker can't use it: the job fails with why, these left to push once it can.
@@ -138,7 +190,7 @@ export class NotificationsProcessor extends WorkerHost {
         const text = notificationPush(wanted.map((row) => ({ kind: row.kind as NotificationKind, data: row.data as NotificationData })), messages, user.locale);
         // The number on the app's icon (issue #407), as the bell counts it.
         const unread = await this.prisma.client.notification.count({ where: { userId: list[0]!.userId, readAt: null } });
-        const sent = await this.toDevices(devices, { ...text, url: first?.url ?? "/calendar", tag: wanted.length === 1 ? wanted[0]!.id : undefined, unread }, config!, job.webUrl);
+        const sent = await this.toDevices(devices, { ...text, url: (first && linkFor(first)) ?? "/calendar", tag: wanted.length === 1 ? wanted[0]!.id : undefined, unread }, config!, job.webUrl);
         if (sent.sent > 0) pushed += 1;
       }
       await this.prisma.client.notification.updateMany({ where: { id: { in: list.map((row) => row.id) } }, data: { pushedAt: new Date() } });

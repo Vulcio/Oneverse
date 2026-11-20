@@ -112,6 +112,10 @@ Its admins make roles of their own under **Roles** on its page, with **New role*
 
 Tick who has each under the role. A role that keeps files can also be given to **whole teams**: their members have it, and its storage tier is the team's share. Its names are its own; this server's admins don't see them in Admin > Roles, and they count nowhere else. A team's admins make roles of their own too, for its own Sonic server and its screens (see [Teams](/teams/#roles-on-the-team)).
 
+## Announcements
+
+An organisation's admins send news to its members from its page: **Announcements**, then **New announcement** - a **Title**, a **Text** and, if you like, a **Link** (a page of the app such as `/calendar`, or a web address). **Under the bell** shows how it will look; it stays a **Draft** until **Send**, which says how many members it goes to. Members get it under the bell with the organisation's name, and on their devices; by email only if they turn that on. A sent one can still be fixed for everyone (**Save: fixes it for everyone**) or taken back (**Take back**).
+
 ## Its own storage
 
 An organisation can keep the files of its teams' songs - recordings, stems, PDFs and the other attachments - in a bucket of its own rather than on this server: its space, its bill. Its admins see **Own storage** on its page when the server's admin has ticked **Organisations may use their own storage** (see [Admin](/admin/#organisations)) and one of their roles allows **Own storage for organisations** (see [Admin](/admin/#roles)); otherwise the card says who to ask.

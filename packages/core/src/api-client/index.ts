@@ -44,7 +44,8 @@ import type { SectionInstance, SectionV2, SongDocumentV2 } from "../schemas/song
 import type { SongbookSection } from "../songbook-sections/index.js";
 import type { StemPart } from "../stems/index.js";
 import type { NewNotes, NoteAnchor, NoteColor, NoteLook, NotePlace, NotePlacement, NoteShow, NoteSize } from "../notes/index.js";
-import type { NotificationData, NotificationKind, NotificationPreferences, QuietHours } from "../notifications/index.js";
+import type { AnnouncementTexts, NotificationData, NotificationKind, NotificationPreferences, QuietHours } from "../notifications/index.js";
+import type { AnnouncementAudience, CreateAnnouncementRequest, SaveOrganizationAnnouncementRequest, UpdateAnnouncementRequest } from "../requests/announcements.js";
 import type { LyricsMatch } from "../search-text/lyrics.js";
 import type { SecondChordRow } from "../display/chord-rows.js";
 import type { SectionProgression } from "../chords/progressions.js";
@@ -1928,6 +1929,23 @@ export interface PushDevice {
   lastErrorAt: string | null;
 }
 
+/** An announcement (issue #536): a draft, or sent (and to how many people). */
+export interface Announcement {
+  id: string;
+  texts: AnnouncementTexts;
+  audience: AnnouncementAudience;
+  organizationId: string | null;
+  organizationName: string | null;
+  /** The release it was drafted for, when a release drafted it. */
+  release: string | null;
+  createdBy: { id: string; displayName: string } | null;
+  sentAt: string | null;
+  /** Sent: how many it went to; a draft: how many it would go to now. */
+  recipients: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface NotificationServerSettingsSummary {
   source: "database" | "env" | "none";
   settings: { emailEnabled: SecuritySetting<boolean> };
@@ -3156,6 +3174,14 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     removeOrganizationMember: (organizationId: string, userId: string) => request<void>(`/organizations/${organizationId}/members/${userId}`, { method: "DELETE" }),
     leaveOrganization: (organizationId: string) => request<void>(`/organizations/${organizationId}/leave`, { method: "POST" }),
     listOrganizationInviteLinks: (organizationId: string) => request<TeamInviteLink[]>(`/organizations/${organizationId}/invite-links`),
+    // An organisation's announcements to its members (issue #536), for its admins.
+    listOrganizationAnnouncements: (organizationId: string) => request<Announcement[]>(`/organizations/${organizationId}/announcements`),
+    createOrganizationAnnouncement: (organizationId: string, data: SaveOrganizationAnnouncementRequest) =>
+      request<Announcement>(`/organizations/${organizationId}/announcements`, { method: "POST", body: JSON.stringify(data) }),
+    updateOrganizationAnnouncement: (organizationId: string, id: string, data: SaveOrganizationAnnouncementRequest) =>
+      request<Announcement>(`/organizations/${organizationId}/announcements/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    sendOrganizationAnnouncement: (organizationId: string, id: string) => request<Announcement>(`/organizations/${organizationId}/announcements/${id}/send`, { method: "POST" }),
+    deleteOrganizationAnnouncement: (organizationId: string, id: string) => request<void>(`/organizations/${organizationId}/announcements/${id}`, { method: "DELETE" }),
     createOrganizationInviteLink: (organizationId: string, data: CreateInviteLinkInput) =>
       request<TeamInviteLink>(`/organizations/${organizationId}/invite-links`, { method: "POST", body: JSON.stringify(data) }),
     revokeOrganizationInviteLink: (organizationId: string, linkId: string) => request<void>(`/organizations/${organizationId}/invite-links/${linkId}`, { method: "DELETE" }),
@@ -4064,6 +4090,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminSaveNotificationSettings: (data: SaveNotificationServerSettingsRequest) => request<void>("/admin/notifications", { method: "PUT", body: JSON.stringify(data) }),
     adminClearNotificationSettings: () => request<void>("/admin/notifications", { method: "DELETE" }),
     adminGeneratePushKeys: () => request<{ publicKey: string }>("/admin/notifications/vapid-keys", { method: "POST" }),
+    // Announcements (issue #536): drafts and sent ones, newest first.
+    adminListAnnouncements: () => request<Announcement[]>("/admin/announcements"),
+    adminCreateAnnouncement: (data: CreateAnnouncementRequest) => request<Announcement>("/admin/announcements", { method: "POST", body: JSON.stringify(data) }),
+    adminUpdateAnnouncement: (id: string, data: UpdateAnnouncementRequest) => request<Announcement>(`/admin/announcements/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    adminSendAnnouncement: (id: string) => request<Announcement>(`/admin/announcements/${id}/send`, { method: "POST" }),
+    adminDeleteAnnouncement: (id: string) => request<void>(`/admin/announcements/${id}`, { method: "DELETE" }),
   };
 }
 
