@@ -7,7 +7,7 @@ import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RequestSwapDto, RespondAssignmentDto, CreateTeamEventDto, CreateTeamEventTypeDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto, UpdateTeamEventTypeDto } from "./dto/team-events.dto.js";
+import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RequestSwapDto, RespondAssignmentDto, CreateTeamEventDto, CreateTeamEventTypeDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, SetTeamEventDateAsksDto, UpdateTeamEventDto, UpdateTeamEventTypeDto } from "./dto/team-events.dto.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { AvailabilityService } from "./availability.service.js";
 import { CalendarFeedService } from "./calendar-feed.service.js";
@@ -177,6 +177,17 @@ export class TeamEventsController {
   @UseGuards(TeamAdminGuard)
   updateDate(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: UpdateTeamEventDateDto) {
     return this.events.updateDate(teamId, eventId, dateParam(date), dto, user?.id ?? null);
+  }
+
+  /**
+   * What a date asks for besides its event's parts (issue #549): the
+   * instruments its music lead wants. The team's admins or the date's music
+   * lead - who may be from another team, on an open place.
+   */
+  @Put("events/:eventId/dates/:date/asks")
+  async setAsks(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: SetTeamEventDateAsksDto) {
+    const isAdmin = user.isGlobalAdmin || (await this.access.teamRole(user.id, teamId)) === "ADMIN";
+    return this.events.setAsks(teamId, eventId, dateParam(date), dto, user.id, isAdmin);
   }
 
   /** A date's set now, however far ahead: to plan it. */

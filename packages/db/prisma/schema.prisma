@@ -708,6 +708,9 @@ model Team {
   // the group it's under, in the same organisation; the positions of its own
   // its members cover ("Greeter", "Coffee"), besides instruments and roles.
   usesSongverse        Boolean                @default(true)
+  // The roles it fills at an organisation's events (issue #549): "Worship" fills Music. A part an event asks for
+  // that one of its groups fills is open to that group's members (and those of the groups under it).
+  fills                String[]               @default([])
   parentId             String?
   parent               Team?                  @relation("Subgroups", fields: [parentId], references: [id], onDelete: SetNull)
   // News its admins sent its members (issue #536).
@@ -1752,6 +1755,9 @@ model TeamEventDate {
   setCreatedAt DateTime?
   // When an admin told the people signed up that its set is ready (issue #235).
   setReadyAt   DateTime?
+  // What this date asks for besides its event's parts (issue #549): the instruments its music lead
+  // asks for from the set, [{ part, position, name, count, openTo }] as TeamEvent.parts.
+  asks         Json?
 
   event   TeamEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   setlist Setlist?  @relation(fields: [setlistId], references: [id], onDelete: SetNull)

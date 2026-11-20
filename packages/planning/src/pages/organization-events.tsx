@@ -44,7 +44,8 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
   const router = useRouter();
   const { organization, events, presets, members, customInstruments } = data;
   const isAdmin = organization.currentUserRole === "ADMIN";
-  const partLabel = usePartLabel(customInstruments);
+  // Its groups name the roles they fill (issue #549): "Music · Worship".
+  const partLabel = usePartLabel(customInstruments, organization.teams);
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
   const [dates, setDates] = useState<OrganizationEventDate[] | null>(null);
   const [editing, setEditing] = useState<OrganizationEvent | "new" | null>(null);
@@ -527,7 +528,7 @@ function OrganizationEventDialog({
                     positions={team?.positions ?? []}
                     customInstruments={customInstruments}
                     partLabel={partLabel}
-                    openToTeams={[...(team ? [team] : []), ...organization.teams.filter((one) => one.id !== need.teamId)].map((one) => ({ id: one.id, name: one.name }))}
+                    openToTeams={[...(team ? [team] : []), ...organization.teams.filter((one) => one.id !== need.teamId)].map((one) => ({ id: one.id, name: one.name, fills: one.fills ?? [] }))}
                     ownTeamId={need.teamId}
                   />
                   <div className="flex items-center gap-2">

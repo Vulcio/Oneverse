@@ -1647,10 +1647,15 @@ const fr: typeof en = {
     techRole: {
       MUSIC_LEADER: "Responsable musique",
       HOST: "Présidence",
-      SPEAKER: "Prédicateur",
+      SPEAKER: "Orateur",
       TECHNICIAN: "Technicien",
-      MEDIA_OPERATOR: "Opérateur média",
-      SOUND_ENGINEER: "Ingénieur du son",
+      MEDIA_OPERATOR: "Projection",
+      SOUND_ENGINEER: "Sono",
+      LIGHTS: "Lumières",
+    },
+    // Un rôle tel qu'un événement le demande (issue #549) : de haut niveau.
+    eventRole: {
+      MUSIC_LEADER: "Musique",
     },
   },
   library: {
@@ -2484,6 +2489,12 @@ const fr: typeof en = {
     cancelled: "Annulé",
     repeats: "Se répète",
     dateActions: "Actions pour {{title}}",
+    asksTitle: "Instruments pour cette date",
+    asksHint: "Ce dont le groupe a besoin à cette date. Ceux à qui la Musique de l'événement est ouverte voient chaque place et s'y inscrivent.",
+    asksAdd: "Demander des instruments",
+    asksChange: "Modifier",
+    asksSave: "Enregistrer",
+    asksNone: "Aucun instrument demandé pour l'instant.",
     viewDates: "Dates",
     viewEvents: "Événements",
     viewHint: "Dates liste chaque date à venir ; Événements, chaque événement une fois - une série avec toutes ses dates - pour le modifier en entier.",
@@ -2574,6 +2585,8 @@ const fr: typeof en = {
     noAway: "Aucune absence.",
   },
   organizations: {
+    fills: "Rôles qu'il tient",
+    fillsHint: "Aux événements de l'organisation, un rôle que ce groupe tient est ouvert à ses membres, et à ceux des groupes en dessous : Louange tient Musique.",
     comingUpHint: "Les prochaines dates de l'organisation et les groupes dont chacune a besoin.",
     openCalendar: "Ouvrir le calendrier",
     noComing: "Rien de prévu dans les semaines à venir.",

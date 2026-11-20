@@ -1,4 +1,4 @@
-import { addDays, coversPart, GIVEN_PARTS, INSTRUMENTS, isGivenPart, partsForTeam, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, isGivenPart, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -54,7 +54,11 @@ export function TeamCalendar({
 }) {
   const { api, sets } = usePlanning();
   const { t, i18n } = useTranslation();
-  const partLabel = usePartLabel(customInstruments);
+  // The team and its organisation's groups (issue #528): who a part may be open to, named on it (issue #549: "Music · Worship").
+  const openToTeams = useOpenToTeams(teamId);
+  // Not the team itself: on its own calendar, "Music" is plainly its.
+  const otherGroups = openToTeams.filter((one) => one.id !== teamId);
+  const partLabel = usePartLabel(customInstruments, otherGroups);
   // A date's set, where the app has sets (every group's, issue #531); made only where they're kept.
   const setHref = sets ? sets.href : null;
   const makesSets = Boolean(setHref && sets?.canMake);
@@ -469,6 +473,7 @@ export function TeamCalendar({
           positions={positions}
           customInstruments={customInstruments}
           partLabel={partLabel}
+          openToTeams={openToTeams}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null);
@@ -778,6 +783,7 @@ function EventDialog({
   positions,
   customInstruments,
   partLabel,
+  openToTeams,
   onClose,
   onSaved,
 }: {
@@ -795,11 +801,11 @@ function EventDialog({
   positions: readonly TeamPosition[];
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
+  openToTeams: OpenToTeam[];
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
   const { api } = usePlanning();
-  const openToTeams = useOpenToTeams(teamId);
   const { t } = useTranslation();
   const [parts, setParts] = useState<EventPart[]>(event?.parts ?? []);
   const planned = event?.planned ?? null;
@@ -839,7 +845,8 @@ function EventDialog({
     if (type.startTime) setStartTime(type.startTime);
     if (type.durationMinutes) setDuration(String(type.durationMinutes));
     setCall(type.callMinutes ? String(type.callMinutes) : "");
-    setParts(partsForTeam(type.parts, teamId));
+    // Its roles open to the groups that fill them (issue #549), unless the type says who.
+    setParts(withFillingGroups(partsForTeam(type.parts, teamId), openToTeams));
     setWithSet(type.withSet);
   };
 
@@ -1138,6 +1145,7 @@ export function PartsEditor({
   partLabel,
   openToTeams = [],
   ownTeamId,
+  instruments = false,
 }: {
   parts: EventPart[];
   onChange: (parts: EventPart[]) => void;
@@ -1146,19 +1154,28 @@ export function PartsEditor({
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
   /** The teams a part's places may be open to (issue #528): the event's team and its organisation's groups. None: no open places. */
-  openToTeams?: readonly { id: string; name: string }[];
+  openToTeams?: readonly OpenToTeam[];
   /** The event's team: a place opened goes to its members first. */
   ownTeamId?: string;
+  /**
+   * Instruments offered (issue #549): only for what a date asks for from its
+   * set. An event asks for roles - Music, not Drums; its music lead asks for
+   * the instruments date by date.
+   */
+  instruments?: boolean;
 }) {
   const { t } = useTranslation();
   const change = (index: number, changes: Partial<EventPart>) => onChange(parts.map((one, at) => (at === index ? { ...one, ...changes } : one)));
   const [naming, setNaming] = useState<string | null>(null);
   const taken = new Set(parts.map((part) => partKey(part)));
   const add = (part: EventPart) => {
-    if (!taken.has(partKey(part))) onChange([...parts, part]);
+    if (taken.has(partKey(part))) return;
+    // A role open to the groups that fill it (issue #549): "Music · Worship".
+    const [filled] = withFillingGroups([part], openToTeams);
+    onChange([...parts, filled!]);
   };
   const choices = (keys: readonly string[]) => keys.filter((key) => !taken.has(key)).map((key) => ({ key, label: partLabel({ part: key, count: 1 }) }));
-  const instruments = [...choices(INSTRUMENTS), ...choices(customInstruments.map((instrument) => instrument.id))];
+  const instrumentChoices = instruments ? [...choices(INSTRUMENTS), ...choices(customInstruments.map((instrument) => instrument.id))] : [];
   const names = teamNames.filter((name) => !taken.has(partKey({ name, count: 1 })));
 
   return (
@@ -1195,7 +1212,7 @@ export function PartsEditor({
                   <input type="checkbox" className="size-3.5" checked={!!part.required} onChange={(e) => change(index, { required: e.target.checked || undefined })} data-testid="event-part-required" />
                   {t("teamCalendar.partRequired")}
                 </label>
-                {openToTeams.length > 0 && !(part.part && isGivenPart(part.part)) ? (
+                {openToTeams.length > 0 && !instruments && !(part.part && isGivenPart(part.part)) ? (
                   <label className="flex items-center gap-1.5">
                     <input
                       type="checkbox"
@@ -1207,7 +1224,7 @@ export function PartsEditor({
                     {t("teamCalendar.partOpen")}
                   </label>
                 ) : null}
-                {part.openTo?.length && openToTeams.length > 1 ? (
+                {part.openTo?.length && openToTeams.length > 1 && !instruments ? (
                   <span className="flex flex-wrap items-center gap-x-3 gap-y-1" aria-label={t("teamCalendar.partOpenTo")}>
                     <span>{t("teamCalendar.partOpenTo")}</span>
                     {openToTeams.map((team) => (
@@ -1246,7 +1263,17 @@ export function PartsEditor({
           data-testid="event-part-add"
         >
           <option value="">{t("teamCalendar.addPart")}</option>
-          {/* The group's own positions first (issue #241): what it's mostly about. */}
+          {/* High-level roles first (issue #549): who hosts, speaks, leads the music, runs the screens, the sound and the lights. */}
+          {!instruments && choices(EVENT_ROLES).length > 0 ? (
+            <optgroup label={t("teamCalendar.partRoles")}>
+              {choices(EVENT_ROLES).map((choice) => (
+                <option key={choice.key} value={choice.key}>
+                  {choice.label}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+          {/* The group's own positions (issue #241). */}
           {positions.some((one) => !taken.has(`position:${one.id}`)) ? (
             <optgroup label={t("teamCalendar.partPositions")}>
               {positions
@@ -1258,20 +1285,15 @@ export function PartsEditor({
                 ))}
             </optgroup>
           ) : null}
-          <optgroup label={t("teamCalendar.partInstruments")}>
-            {instruments.map((choice) => (
-              <option key={choice.key} value={choice.key}>
-                {choice.label}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label={t("teamCalendar.partRoles")}>
-            {choices([...Object.keys(GIVEN_PARTS), ...TECH_ROLES]).map((choice) => (
-              <option key={choice.key} value={choice.key}>
-                {choice.label}
-              </option>
-            ))}
-          </optgroup>
+          {instrumentChoices.length > 0 ? (
+            <optgroup label={t("teamCalendar.partInstruments")}>
+              {instrumentChoices.map((choice) => (
+                <option key={choice.key} value={choice.key}>
+                  {choice.label}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
           {names.length > 0 ? (
             <optgroup label={t("teamCalendar.partTeamNames")}>
               {names.map((name) => (
@@ -1318,20 +1340,36 @@ export function PartsEditor({
   );
 }
 
+/** A team a part may be open to (issue #528), and the roles it fills (issue #549). */
+export type OpenToTeam = { id: string; name: string; fills?: string[] };
+
+/**
+ * Parts open to the groups that fill them (issue #549): a role with no
+ * teams of its own goes to those - "Music" to Worship. Others as they are.
+ */
+export function withFillingGroups(parts: EventPart[], groups: readonly OpenToTeam[]): EventPart[] {
+  return parts.map((part) => {
+    if (part.openTo?.length || !part.part || isGivenPart(part.part)) return part;
+    const filling = fillingGroups(part.part, groups);
+    return filling.length > 0 ? { ...part, openTo: filling } : part;
+  });
+}
+
 /**
  * The teams a part's places may be open to (issue #528): the team itself,
- * then the other groups of its organisation.
+ * then the other groups of its organisation, each with the roles it fills.
  */
-export function useOpenToTeams(teamId: string | null): { id: string; name: string }[] {
+export function useOpenToTeams(teamId: string | null): OpenToTeam[] {
   const { api } = usePlanning();
-  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  const [teams, setTeams] = useState<OpenToTeam[]>([]);
   useEffect(() => {
     if (!teamId) return;
     let live = true;
     void (async () => {
       const team = await api.getTeam(teamId);
       const others = team.organization ? (await api.getOrganization(team.organization.id).catch(() => null))?.teams ?? [] : [];
-      if (live) setTeams([{ id: team.id, name: team.name }, ...others.filter((one) => one.id !== team.id).map((one) => ({ id: one.id, name: one.name }))]);
+      const own = others.find((one) => one.id === team.id);
+      if (live) setTeams([{ id: team.id, name: team.name, fills: own?.fills ?? [] }, ...others.filter((one) => one.id !== team.id).map((one) => ({ id: one.id, name: one.name, fills: one.fills ?? [] }))]);
     })().catch(() => {});
     return () => {
       live = false;

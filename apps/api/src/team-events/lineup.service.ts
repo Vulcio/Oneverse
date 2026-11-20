@@ -4,7 +4,7 @@ import { Prisma } from "@oneverse/db";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { givenOn, givenPartsAmong, mayFill } from "../roles/capabilities.js";
-import { changesOf, dateText, day, partsOf, TeamEventsService, timingOf, withDates, type EventRow } from "./team-events.service.js";
+import { changesOf, dateText, day, partsOf, TeamEventsService, timingOf, withDates, withGroupsAbove, type EventRow } from "./team-events.service.js";
 
 type Client = PrismaService["client"];
 
@@ -83,7 +83,8 @@ export class LineupService {
 
   /** A part as a notification names it: its instrument or role key, else its own name (a team's, or a custom instrument's). */
   private async partData(event: EventRow, key: string): Promise<Pick<NotificationData, "part" | "partName">> {
-    const part = partsOf(event).find((one) => partKey(one) === key);
+    // Its parts, or one a date asks for besides (issue #549).
+    const part = [...partsOf(event), ...(event.dates ?? []).flatMap((row) => partsOf({ parts: [], dates: [row] }, dateText(row.date)))].find((one) => partKey(one) === key);
     // One of the group's positions (issue #241): by its name.
     if (part?.position) return { partName: (await this.prisma.client.teamPosition.findUnique({ where: { id: part.position }, select: { name: true } }))?.name ?? "" };
     if (!part?.part) return { partName: part?.name ?? key.replace(/^name:/, "") };
@@ -111,7 +112,7 @@ export class LineupService {
    */
   async assign(teamId: string, eventId: string, date: string, dto: AssignPartRequest, by: string) {
     const event = await this.comingDate(teamId, eventId, date);
-    if (!partsOf(event).some((part) => partKey(part) === dto.part)) throw new BadRequestException(["part isn't one this event needs"]);
+    if (!partsOf(event, date).some((part) => partKey(part) === dto.part)) throw new BadRequestException(["part isn't one this event needs"]);
     let guest = false;
     // On an organisation's event, a given part (hosting, speaking) is for those a role gives it (issue #520): never
     // someone without an account. On a team's own event, its admins name whoever they like. A part guests can fill
@@ -252,7 +253,7 @@ export class LineupService {
   async requestSwap(teamId: string, eventId: string, date: string, assignmentId: string, userId: string, dto: RequestSwapRequest) {
     const row = await this.ownPlace(teamId, eventId, date, assignmentId, userId);
     const event = await this.comingDate(teamId, eventId, date);
-    const part = partsOf(event).find((one) => partKey(one) === row.partKey);
+    const part = partsOf(event, date).find((one) => partKey(one) === row.partKey);
     if (!part) throw new BadRequestException(["That part isn't one this event needs any more"]);
     const candidates = await this.swapCandidatesFor(teamId, eventId, date, part, userId);
     const first = candidates.filter((one) => one.answer === "IF_NEEDED");
@@ -284,7 +285,7 @@ export class LineupService {
       // Marked first: the API's instances and the Worker may run this at once; one tells.
       const { count } = await this.prisma.client.teamEventAssignment.updateMany({ where: { id: row.id, swapWidenedAt: null, swapRequestedAt: { not: null } }, data: { swapWidenedAt: now } });
       if (count === 0) continue;
-      const part = partsOf(row.event).find((one) => partKey(one) === row.partKey);
+      const part = partsOf(row.event, date).find((one) => partKey(one) === row.partKey);
       if (!part) continue;
       const others = (await this.swapCandidatesFor(row.event.teamId, row.eventId, date, part, row.userId!)).filter((one) => one.answer !== "IF_NEEDED");
       const data = { event: this.titleOn(row.event, date), date, team: row.event.team.name, by: row.user?.displayName ?? "", ...(await this.partData(row.event, row.partKey)) };
@@ -309,7 +310,7 @@ export class LineupService {
     const row = await this.prisma.client.teamEventAssignment.findFirst({ where: { id: assignmentId, eventId, date: day(date), event: { teamId } } });
     if (!row || !row.swapRequestedAt || row.status === "DECLINED") throw new ConflictException("Someone already took it, or it's no longer offered");
     if (row.userId === userId) throw new BadRequestException(["It's your own place"]);
-    const part = partsOf(event).find((one) => partKey(one) === row.partKey);
+    const part = partsOf(event, date).find((one) => partKey(one) === row.partKey);
     const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { positionIds: true, user: { select: { instruments: true, techRoles: true, displayName: true } } } });
     const givenParts = givenOn(event.organizationEventId, event.organizationEventId && part?.part && isGivenPart(part.part) ? (await givenPartsAmong(this.prisma.client, teamId, [userId])).get(userId) : []);
     if (!member || !part || !coversPart({ ...member.user, positionIds: member.positionIds, givenParts }, part)) throw new BadRequestException(["You don't play that part"]);
@@ -345,12 +346,13 @@ export class LineupService {
   }
 
   /** The teams someone is in, and those whose open places (issue #528) may be open to them: their teams and their organisations' other groups. */
-  private async teamsNear(userId: string): Promise<{ mine: Set<string>; near: string[] }> {
+  /** `reach`: their groups and those above them (issue #549), whose open places they may take. */
+  private async teamsNear(userId: string): Promise<{ mine: Set<string>; near: string[]; reach: Set<string> }> {
     const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true, team: { select: { organizationId: true } } } });
     const mine = new Set(memberships.map((m) => m.teamId));
     const organizations = [...new Set(memberships.map((m) => m.team.organizationId).filter((id): id is string => !!id))];
     const others = organizations.length > 0 ? (await this.prisma.client.team.findMany({ where: { organizationId: { in: organizations } }, select: { id: true } })).map((row) => row.id) : [];
-    return { mine, near: [...new Set([...mine, ...others])] };
+    return { mine, near: [...new Set([...mine, ...others])], reach: await withGroupsAbove(this.prisma.client, mine) };
   }
 
   /**
@@ -361,10 +363,11 @@ export class LineupService {
   async openPlaces(userId: string, from: string, to: string) {
     if (to < from) throw new BadRequestException(["to must not be before from"]);
     if (daysBetween(from, to) > 400) throw new BadRequestException(["to must be at most 400 days after from"]);
-    const { mine, near } = await this.teamsNear(userId);
+    const { mine, near, reach } = await this.teamsNear(userId);
     if (mine.size === 0) return [];
     const events = (await this.prisma.client.teamEvent.findMany({ where: { teamId: { in: near }, rehearsalForId: null }, include: { ...withDates, team: { select: { name: true, color: true } } } })).filter((event) =>
-      partsOf(event).some((part) => part.openTo?.some((id) => mine.has(id))),
+      // Its parts, or what one of its dates asks for besides (issue #549).
+      [...partsOf(event), ...event.dates.flatMap((row) => partsOf({ parts: [], dates: [row] }, dateText(row.date)))].some((part) => part.openTo?.some((id) => reach.has(id))),
     );
     if (events.length === 0) return [];
     const lineup = await this.prisma.client.teamEventAssignment.findMany({ where: { eventId: { in: events.map((e) => e.id) }, date: { gte: day(from), lte: day(to) } }, select: { eventId: true, date: true, partKey: true, status: true, userId: true } });
@@ -374,8 +377,8 @@ export class LineupService {
       for (const when of eventDates(timingOf(event), from < today ? today : from, to, changesOf(event))) {
         if (when.cancelled || when.date < today) continue;
         const on = lineup.filter((row) => row.eventId === event.id && dateText(row.date) === when.date);
-        for (const part of partsOf(event)) {
-          if (!part.openTo?.some((id) => mine.has(id))) continue;
+        for (const part of partsOf(event, when.date)) {
+          if (!part.openTo?.some((id) => reach.has(id))) continue;
           const left = placesLeft(part, on);
           const key = partKey(part);
           if (left === 0 || on.some((row) => row.partKey === key && row.userId === userId && row.status !== "DECLINED")) continue;
@@ -408,9 +411,9 @@ export class LineupService {
   async volunteer(userId: string, dto: VolunteerRequest) {
     const { teamId, eventId, date } = dto;
     const event = await this.comingDate(teamId, eventId, date);
-    const part = partsOf(event).find((one) => partKey(one) === dto.part);
-    const { mine } = await this.teamsNear(userId);
-    if (!part || !part.openTo?.some((id) => mine.has(id)) || (part.part && isGivenPart(part.part))) throw new BadRequestException(["That place isn't open to you"]);
+    const part = partsOf(event, date).find((one) => partKey(one) === dto.part);
+    const { mine, reach } = await this.teamsNear(userId);
+    if (!part || !part.openTo?.some((id) => reach.has(id)) || (part.part && isGivenPart(part.part))) throw new BadRequestException(["That place isn't open to you"]);
     const member = mine.has(teamId);
     let row;
     try {

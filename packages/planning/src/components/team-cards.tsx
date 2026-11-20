@@ -1,7 +1,8 @@
-import type { OrganizationDetail, OrganizationSummary, TeamPosition, TeamSummary } from "@oneverse/core";
+import { FILLABLE_ROLES, type OrganizationDetail, type OrganizationSummary, type TeamPosition, type TeamSummary } from "@oneverse/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePlanning } from "../host";
+import { usePartLabel } from "./lineup";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Label } from "@oneverse/ui/components/label";
@@ -204,15 +205,19 @@ export function GroupCard({ team, organization, onChanged, onError }: { team: Te
   const { t } = useTranslation();
   const [usesSongverse, setUsesSongverse] = useState(team.usesSongverse !== false);
   const [parentId, setParentId] = useState(team.parentId ?? "");
+  // The roles it fills at the organisation's events (issue #549): "Worship" fills Music.
+  const filled = organization.teams.find((one) => one.id === team.id)?.fills ?? [];
+  const [fills, setFills] = useState<string[]>(filled);
+  const partLabel = usePartLabel([]);
   const [saving, setSaving] = useState(false);
   // Not under itself or a group under it.
   const excluded = withSubgroups(organization.teams, team.id);
-  const changed = usesSongverse !== (team.usesSongverse !== false) || parentId !== (team.parentId ?? "");
+  const changed = usesSongverse !== (team.usesSongverse !== false) || parentId !== (team.parentId ?? "") || [...fills].sort().join() !== [...filled].sort().join();
 
   async function save() {
     setSaving(true);
     try {
-      await api.updateTeamGroup(team.id, { usesSongverse, parentId: parentId || null });
+      await api.updateTeamGroup(team.id, { usesSongverse, parentId: parentId || null, fills });
       await onChanged();
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
@@ -248,6 +253,18 @@ export function GroupCard({ team, organization, onChanged, onError }: { team: Te
             <span className="text-xs text-muted-foreground">{t("organizations.usesSongverseHint")}</span>
           </span>
         </label>
+        <fieldset className="flex flex-col gap-1.5" data-testid="team-fills">
+          <legend className="text-sm font-medium">{t("organizations.fills")}</legend>
+          <p className="text-xs text-muted-foreground">{t("organizations.fillsHint")}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-1">
+            {FILLABLE_ROLES.map((key) => (
+              <label key={key} className="flex items-center gap-1.5 text-sm">
+                <input type="checkbox" className="size-4" checked={fills.includes(key)} onChange={(e) => setFills(e.target.checked ? [...fills, key] : fills.filter((one) => one !== key))} data-fills={key} />
+                {partLabel({ part: key, count: 1 })}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <Button className="self-start" disabled={saving || !changed} onClick={() => void save()} data-testid="team-group-save">
           {saving ? t("organizations.saving") : t("organizations.save")}
         </Button>

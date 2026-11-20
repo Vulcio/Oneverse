@@ -6,7 +6,7 @@ import { givenOn, givenPartsAmong } from "../roles/capabilities.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
 import { placesElsewhere, type LineupConflict } from "./lineup.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
-import { changesOf, dateText, day, partsOf, rehearsalDatesOf, timingOf, withDates, type EventRow, type RehearsalOf } from "./team-events.service.js";
+import { changesOf, dateText, day, partsOf, withGroupsAbove, rehearsalDatesOf, timingOf, withDates, type EventRow, type RehearsalOf } from "./team-events.service.js";
 
 /** The longest range of dates asked for at once. */
 const MAX_RANGE_DAYS = 400;
@@ -61,7 +61,8 @@ export class AvailabilityService {
     const timeZoneOf = new Map(eventRows.map((e) => [e.id, e.timeZone]));
     const viewerAt = (eventId: string) => (viewerUser ? { ...viewerUser, positionIds: viewerMembership?.positionIds ?? [], givenParts: givenOn(organizationEventOf.get(eventId), partsGiven.get(viewerId)) } : null);
     // The viewer's teams: the open places (issue #528) they may take.
-    const viewerTeams = new Set((await this.prisma.client.teamMembership.findMany({ where: { userId: viewerId }, select: { teamId: true } })).map((m) => m.teamId));
+    // Their groups and those above them (issue #549): whose open places they may take.
+    const viewerTeams = await withGroupsAbove(this.prisma.client, (await this.prisma.client.teamMembership.findMany({ where: { userId: viewerId }, select: { teamId: true } })).map((m) => m.teamId));
     const members = isAdmin ? memberRows.map((m) => m.userId) : [viewerId];
     const userIds = members.includes(viewerId) ? members : [...members, viewerId];
     const [answers, away, lineupRows] = await Promise.all([
@@ -176,7 +177,7 @@ export class AvailabilityService {
       if (!member) throw new NotFoundException("Not a member of the team");
     }
     // The parts they'd like to play (issue #520): among those they may wish for; none when they can't come.
-    const wishes = dto.answer === "UNAVAILABLE" ? [] : dto.wishes === undefined ? undefined : await this.checkedWishes(teamId, event, userId, dto.wishes);
+    const wishes = dto.answer === "UNAVAILABLE" ? [] : dto.wishes === undefined ? undefined : await this.checkedWishes(teamId, event, date, userId, dto.wishes);
     const data = { answer: dto.answer, note: dto.note === undefined ? undefined : dto.note, answeredByUserId: by, ...(wishes !== undefined && { wishes }) };
     const row = await this.prisma.client.teamEventAnswer.upsert({
       where: { eventId_date_userId: { eventId, date: day(date), userId } },
@@ -193,17 +194,17 @@ export class AvailabilityService {
   }
 
   /** What someone may wish to play on an event's date (issue #520): its parts, else their instruments and roles. */
-  private async wishOptionsOf(teamId: string, event: { parts: EventRow["parts"]; organizationEventId: string | null }, userId: string): Promise<EventPart[]> {
+  private async wishOptionsOf(teamId: string, event: Pick<EventRow, "parts" | "dates" | "organizationEventId">, date: string, userId: string): Promise<EventPart[]> {
     const [user, membership] = await Promise.all([
       this.prisma.client.user.findUnique({ where: { id: userId }, select: { instruments: true, techRoles: true } }),
       this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { positionIds: true } }),
     ]);
     const givenParts = givenOn(event.organizationEventId, event.organizationEventId ? (await givenPartsAmong(this.prisma.client, teamId, [userId])).get(userId) : []);
-    return wishOptions(partsOf(event), { instruments: user?.instruments ?? [], techRoles: user?.techRoles ?? [], positionIds: membership?.positionIds ?? [], givenParts });
+    return wishOptions(partsOf(event, date), { instruments: user?.instruments ?? [], techRoles: user?.techRoles ?? [], positionIds: membership?.positionIds ?? [], givenParts });
   }
 
-  private async checkedWishes(teamId: string, event: { parts: EventRow["parts"]; organizationEventId: string | null }, userId: string, wishes: string[]): Promise<string[]> {
-    const allowed = new Set((await this.wishOptionsOf(teamId, event, userId)).map(partKey));
+  private async checkedWishes(teamId: string, event: Pick<EventRow, "parts" | "dates" | "organizationEventId">, date: string, userId: string, wishes: string[]): Promise<string[]> {
+    const allowed = new Set((await this.wishOptionsOf(teamId, event, date, userId)).map(partKey));
     const unknown = wishes.filter((wish) => !allowed.has(wish));
     if (unknown.length > 0) throw new BadRequestException([`wishes must be among the date's parts, or what they play when it lists none: ${unknown.join(", ")}`]);
     return [...new Set(wishes)];
@@ -293,6 +294,7 @@ export class AvailabilityService {
     const givenIn = new Map<string, string[]>();
     for (const membership of memberships) givenIn.set(membership.teamId, (await givenPartsAmong(this.prisma.client, membership.teamId, [userId])).get(userId) ?? []);
     const memberTeams = new Set(memberships.map((m) => m.teamId));
+    const reach = await withGroupsAbove(this.prisma.client, memberTeams);
     // A guest's dates too (issue #235, phase 7): the events of other teams they're on a line-up for.
     const guestOn = await this.prisma.client.teamEventAssignment.findMany({ where: { userId, date: { gte: day(from), lte: day(to) }, event: { teamId: { notIn: [...memberTeams] } } }, select: { eventId: true, date: true } });
     const guestDates = new Set(guestOn.map((row) => key(row.eventId, dateText(row.date))));
@@ -373,16 +375,16 @@ export class AvailabilityService {
             setlistId: row?.setlist?.id ?? null,
             songCount: row?.setlist?._count.items ?? 0,
             myAnswer: { ...effectiveAnswer(mine?.answer ?? null, away.get(userId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId, wishes: mine?.wishes ?? [] },
-            parts: partsOf(event),
+            parts: partsOf(event, date.date),
             // What they may say they'd like to play (issue #520).
-            wishOptions: wishOptions(partsOf(event), { instruments: me?.instruments ?? [], techRoles: me?.techRoles ?? [], positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenOn(event.organizationEventId, givenIn.get(event.teamId)) }),
+            wishOptions: wishOptions(partsOf(event, date.date), { instruments: me?.instruments ?? [], techRoles: me?.techRoles ?? [], positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenOn(event.organizationEventId, givenIn.get(event.teamId)) }),
             rehearsalFor: null as RehearsalOf | null,
             // Issue #528: the required parts still to fill, and the open places one may take.
-            missing: missingRequired(partsOf(event), dayLineup),
-            volunteerOptions: date.date >= localDate(new Date(), event.timeZone) ? volunteerOptions(partsOf(event), dayLineup, userId, memberTeams) : [],
+            missing: missingRequired(partsOf(event, date.date), dayLineup),
+            volunteerOptions: date.date >= localDate(new Date(), event.timeZone) ? volunteerOptions(partsOf(event, date.date), dayLineup, userId, reach) : [],
             // Who's on which part; one's own place to accept or decline.
             lineup: dayLineup.map((row) => {
-                const part = partsOf(event).find((one) => partKey(one) === row.partKey);
+                const part = partsOf(event, date.date).find((one) => partKey(one) === row.partKey);
                 const offered = !!row.swapRequestedAt && row.status !== "DECLINED";
                 const onIt = lineupRows.some((other) => other.eventId === row.eventId && dateText(other.date) === date.date && other.userId === userId && other.partKey === row.partKey && other.status !== "DECLINED");
                 return {

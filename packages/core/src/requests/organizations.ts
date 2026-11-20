@@ -1,6 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { ENTITY_COLORS } from "../constants/index.js";
+import { FILLABLE_ROLES } from "../calendar/index.js";
 import { clearableInt, clearableText, optional, queryBoolean } from "./fields.js";
 
 /**
@@ -114,6 +115,11 @@ export type CreateGroupRequest = z.input<typeof CreateGroupSchema>;
 /** PATCH /teams/:id/group (the team's admins): a field left out keeps its value; parentId null puts it at the top. */
 export const UpdateGroupSchema = z.strictObject({
   usesSongverse: z.boolean().optional(),
+  fills: z
+    .array(z.enum(FILLABLE_ROLES as unknown as [string, ...string[]]))
+    .max(FILLABLE_ROLES.length)
+    .optional()
+    .describe("The roles it fills at its organisation's events (issue #549): Music, Media operator, Audio operator, Lights, Technician"),
   parentId: z.string().min(1).nullable().optional(),
 });
 export type UpdateGroupRequest = z.input<typeof UpdateGroupSchema>;

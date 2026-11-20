@@ -1650,7 +1650,12 @@ const en = {
       SPEAKER: "Speaker",
       TECHNICIAN: "Technician",
       MEDIA_OPERATOR: "Media operator",
-      SOUND_ENGINEER: "Sound engineer",
+      SOUND_ENGINEER: "Audio operator",
+      LIGHTS: "Lights",
+    },
+    // A role as an event asks for it (issue #549): high level.
+    eventRole: {
+      MUSIC_LEADER: "Music",
     },
   },
   library: {
@@ -2481,6 +2486,12 @@ const en = {
     cancelled: "Cancelled",
     repeats: "Repeats",
     dateActions: "{{title}} actions",
+    asksTitle: "Instruments for this date",
+    asksHint: "What the band needs this date. Whoever the event's Music is open to sees each place and signs up for it.",
+    asksAdd: "Ask for instruments",
+    asksChange: "Change",
+    asksSave: "Save",
+    asksNone: "No instruments asked for yet.",
     viewDates: "Dates",
     viewEvents: "Events",
     viewHint: "Dates lists each coming date; Events, each event once - a series with all its dates - to change it as a whole.",
@@ -2571,6 +2582,8 @@ const en = {
     noAway: "No days away.",
   },
   organizations: {
+    fills: "Roles it fills",
+    fillsHint: "At the organisation's events, a role this group fills is open to its members, and to those of the groups under it: Worship fills Music.",
     comingUpHint: "The organisation's next dates and the groups each needs.",
     openCalendar: "Open the calendar",
     noComing: "Nothing planned in the coming weeks.",
