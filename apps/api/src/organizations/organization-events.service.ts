@@ -103,6 +103,79 @@ export class OrganizationEventsService {
     );
   }
 
+  /** Its groups' events waiting to become the organisation's (issue #549), for its admins. */
+  async transfers(viewer: Viewer, organizationId: string) {
+    await this.assertManager(viewer, organizationId, null);
+    const rows = await this.prisma.client.teamEvent.findMany({
+      where: { team: { organizationId }, transferRequestedAt: { not: null }, organizationEventId: null },
+      include: { team: { select: { name: true, color: true, avatarUrl: true } }, transferRequestedBy: { select: { displayName: true } } },
+      orderBy: { transferRequestedAt: "asc" },
+    });
+    return rows.map((row) => ({
+      teamEventId: row.id,
+      teamId: row.teamId,
+      teamName: row.team.name,
+      color: row.team.color,
+      avatarUrl: row.team.avatarUrl,
+      title: row.title,
+      date: dateText(row.date),
+      startTime: row.startTime,
+      timeZone: row.timeZone,
+      repeat: row.repeatEveryWeeks ? { everyWeeks: row.repeatEveryWeeks, until: row.repeatUntil ? dateText(row.repeatUntil) : null } : null,
+      requestedBy: row.transferRequestedBy?.displayName ?? null,
+      requestedAt: row.transferRequestedAt!.toISOString(),
+    }));
+  }
+
+  /**
+   * A group's event made the organisation's (issue #549), by its admins: a
+   * new organisation event with the same timing, the group's event its part
+   * of it - its dates, answers, line-ups and sets kept. Its host: who asked,
+   * while they're in the organisation, else the admin accepting. `accept`
+   * false declines it: it stays the team's.
+   */
+  async decideTransfer(viewer: Viewer, organizationId: string, teamEventId: string, accept: boolean) {
+    const role = await this.assertManager(viewer, organizationId, null);
+    const row = await this.prisma.client.teamEvent.findFirst({ where: { id: teamEventId, team: { organizationId }, transferRequestedAt: { not: null }, organizationEventId: null }, include: { team: { select: { name: true } } } });
+    if (!row) throw new NotFoundException("No such event waiting for the organisation");
+    const who = await this.prisma.client.user.findUnique({ where: { id: viewer.id }, select: { displayName: true } });
+    const tell = async (kind: "EVENT_TRANSFER_ACCEPTED" | "EVENT_TRANSFER_DECLINED") => {
+      if (row.transferRequestedByUserId)
+        await this.notifications.notify([{ userId: row.transferRequestedByUserId, kind, data: { event: row.title, team: row.team.name, by: who?.displayName ?? "" }, url: `/teams/${row.teamId}`, teamId: row.teamId }], viewer.id);
+    };
+    if (!accept) {
+      await this.prisma.client.teamEvent.update({ where: { id: row.id }, data: { transferRequestedAt: null, transferRequestedByUserId: null } });
+      await tell("EVENT_TRANSFER_DECLINED");
+      return null;
+    }
+    const asker = row.transferRequestedByUserId ? await this.organizations.roleOf({ id: row.transferRequestedByUserId, isGlobalAdmin: false }, organizationId) : null;
+    // A location of the organisation's stays; the team's own becomes the place's words.
+    const location = row.locationId ? await this.prisma.client.location.findFirst({ where: { id: row.locationId, ownerOrganizationId: organizationId }, select: { id: true } }) : null;
+    const event = await this.prisma.client.$transaction(async (tx) => {
+      const made = await tx.organizationEvent.create({
+        data: {
+          organizationId,
+          title: row.title,
+          date: row.date,
+          startTime: row.startTime,
+          durationMinutes: row.durationMinutes,
+          timeZone: row.timeZone,
+          place: row.place,
+          locationId: location?.id ?? null,
+          note: row.note,
+          repeatEveryWeeks: row.repeatEveryWeeks,
+          repeatUntil: row.repeatUntil,
+          hostUserId: asker ? row.transferRequestedByUserId : viewer.id,
+          createdByUserId: viewer.id,
+        },
+      });
+      await tx.teamEvent.update({ where: { id: row.id }, data: { organizationEventId: made.id, transferRequestedAt: null, transferRequestedByUserId: null } });
+      return made;
+    });
+    await tell("EVENT_TRANSFER_ACCEPTED");
+    return this.summary(await this.find(organizationId, event.id), viewer, role);
+  }
+
   async list(viewer: Viewer, organizationId: string) {
     const role = await this.role(viewer, organizationId);
     const events = await this.prisma.client.organizationEvent.findMany({ where: { organizationId }, include: withGroups, orderBy: { date: "asc" } });

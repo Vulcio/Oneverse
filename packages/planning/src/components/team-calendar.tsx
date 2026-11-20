@@ -1,6 +1,6 @@
 import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, isGivenPart, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Ban, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { Ban, Building2, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -43,9 +43,12 @@ export function TeamCalendar({
   customInstruments = [],
   setsByDefault = true,
   positions = [],
+  organization = null,
 }: {
   teamId: string;
   isAdmin: boolean;
+  /** The team's organisation (issue #549): an event can be moved to it, once its admins accept. */
+  organization?: { id: string; name: string } | null;
   customInstruments?: readonly CustomInstrument[];
   /** The group's own positions (issue #241), parts its events can ask for. */
   positions?: readonly TeamPosition[];
@@ -198,7 +201,7 @@ export function TeamCalendar({
           </TabsList>
         </Tabs>
         {view === "events" ? (
-          <EventSeriesList events={events} types={types} isAdmin={isAdmin} partLabel={partLabel} onEdit={setEditing} />
+          <EventSeriesList events={events} types={types} isAdmin={isAdmin} partLabel={partLabel} onEdit={setEditing} organizationName={organization?.name ?? null} />
         ) : (
         <>
         {dates === null ? null : dates.length === 0 ? (
@@ -474,6 +477,7 @@ export function TeamCalendar({
           customInstruments={customInstruments}
           partLabel={partLabel}
           openToTeams={openToTeams}
+          organization={organization}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null);
@@ -576,7 +580,7 @@ function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: st
  * a one-off with its date, a rehearsal with its event - to change one as a
  * whole, not date by date.
  */
-function EventSeriesList({ events, types, isAdmin, partLabel, onEdit }: { events: TeamEvent[]; types: TeamEventType[]; isAdmin: boolean; partLabel: (part: EventPart) => string; onEdit: (event: TeamEvent) => void }) {
+function EventSeriesList({ events, types, isAdmin, partLabel, onEdit, organizationName }: { events: TeamEvent[]; types: TeamEventType[]; isAdmin: boolean; partLabel: (part: EventPart) => string; onEdit: (event: TeamEvent) => void; organizationName: string | null }) {
   const { t, i18n } = useTranslation();
   if (events.length === 0) return <p className="text-sm text-muted-foreground">{t("teamCalendar.noSeries")}</p>;
   const today = localDate(new Date(), browserZone());
@@ -596,6 +600,11 @@ function EventSeriesList({ events, types, isAdmin, partLabel, onEdit }: { events
                 {type ? <Badge variant="muted">{type.name}</Badge> : null}
                 {event.planned ? <Badge variant="outline">{t("teamCalendar.plannedBy", { organization: event.planned.organizationName })}</Badge> : null}
                 {over(event) ? <Badge variant="outline">{t("teamCalendar.seriesPast")}</Badge> : null}
+                {event.transferRequestedAt && organizationName ? (
+                  <Badge variant="warning" data-testid="series-transfer-waiting">
+                    {t("teamCalendar.transferBadge", { organization: organizationName })}
+                  </Badge>
+                ) : null}
               </div>
               <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground" data-testid="series-when">
                 {parent && event.rehearsalFor ? (
@@ -784,6 +793,7 @@ function EventDialog({
   customInstruments,
   partLabel,
   openToTeams,
+  organization,
   onClose,
   onSaved,
 }: {
@@ -802,10 +812,13 @@ function EventDialog({
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
   openToTeams: OpenToTeam[];
+  organization: { id: string; name: string } | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
   const { api } = usePlanning();
+  // Asked to become the organisation's (issue #549): waiting for its admins.
+  const transferAsked = !!event?.transferRequestedAt;
   const { t } = useTranslation();
   const [parts, setParts] = useState<EventPart[]>(event?.parts ?? []);
   const planned = event?.planned ?? null;
@@ -1024,6 +1037,40 @@ function EventDialog({
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} ownTeamId={teamId} />}
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
+        {/* Moved to the organisation (issue #549), one-off or series: its admins accept it; dates, answers, line-ups and sets stay. */}
+        {event && !planned && !event.rehearsalFor && organization ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-3 text-sm" data-testid="event-transfer">
+            <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            {transferAsked ? (
+              <>
+                <span className="min-w-0 flex-1">{t("teamCalendar.transferWaiting", { organization: organization.name })}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void api.requestTeamEventTransfer(teamId, event.id, false).then(() => onSaved(), (err: unknown) => setError(err instanceof Error ? err.message : String(err)))}
+                  data-testid="event-transfer-cancel"
+                >
+                  {t("teamCalendar.transferCancel")}
+                </Button>
+              </>
+            ) : (
+              <>
+                <span className="min-w-0 flex-1 text-muted-foreground">{t("teamCalendar.transferHint", { organization: organization.name })}</span>
+                {/* Only asked: it can be taken back until an admin accepts. */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void api.requestTeamEventTransfer(teamId, event.id).then(() => onSaved(), (err: unknown) => setError(err instanceof Error ? err.message : String(err)))}
+                  data-testid="event-transfer-ask"
+                >
+                  {t("teamCalendar.transfer", { organization: organization.name })}
+                </Button>
+              </>
+            )}
+          </div>
+        ) : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
           {event && !planned ? (
             <ConfirmButton

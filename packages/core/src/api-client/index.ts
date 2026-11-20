@@ -1592,6 +1592,24 @@ export interface TeamEvent {
   typeId?: string | null;
   /** Whether its dates get a set (issue #523). */
   withSet?: boolean;
+  /** Asked to become its organisation's (issue #549), waiting for its admins; null: not asked. */
+  transferRequestedAt?: string | null;
+}
+
+/** A group's event asking to become its organisation's (issue #549). */
+export interface OrganizationEventTransfer {
+  teamEventId: string;
+  teamId: string;
+  teamName: string;
+  color: string | null;
+  avatarUrl: string | null;
+  title: string;
+  date: string;
+  startTime: string;
+  timeZone: string;
+  repeat: EventRepeat | null;
+  requestedBy: string | null;
+  requestedAt: string;
 }
 
 /** A kind of event a team holds (issue #523): what a new event of it starts with. */
@@ -3222,6 +3240,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<{ positionIds: string[] }>(`/teams/${teamId}/members/${userId}/positions`, { method: "PUT", body: JSON.stringify({ positionIds }) }),
     // An organisation's events (issue #241).
     listOrganizationEvents: (organizationId: string) => request<OrganizationEvent[]>(`/organizations/${organizationId}/events`),
+    /** Its groups' events asking to become the organisation's (issue #549), for its admins. */
+    listOrganizationEventTransfers: (organizationId: string) => request<OrganizationEventTransfer[]>(`/organizations/${organizationId}/event-transfers`),
+    acceptOrganizationEventTransfer: (organizationId: string, teamEventId: string) => request<OrganizationEvent>(`/organizations/${organizationId}/event-transfers/${teamEventId}/accept`, { method: "POST" }),
+    declineOrganizationEventTransfer: (organizationId: string, teamEventId: string) => request<void>(`/organizations/${organizationId}/event-transfers/${teamEventId}/decline`, { method: "POST" }),
     listOrganizationEventDates: (organizationId: string, from: string, to: string) =>
       request<OrganizationEventDate[]>(`/organizations/${organizationId}/event-dates?${new URLSearchParams({ from, to })}`),
     createOrganizationEvent: (organizationId: string, data: CreateOrganizationEventRequest) =>
@@ -3247,6 +3269,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     updateTeamEvent: (teamId: string, eventId: string, data: UpdateTeamEventRequest) =>
       request<TeamEvent>(`/teams/${teamId}/events/${eventId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteTeamEvent: (teamId: string, eventId: string) => request<void>(`/teams/${teamId}/events/${eventId}`, { method: "DELETE" }),
+    /** Ask for the event to become the team's organisation's (issue #549); `false` takes the request back. */
+    requestTeamEventTransfer: (teamId: string, eventId: string, ask = true) => request<TeamEvent>(`/teams/${teamId}/events/${eventId}/transfer`, { method: ask ? "POST" : "DELETE" }),
     // A team's event types (issue #523).
     listTeamEventTypes: (teamId: string) => request<TeamEventType[]>(`/teams/${teamId}/event-types`),
     createTeamEventType: (teamId: string, data: CreateTeamEventTypeRequest) =>

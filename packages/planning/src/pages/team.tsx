@@ -244,7 +244,7 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
       {error ? <FieldError>{error}</FieldError> : null}
 
       {/* Its services and rehearsals, each date with its set (issue #235). */}
-      <TeamCalendar teamId={team.id} isAdmin={isAdmin} customInstruments={customInstruments} setsByDefault={team.usesSongverse !== false} positions={positions} />
+      <TeamCalendar teamId={team.id} isAdmin={isAdmin} customInstruments={customInstruments} setsByDefault={team.usesSongverse !== false} positions={positions} organization={team.organization && organizations && organizations.mode !== "NONE" ? team.organization : null} />
 
       <div className="grid grid-cols-1 items-start gap-6 @6xl:grid-cols-2">
       <Card>

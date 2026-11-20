@@ -46,6 +46,23 @@ export class OrganizationEventsController {
     return this.events.updateDate(user, organizationId, eventId, date, dto.cancelled);
   }
 
+  /** Its groups' events asking to become the organisation's (issue #549): its admins accept or decline them. */
+  @Get("event-transfers")
+  transfers(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string) {
+    return this.events.transfers(user, organizationId);
+  }
+
+  @Post("event-transfers/:teamEventId/accept")
+  acceptTransfer(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("teamEventId") teamEventId: string) {
+    return this.events.decideTransfer(user, organizationId, teamEventId, true);
+  }
+
+  @Post("event-transfers/:teamEventId/decline")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async declineTransfer(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("teamEventId") teamEventId: string) {
+    await this.events.decideTransfer(user, organizationId, teamEventId, false);
+  }
+
   @Get("event-dates")
   dates(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Query() query: TeamEventDatesQueryDto) {
     return this.events.dates(user, organizationId, query.from, query.to);

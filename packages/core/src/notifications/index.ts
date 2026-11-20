@@ -38,6 +38,11 @@ export const NOTIFICATION_KINDS = [
   "SWAP_TAKEN",
   // One is made the host of an organisation's event (issue #241).
   "HOSTING",
+  // A team's admin asks for one of its events to become the organisation's (issue #549, to its admins): accept or decline.
+  "EVENT_TRANSFER_REQUESTED",
+  // The organisation took the event one asked it to, or declined (to the one who asked).
+  "EVENT_TRANSFER_ACCEPTED",
+  "EVENT_TRANSFER_DECLINED",
   // Someone asks to connect (issue #149, #77): accept or decline right there.
   "CONNECTION_REQUESTED",
   // Someone one asked to connect said yes.

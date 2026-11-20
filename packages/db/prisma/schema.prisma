@@ -369,6 +369,7 @@ model User {
   connectionsAnswered          Connection[]          @relation("ConnectionAddressee")
   reviewedProposals            ChangeProposal[]      @relation("ProposalReviewer")
   teamEventsCreated            TeamEvent[]           @relation("TeamEventCreatedBy")
+  teamEventTransfersAsked      TeamEvent[]           @relation("TeamEventTransferBy")
   eventAnswers                 TeamEventAnswer[]     @relation("TeamEventAnswerUser")
   eventAnswersGiven            TeamEventAnswer[]     @relation("TeamEventAnswerBy")
   awayRanges                   UserAway[]
@@ -1508,6 +1509,10 @@ model TeamEvent {
   typeId              String?
   // Whether its dates get a set (issue #523): false for a meeting, a prayer evening; a group that only plans has none anyway.
   withSet             Boolean   @default(true)
+  // Asked to become its organisation's event (issue #549), by one of the team's admins: an
+  // organisation admin accepts (it becomes the team's part of a new organisation event) or declines.
+  transferRequestedAt       DateTime?
+  transferRequestedByUserId String?
   createdByUserId     String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -1515,6 +1520,7 @@ model TeamEvent {
   team              Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   type              TeamEventType?        @relation(fields: [typeId], references: [id], onDelete: SetNull)
   createdBy         User?                 @relation("TeamEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  transferRequestedBy User?               @relation("TeamEventTransferBy", fields: [transferRequestedByUserId], references: [id], onDelete: SetNull)
   dates             TeamEventDate[]
   answers           TeamEventAnswer[]
   reminders         TeamEventReminder[]

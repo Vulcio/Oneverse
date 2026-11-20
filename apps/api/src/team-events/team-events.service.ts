@@ -156,6 +156,8 @@ export class TeamEventsService {
       organizationEventId: event.organizationEventId,
       typeId: event.typeId,
       withSet: event.withSet,
+      // Asked to become its organisation's (issue #549), waiting for its admins.
+      transferRequestedAt: event.transferRequestedAt?.toISOString() ?? null,
     };
   }
 
@@ -348,6 +350,35 @@ export class TeamEventsService {
     const fresh = await this.find(teamId, eventId);
     await this.notifyDates(before, fresh, signedUp, by);
     return this.summary(fresh);
+  }
+
+  /**
+   * Asked to become its organisation's event (issue #549), by one of the
+   * team's admins, one-off or series: the organisation's admins are told,
+   * and accept or decline it (OrganizationEventsService.acceptTransfer).
+   * `ask` false takes the request back.
+   */
+  async requestTransfer(teamId: string, eventId: string, userId: string, ask = true) {
+    const event = await this.find(teamId, eventId);
+    if (event.organizationEventId) throw new BadRequestException(["This event is the organisation's already"]);
+    if (event.rehearsalForId) throw new BadRequestException(["A rehearsal goes with its event: move that event"]);
+    const team = await this.prisma.client.team.findUniqueOrThrow({ where: { id: teamId }, select: { name: true, organizationId: true } });
+    if (!team.organizationId) throw new BadRequestException(["The team isn't part of an organisation"]);
+    if (!ask) {
+      await this.prisma.client.teamEvent.update({ where: { id: eventId }, data: { transferRequestedAt: null, transferRequestedByUserId: null } });
+      return this.summary(await this.find(teamId, eventId));
+    }
+    if (event.transferRequestedAt) return this.summary(event);
+    await this.prisma.client.teamEvent.update({ where: { id: eventId }, data: { transferRequestedAt: new Date(), transferRequestedByUserId: userId } });
+    const [admins, by] = await Promise.all([
+      this.prisma.client.organizationMembership.findMany({ where: { organizationId: team.organizationId, role: "ADMIN" }, select: { userId: true } }),
+      this.prisma.client.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
+    ]);
+    await this.notifications.notify(
+      admins.map((admin) => ({ userId: admin.userId, kind: "EVENT_TRANSFER_REQUESTED" as const, data: { event: event.title, team: team.name, by: by?.displayName ?? "" }, url: `/organizations/${team.organizationId}/events`, app: "planiverse" as const })),
+      userId,
+    );
+    return this.summary(await this.find(teamId, eventId));
   }
 
   /** The event goes; its coming dates' empty sets with it, the rest stay as the team's sets. */

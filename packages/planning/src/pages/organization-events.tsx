@@ -1,4 +1,4 @@
-import { addDays, localDate, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type OrganizationEventPreset, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
+import { addDays, localDate, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type OrganizationEventPreset, type OrganizationEventTransfer, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Ban, CalendarDays, CircleCheck, MapPin, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -92,6 +92,9 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
       </div>
 
       {error ? <FieldError>{error}</FieldError> : null}
+
+      {/* Groups' events asking to be the organisation's (issue #549): its admins accept or decline. */}
+      {isAdmin ? <TransfersCard organizationId={organization.id} onDecided={() => act(async () => {})} /> : null}
 
       <Card>
         <CardContent className="flex flex-col gap-3">
@@ -263,6 +266,75 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
         />
       ) : null}
     </div>
+  );
+}
+
+/** Its groups' events asking to become the organisation's (issue #549): accepted, each is the organisation's with that group's part as it was. */
+function TransfersCard({ organizationId, onDecided }: { organizationId: string; onDecided: () => Promise<void> }) {
+  const { api } = usePlanning();
+  const { t, i18n } = useTranslation();
+  const [transfers, setTransfers] = useState<OrganizationEventTransfer[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(() => api.listOrganizationEventTransfers(organizationId).then(setTransfers, () => setTransfers([])), [organizationId]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  if (transfers.length === 0) return null;
+  const decide = async (id: string, accept: boolean) => {
+    setBusy(id);
+    setError(null);
+    try {
+      if (accept) await api.acceptOrganizationEventTransfer(organizationId, id);
+      else await api.declineOrganizationEventTransfer(organizationId, id);
+      await load();
+      await onDecided();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+  const weekday = (date: string) => new Intl.DateTimeFormat(i18n.language, { weekday: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+  return (
+    <Card className="border-primary/40" data-testid="org-transfers">
+      <CardHeader>
+        <CardTitle className="text-sm">{t("organizations.transfersTitle")}</CardTitle>
+        <CardDescription>{t("organizations.transfersHint")}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2">
+        {error ? <FieldError>{error}</FieldError> : null}
+        <ul className="flex flex-col divide-y">
+          {transfers.map((one) => (
+            <li key={one.teamEventId} className="flex flex-wrap items-center gap-3 py-2 first:pt-0 last:pb-0" data-transfer={one.teamEventId}>
+              <EntityAvatar name={one.teamName} color={one.color} avatarUrl={one.avatarUrl} size={28} />
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-sm font-medium">{one.title}</span>
+                <span className="text-xs text-muted-foreground">
+                  {[
+                    one.teamName,
+                    one.repeat
+                      ? `${t("teamCalendar.everyNWeeks", { count: one.repeat.everyWeeks })} · ${t("teamCalendar.seriesOn", { weekday: weekday(one.date), time: one.startTime })}`
+                      : t("teamCalendar.seriesOnce", { date: formatSetDate(one.date, i18n.language), time: one.startTime }),
+                    one.requestedBy ? t("organizations.transferAskedBy", { name: one.requestedBy }) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" disabled={busy !== null} onClick={() => void decide(one.teamEventId, true)} data-testid="org-transfer-accept">
+                  {t("organizations.transferAccept")}
+                </Button>
+                <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => void decide(one.teamEventId, false)} data-testid="org-transfer-decline">
+                  {t("organizations.transferDecline")}
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 

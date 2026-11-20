@@ -190,6 +190,19 @@ export class TeamEventsController {
     return this.events.setAsks(teamId, eventId, dateParam(date), dto, user.id, isAdmin);
   }
 
+  /** Asked to become the team's organisation's event (issue #549); its admins accept or decline. */
+  @Post("events/:eventId/transfer")
+  @UseGuards(TeamAdminGuard)
+  requestTransfer(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string) {
+    return this.events.requestTransfer(teamId, eventId, user.id);
+  }
+
+  @Delete("events/:eventId/transfer")
+  @UseGuards(TeamAdminGuard)
+  cancelTransfer(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string) {
+    return this.events.requestTransfer(teamId, eventId, user.id, false);
+  }
+
   /** A date's set now, however far ahead: to plan it. */
   /** A member put on a part for a date (issue #235, phase 7): they're asked, and told. */
   @Post("events/:eventId/dates/:date/lineup")
