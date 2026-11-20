@@ -6,7 +6,10 @@ import { AnnouncementsCard, type AnnouncementsActions } from "@oneverse/planning
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/admin/announcements")({
-  loader: () => apiClient.adminGetOrganizations(),
+  loader: async () => {
+    const [organizations, teams] = await Promise.all([apiClient.adminGetOrganizations(), apiClient.adminListTeams()]);
+    return { ...organizations, teams };
+  },
   component: AdminAnnouncementsPage,
 });
 
@@ -14,12 +17,18 @@ export const Route = createFileRoute("/_protected/admin/announcements")({
  * Admin > Announcements (issue #536): news for people - a new version (a
  * release drafts its own), new features - in English and French, for
  * everyone, Songverse's or Planiverse's people (when Planiverse is
- * deployed), or an organisation's members; sent as notifications.
+ * deployed), an organisation's members, or some teams'; sent as
+ * notifications.
  */
 function AdminAnnouncementsPage() {
   const { t } = useTranslation();
-  const { organizations, planiverseUrl } = Route.useLoaderData();
-  const audiences: AnnouncementAudience[] = ["EVERYONE", ...(planiverseUrl ? (["SONGVERSE", "PLANIVERSE"] as const) : []), ...(organizations.length > 0 ? (["ORGANIZATION"] as const) : [])];
+  const { organizations, planiverseUrl, teams } = Route.useLoaderData();
+  const audiences: AnnouncementAudience[] = [
+    "EVERYONE",
+    ...(planiverseUrl ? (["SONGVERSE", "PLANIVERSE"] as const) : []),
+    ...(organizations.length > 0 ? (["ORGANIZATION"] as const) : []),
+    ...(teams.length > 0 ? (["TEAMS"] as const) : []),
+  ];
   const actions = useMemo<AnnouncementsActions>(
     () => ({
       list: () => apiClient.adminListAnnouncements(),
@@ -38,6 +47,7 @@ function AdminAnnouncementsPage() {
         languages={["en", "fr"]}
         audiences={audiences}
         organizations={organizations.map((one) => ({ id: one.id, name: one.name }))}
+        teams={teams.map((team) => ({ id: team.id, name: team.name }))}
         title={t("announcements.title")}
         description={t("announcements.description")}
       />

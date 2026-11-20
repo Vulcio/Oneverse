@@ -93,10 +93,56 @@ check("its admin lists the organisation's, newest first", r.status === 200 && r.
 r = await call(admin, "GET", "/admin/announcements");
 check("Admin lists them all", r.body.some((one) => one.id === local.id) && r.body.some((one) => one.id === everyone.id), String(r.body.length));
 
+// --- an organisation's admins, to some of its groups (and the groups under them)
+const group = (await call(admin, "POST", "/teams", { name: `Announce choir ${stamp}` })).body;
+const subgroup = (await call(admin, "POST", "/teams", { name: `Announce altos ${stamp}` })).body;
+sql(`update "Team" set "organizationId"='${organization.id}' where id in ('${group.id}', '${subgroup.id}')`);
+sql(`update "Team" set "parentId"='${group.id}' where id='${subgroup.id}'`);
+// Their maker isn't in them: only who's added below.
+sql(`delete from "TeamMembership" where "teamId" in ('${group.id}', '${subgroup.id}')`);
+sql(`insert into "TeamMembership" (id, "teamId", "userId", role, "joinedAt", "updatedAt") values ('tman1${stamp}', '${group.id}', '${member.id}', 'MEMBER', now(), now()), ('tman2${stamp}', '${subgroup.id}', '${french.id}', 'MEMBER', now(), now()), ('tman3${stamp}', '${subgroup.id}', '${member.id}', 'MEMBER', now(), now())`);
+const elsewhere = (await call(outsider, "POST", "/teams", { name: `Announce elsewhere ${stamp}` })).body;
+r = await call(orgAdmin, "POST", `/organizations/${organization.id}/announcements`, { texts: { en: { title: "Choir only" } }, teamIds: [elsewhere.id] });
+check("…only its own groups", r.status === 400, JSON.stringify(r.body));
+r = await call(orgAdmin, "POST", `/organizations/${organization.id}/announcements`, { texts: { en: { title: "Choir only" } }, teamIds: [group.id] });
+check("to one group: its members (the admin's not in it)", r.status === 201 && r.body.audience === "TEAMS" && r.body.recipients === 1 && r.body.teams[0]?.name === group.name, JSON.stringify(r.body));
+r = await call(orgAdmin, "PATCH", `/organizations/${organization.id}/announcements/${r.body.id}`, { texts: { en: { title: "Choir and altos" } }, teamIds: [group.id], withSubgroups: true });
+check("and the groups under it: each person once", r.status === 200 && r.body.recipients === 2 && r.body.withSubgroups === true, JSON.stringify(r.body));
+const choir = r.body;
+await call(orgAdmin, "POST", `/organizations/${organization.id}/announcements/${choir.id}/send`);
+check("sent to them, from the organisation", await until(async () => (await mine(french, "ORGANIZATION_ANNOUNCEMENT")).some((one) => one.data.texts.en?.title === "Choir and altos")));
+check("…once to someone in both", (await mine(member, "ORGANIZATION_ANNOUNCEMENT")).filter((one) => one.data.texts.en?.title === "Choir and altos").length === 1);
+check("…not to the organisation's admin, in neither", (await mine(orgAdmin, "ORGANIZATION_ANNOUNCEMENT")).every((one) => one.data.texts.en?.title !== "Choir and altos"));
+
+// --- a global admin, to some teams
+r = await call(admin, "POST", "/admin/announcements", { texts: { en: { title: "For the elsewhere team" } }, audience: "TEAMS" });
+check("some teams, but which: refused", r.status === 400, JSON.stringify(r.body));
+r = await call(admin, "POST", "/admin/announcements", { texts: { en: { title: "For the elsewhere team" } }, audience: "TEAMS", teamIds: [elsewhere.id] });
+check("any team, from Admin", r.status === 201 && r.body.recipients === 1 && r.body.organizationId === null, JSON.stringify(r.body));
+await call(admin, "DELETE", `/admin/announcements/${r.body.id}`);
+
+// --- a team's admins, to its members
+r = await call(member, "POST", `/teams/${group.id}/announcements`, { texts: { en: { title: "Hi" } } });
+check("a team's member can't announce", r.status === 403, String(r.status));
+sql(`update "TeamMembership" set role='ADMIN' where "teamId"='${group.id}' and "userId"='${member.id}'`);
+r = await call(member, "POST", `/teams/${group.id}/announcements`, { texts: { en: { title: "Rehearsal moved", body: "" } }, teamIds: [elsewhere.id] });
+check("a team's admin can't pick other teams", r.status === 400, JSON.stringify(r.body));
+r = await call(member, "POST", `/teams/${group.id}/announcements`, { texts: { en: { title: "Rehearsal moved", body: "" } } });
+check("its admin drafts one for its members", r.status === 201 && r.body.teamId === group.id && r.body.teamName === group.name && r.body.recipients === 1, JSON.stringify(r.body));
+const rehearsal = r.body;
+r = await call(orgAdmin, "GET", `/organizations/${organization.id}/announcements`);
+check("…not on the organisation's list", r.body.every((one) => one.id !== rehearsal.id));
+r = await call(orgAdmin, "POST", `/organizations/${organization.id}/announcements/${rehearsal.id}/send`);
+check("…nor sent from it", r.status === 404, String(r.status));
+r = await call(member, "POST", `/teams/${group.id}/announcements/${rehearsal.id}/send`);
+check("sent", r.status === 200 && !!r.body.sentAt, JSON.stringify(r.body));
+check("…to its members, from the team", await until(async () => (await mine(member, "TEAM_ANNOUNCEMENT")).some((one) => one.data.team === group.name)));
+check("…not to the groups under it", (await mine(french, "TEAM_ANNOUNCEMENT")).length === 0);
+
 // --- taken back: out of everyone's notifications
 r = await call(orgAdmin, "DELETE", `/organizations/${organization.id}/announcements/${local.id}`);
 check("taken back", r.status === 204, String(r.status));
-check("…gone from their notifications", (await mine(member, "ORGANIZATION_ANNOUNCEMENT")).length === 1 && sql(`select count(*) from "Notification" where "announcementId"='${local.id}'`) === "0");
+check("…gone from their notifications", (await mine(member, "ORGANIZATION_ANNOUNCEMENT")).every((one) => one.data.texts.fr?.title !== "Nouveau lieu") && sql(`select count(*) from "Notification" where "announcementId"='${local.id}'`) === "0");
 r = await call(admin, "DELETE", `/admin/announcements/${everyone.id}`);
 check("a draft deleted", r.status === 204 && (await call(admin, "GET", "/admin/announcements")).body.every((one) => one.id !== everyone.id), String(r.status));
 

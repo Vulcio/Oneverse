@@ -4,7 +4,7 @@ import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AnnouncementsService } from "./announcements.service.js";
-import { CreateAnnouncementDto, SaveOrganizationAnnouncementDto, UpdateAnnouncementDto } from "./dto/announcements.dto.js";
+import { CreateAnnouncementDto, SaveOrganizationAnnouncementDto, SaveTeamAnnouncementDto, UpdateAnnouncementDto } from "./dto/announcements.dto.js";
 
 /** Admin > Announcements (issue #536): news for everyone, an app's people, or an organisation. */
 @ApiTags("admin")
@@ -78,5 +78,40 @@ export class OrganizationAnnouncementsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("id") id: string): Promise<void> {
     await this.announcements.removeForOrganization(user, organizationId, id);
+  }
+}
+
+/** A team's announcements to its members (issue #536), for its admins. */
+@ApiTags("teams")
+@ApiBearerAuth()
+@Controller("teams/:teamId/announcements")
+export class TeamAnnouncementsController {
+  constructor(private readonly announcements: AnnouncementsService) {}
+
+  @Get()
+  list(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string) {
+    return this.announcements.listForTeam(user, teamId);
+  }
+
+  @Post()
+  create(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Body() dto: SaveTeamAnnouncementDto) {
+    return this.announcements.createForTeam(user, teamId, dto);
+  }
+
+  @Patch(":id")
+  update(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("id") id: string, @Body() dto: SaveTeamAnnouncementDto) {
+    return this.announcements.updateForTeam(user, teamId, id, dto);
+  }
+
+  @Post(":id/send")
+  @HttpCode(HttpStatus.OK)
+  send(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("id") id: string) {
+    return this.announcements.sendForTeam(user, teamId, id);
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("id") id: string): Promise<void> {
+    await this.announcements.removeForTeam(user, teamId, id);
   }
 }

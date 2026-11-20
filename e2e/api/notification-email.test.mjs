@@ -49,7 +49,7 @@ check("…or change it", r.status === 403, String(r.status));
 // --- one's own choices
 r = await call(singer, "GET", "/users/me/notifications/settings");
 // Announcements (issue #536) are pushed, not emailed, until one chooses.
-const announcementKinds = ["ANNOUNCEMENT", "ORGANIZATION_ANNOUNCEMENT"];
+const announcementKinds = ["ANNOUNCEMENT", "ORGANIZATION_ANNOUNCEMENT", "TEAM_ANNOUNCEMENT"];
 check(
   "each kind by email until one chooses, but announcements; the server doesn't email yet",
   r.status === 200 && Object.entries(r.body.kinds).every(([kind, on]) => on.email === !announcementKinds.includes(kind) && on.push === true) && r.body.emailAvailable === false,

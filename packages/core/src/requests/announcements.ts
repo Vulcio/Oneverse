@@ -2,8 +2,8 @@ import "../zod-config.js";
 import { z } from "zod";
 import { optional } from "./fields.js";
 
-/** Who an announcement is for (issue #536): everyone, Songverse's people, Planiverse's (organisations' members), or one organisation's members. */
-export const ANNOUNCEMENT_AUDIENCES = ["EVERYONE", "SONGVERSE", "PLANIVERSE", "ORGANIZATION"] as const;
+/** Who an announcement is for (issue #536): everyone, Songverse's people, Planiverse's (organisations' members), one organisation's members, or some teams' members. */
+export const ANNOUNCEMENT_AUDIENCES = ["EVERYONE", "SONGVERSE", "PLANIVERSE", "ORGANIZATION", "TEAMS"] as const;
 export type AnnouncementAudience = (typeof ANNOUNCEMENT_AUDIENCES)[number];
 
 /** The languages an announcement is written in: its words in each. */
@@ -31,14 +31,20 @@ const textsSchema = z
   .transform((texts) => Object.fromEntries(Object.entries(texts).filter(([, text]) => !!text)) as Partial<Record<(typeof ANNOUNCEMENT_LANGUAGES)[number], z.output<typeof AnnouncementTextSchema>>>)
   .refine((texts) => Object.keys(texts).length > 0, "texts must have the words in one language at least");
 
+/** Teams whose members get it: each person once. */
+const teamIds = z.array(z.string().trim().min(1).max(64)).max(100);
+
 /** POST /admin/announcements: a draft (issue #536). The audience defaults to everyone; ORGANIZATION needs organizationId. */
 export const CreateAnnouncementSchema = z
   .strictObject({
     texts: textsSchema,
     audience: z.enum(ANNOUNCEMENT_AUDIENCES).default("EVERYONE"),
     organizationId: optional(z.string().trim().min(1).max(64)),
+    teamIds: teamIds.optional().describe("TEAMS: their members"),
+    withSubgroups: z.boolean().optional().describe("TEAMS: and the groups under them"),
   })
-  .refine((dto) => dto.audience !== "ORGANIZATION" || !!dto.organizationId, "organizationId must be given for an organisation's members");
+  .refine((dto) => dto.audience !== "ORGANIZATION" || !!dto.organizationId, "organizationId must be given for an organisation's members")
+  .refine((dto) => dto.audience !== "TEAMS" || (dto.teamIds?.length ?? 0) > 0, "teamIds must name one team at least");
 export type CreateAnnouncementRequest = z.input<typeof CreateAnnouncementSchema>;
 
 /** PATCH: a draft, or a sent one's words (fixed in everyone's notifications). Left out keeps it. */
@@ -46,9 +52,19 @@ export const UpdateAnnouncementSchema = z.strictObject({
   texts: textsSchema.optional(),
   audience: z.enum(ANNOUNCEMENT_AUDIENCES).optional(),
   organizationId: optional(z.string().trim().min(1).max(64)),
+  teamIds: teamIds.optional(),
+  withSubgroups: z.boolean().optional(),
 });
 export type UpdateAnnouncementRequest = z.input<typeof UpdateAnnouncementSchema>;
 
-/** An organisation's admins' announcement to its members: only its words. */
-export const SaveOrganizationAnnouncementSchema = z.strictObject({ texts: textsSchema });
+/** An organisation's admins' announcement: its words, to all its members, or to some of its groups' (and the groups under them). */
+export const SaveOrganizationAnnouncementSchema = z.strictObject({
+  texts: textsSchema,
+  teamIds: teamIds.optional().describe("Its groups whose members get it; left out or empty: all its members"),
+  withSubgroups: z.boolean().optional(),
+});
 export type SaveOrganizationAnnouncementRequest = z.input<typeof SaveOrganizationAnnouncementSchema>;
+
+/** A team's admins' announcement to its members: only its words. */
+export const SaveTeamAnnouncementSchema = z.strictObject({ texts: textsSchema });
+export type SaveTeamAnnouncementRequest = z.input<typeof SaveTeamAnnouncementSchema>;

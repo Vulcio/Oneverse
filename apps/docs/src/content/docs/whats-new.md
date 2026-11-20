@@ -9,7 +9,7 @@ What changed in each version, newest first. When your server is updated, its adm
 
 ### Announcements
 
-- News from your server's admins - a new version, new features - and from your organisations' admins now arrives with your notifications: under the bell and on your devices. Choose how they reach you in your account's [notification settings](/account/#notifications).
+- News from your server's admins - a new version, new features - and from your organisations' and teams' admins now arrives with your notifications: under the bell and on your devices. Choose how they reach you in your account's [notification settings](/account/#notifications).
 
 ### Sets and planning
 

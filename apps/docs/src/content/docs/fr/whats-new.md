@@ -9,7 +9,7 @@ Ce qui a changé à chaque version, de la plus récente à la plus ancienne. Qua
 
 ### Annonces
 
-- Les nouvelles des administrateurs de votre serveur - une nouvelle version, de nouvelles fonctionnalités - et des administrateurs de vos organisations arrivent maintenant avec vos notifications : sous la cloche et sur vos appareils. Choisissez comment elles vous parviennent dans les [réglages de notifications](/fr/account/#notifications) de votre compte.
+- Les nouvelles des administrateurs de votre serveur - une nouvelle version, de nouvelles fonctionnalités - et des administrateurs de vos organisations et équipes arrivent maintenant avec vos notifications : sous la cloche et sur vos appareils. Choisissez comment elles vous parviennent dans les [réglages de notifications](/fr/account/#notifications) de votre compte.
 
 ### Sets et planification
 

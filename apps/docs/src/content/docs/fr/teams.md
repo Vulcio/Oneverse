@@ -141,6 +141,10 @@ Sous **Bible**, les administrateurs de l'équipe cochent **Montrer la Bible dans
 
 Sous **Chants joués souvent**, les administrateurs de l'équipe choisissent sur combien de semaines compter les fois où un chant était dans les listes de l'équipe (6 par défaut) et, avec **Signaler un chant joué au moins ce nombre de fois**, une limite. Au-delà, un chant est signalé dans les listes de l'équipe et dans **Ajouter à une liste**, mais on peut toujours l'ajouter (voir [Chants joués souvent](/fr/sets/#chants-joués-souvent)). Une liste compte une fois sa date passée.
 
+## Annonces
+
+Les administrateurs d'une équipe envoient des nouvelles à ses membres depuis sa page : **Annonces**, puis **Nouvelle annonce** - un **Titre**, un **Texte** et, si vous voulez, un **Lien**, tapé ou choisi sous **Ou une page de l'application** (**Ce que je joue ou fais (Tableau de bord > Rôles)**, **Réglages du compte**, **Mon calendrier**…). **Sous la cloche** montre à quoi elle ressemblera ; elle reste un **Brouillon** jusqu'à **Envoyer**, qui dit à combien de membres elle part. Les membres la reçoivent sous la cloche avec le nom de l'équipe, et sur leurs appareils ; par e-mail seulement s'ils l'activent. Une annonce envoyée peut encore être corrigée pour tout le monde (**Enregistrer : corrigée pour tout le monde**) ou retirée (**Retirer**). Elle va aux membres de l'équipe, pas aux groupes en dessous ; les administrateurs d'une organisation peuvent écrire à plusieurs groupes à la fois (voir [Organisations](/fr/organizations/#annonces)).
+
 ## Quitter ou supprimer une équipe
 
 **Quitter l'équipe** vous en retire. Si vous en êtes le seul administrateur, nommez d'abord un autre membre administrateur. Un administrateur peut la **Renommer** - le crayon à côté de son nom ; un groupe d'organisation aussi - ou **Supprimer l'équipe**.

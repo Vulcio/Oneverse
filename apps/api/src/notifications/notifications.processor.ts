@@ -11,7 +11,7 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { getEffectiveNotificationSettings, getPushConfigOrError, type PushConfig } from "./notification-settings.js";
 import { announceNotifications, type DeliverJob, type TestPushJob } from "./notifications.service.js";
 import { pushSubject, sendPush, type PushPayload } from "./push-sender.js";
-import { announcementApp, announcementRecipients } from "../announcements/announcement-recipients.js";
+import { announcementApp, announcementFrom, announcementKind, announcementRecipients } from "../announcements/announcement-recipients.js";
 import type { AnnounceJob } from "../announcements/announcements.service.js";
 
 const MESSAGES: Record<string, Messages> = { en, fr };
@@ -86,18 +86,23 @@ export class NotificationsProcessor extends WorkerHost {
    * stopped - in batches, each delivered like any other.
    */
   private async announce(job: AnnounceJob): Promise<number> {
-    const announcement = await this.prisma.client.announcement.findUnique({ where: { id: job.announcementId }, include: { organization: { select: { name: true } } } });
+    const announcement = await this.prisma.client.announcement.findUnique({
+      where: { id: job.announcementId },
+      include: { organization: { select: { name: true } }, team: { select: { name: true, usesSongverse: true } } },
+    });
     // Taken back, or never sent: nothing to do.
     if (!announcement?.sentAt) return 0;
-    const kind: NotificationKind = announcement.audience === "ORGANIZATION" ? "ORGANIZATION_ANNOUNCEMENT" : "ANNOUNCEMENT";
-    const data = { texts: announcement.texts, ...(announcement.organization ? { organization: announcement.organization.name } : {}) } as Prisma.InputJsonValue;
+    const kind: NotificationKind = announcementKind(announcement);
+    const data = { texts: announcement.texts, ...announcementFrom(announcement) } as Prisma.InputJsonValue;
+    // Its teams (and the groups under them) as they are now, once.
+    const recipients = await announcementRecipients(this.prisma.client, announcement);
     // Its link in English, else in its first language: each reader gets theirs (notificationUrl).
     const english = announcementText(announcement.texts as AnnouncementTexts, "en")?.url ?? null;
-    const app = announcementApp(announcement.audience);
+    const app = announcementApp(announcement);
     let made = 0;
     for (;;) {
       const users = await this.prisma.client.user.findMany({
-        where: { ...announcementRecipients(announcement), notifications: { none: { announcementId: announcement.id } } },
+        where: { ...recipients, notifications: { none: { announcementId: announcement.id } } },
         select: { id: true },
         orderBy: { id: "asc" },
         take: ANNOUNCE_BATCH,
@@ -112,9 +117,9 @@ export class NotificationsProcessor extends WorkerHost {
       await this.queue.add("deliver", { ids: rows.map((row) => row.id), webUrl: job.webUrl, planiverseUrl: job.planiverseUrl ?? null } satisfies DeliverJob, { removeOnComplete: 100, removeOnFail: 100 });
       if (users.length < ANNOUNCE_BATCH) break;
     }
-    const recipients = await this.prisma.client.notification.count({ where: { announcementId: announcement.id } });
-    await this.prisma.client.announcement.update({ where: { id: announcement.id }, data: { recipients } });
-    this.logger.log(`Announcement ${announcement.id}: ${made} notification(s) made, ${recipients} in all`);
+    const total = await this.prisma.client.notification.count({ where: { announcementId: announcement.id } });
+    await this.prisma.client.announcement.update({ where: { id: announcement.id }, data: { recipients: total } });
+    this.logger.log(`Announcement ${announcement.id}: ${made} notification(s) made, ${total} in all`);
     return made;
   }
 

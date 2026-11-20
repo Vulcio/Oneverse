@@ -114,7 +114,7 @@ Cochez qui a chacun sous le rôle. Un rôle qui garde des fichiers peut aussi ê
 
 ## Annonces
 
-Les administrateurs d'une organisation envoient des nouvelles à ses membres depuis sa page : **Annonces**, puis **Nouvelle annonce** - un **Titre**, un **Texte** et, si vous voulez, un **Lien** (une page de l'application comme `/calendar`, ou une adresse web). **Sous la cloche** montre à quoi elle ressemblera ; elle reste un **Brouillon** jusqu'à **Envoyer**, qui dit à combien de membres elle part. Les membres la reçoivent sous la cloche avec le nom de l'organisation, et sur leurs appareils ; par e-mail seulement s'ils l'activent. Une annonce envoyée peut encore être corrigée pour tout le monde (**Enregistrer : corrigée pour tout le monde**) ou retirée (**Retirer**).
+Les administrateurs d'une organisation envoient des nouvelles à ses membres depuis sa page : **Annonces**, puis **Nouvelle annonce** - un **Titre**, un **Texte** et, si vous voulez, un **Lien** (une adresse web, ou une page de l'application, tapée comme `/calendar` ou choisie sous **Ou une page de l'application**). **Destinataires** : **Tous ses membres**, ou **Les membres de certains de ses groupes** - cochez les groupes, et **Et les groupes en dessous** pour les inclure aussi ; chacun la reçoit une seule fois. **Sous la cloche** montre à quoi elle ressemblera ; elle reste un **Brouillon** jusqu'à **Envoyer**, qui dit à combien de membres elle part. Les membres la reçoivent sous la cloche avec le nom de l'organisation, et sur leurs appareils ; par e-mail seulement s'ils l'activent. Une annonce envoyée peut encore être corrigée pour tout le monde (**Enregistrer : corrigée pour tout le monde**) ou retirée (**Retirer**).
 
 ## Son propre stockage
 

@@ -710,6 +710,8 @@ model Team {
   usesSongverse        Boolean                @default(true)
   parentId             String?
   parent               Team?                  @relation("Subgroups", fields: [parentId], references: [id], onDelete: SetNull)
+  // News its admins sent its members (issue #536).
+  announcements        Announcement[]
   subgroups            Team[]                 @relation("Subgroups")
   positions            TeamPosition[]
   screenWidgetDefaults ScreenWidgetDefault[]
@@ -1692,9 +1694,15 @@ model Announcement {
   id             String    @id @default(cuid())
   // AnnouncementTexts in @oneverse/core: { en: { title, body, url? }, fr: … }.
   texts          Json
-  // Who it's for: EVERYONE, SONGVERSE, PLANIVERSE, or ORGANIZATION (its members).
+  // Who it's for: EVERYONE, SONGVERSE, PLANIVERSE, ORGANIZATION (its members) or TEAMS (theirs).
   audience       String    @default("EVERYONE")
+  // The organisation it's from (its admins wrote it, or it's for its members).
   organizationId String?
+  // The team whose admins wrote it, for its members.
+  teamId         String?
+  // TEAMS: which teams' members (each person once), and the groups under them too.
+  teamIds        String[]  @default([])
+  withSubgroups  Boolean   @default(false)
   // The release it was drafted for (a tagged version), one draft each.
   release        String?   @unique
   createdById    String?
@@ -1705,10 +1713,12 @@ model Announcement {
   updatedAt      DateTime  @updatedAt
 
   organization  Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  team          Team?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   createdBy     User?          @relation("AnnouncementsWritten", fields: [createdById], references: [id], onDelete: SetNull)
   notifications Notification[]
 
   @@index([organizationId, createdAt])
+  @@index([teamId, createdAt])
 }
 
 // Days someone is away (issue #235), across all their teams: every date in

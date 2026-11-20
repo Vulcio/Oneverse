@@ -2844,6 +2844,7 @@ export const CONFORMANCE: ConformanceArea[] = [
             args: ["ANNOUNCEMENT", { texts: { en: { title: "What's new in version 0.10.0", body: "See what changed." }, fr: { title: "Les nouveautés de la version 0.10.0", body: "Découvrez ce qui a changé." } } }, "fr"] },
           { name: "an announcement not written in theirs: in English", args: ["ANNOUNCEMENT", { texts: { fr: { title: "Répétition annulée", body: "" }, en: { title: "Rehearsal cancelled", body: "" } } }, "de"] },
           { name: "an organisation's announcement, written in one language", args: ["ORGANIZATION_ANNOUNCEMENT", { organization: "Grace Church", texts: { fr: { title: "Nouveau site", body: "On se retrouve rue Neuve." } } }, "en"] },
+          { name: "a team's announcement without a text: the team's name alone", args: ["TEAM_ANNOUNCEMENT", { team: "Worship team", texts: { en: { title: "Rehearsal moved to 7pm", body: "" } } }, "en"] },
         ],
       },
       notificationUrl: {

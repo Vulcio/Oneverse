@@ -114,7 +114,7 @@ Tick who has each under the role. A role that keeps files can also be given to *
 
 ## Announcements
 
-An organisation's admins send news to its members from its page: **Announcements**, then **New announcement** - a **Title**, a **Text** and, if you like, a **Link** (a page of the app such as `/calendar`, or a web address). **Under the bell** shows how it will look; it stays a **Draft** until **Send**, which says how many members it goes to. Members get it under the bell with the organisation's name, and on their devices; by email only if they turn that on. A sent one can still be fixed for everyone (**Save: fixes it for everyone**) or taken back (**Take back**).
+An organisation's admins send news to its members from its page: **Announcements**, then **New announcement** - a **Title**, a **Text** and, if you like, a **Link** (a web address, or a page of the app, typed such as `/calendar` or picked under **Or a page of the app**). **Who gets it**: **All its members**, or **Some of its groups' members** - tick the groups, and **And the groups under them** to include those too; each person gets it once. **Under the bell** shows how it will look; it stays a **Draft** until **Send**, which says how many members it goes to. Members get it under the bell with the organisation's name, and on their devices; by email only if they turn that on. A sent one can still be fixed for everyone (**Save: fixes it for everyone**) or taken back (**Take back**).
 
 ## Its own storage
 

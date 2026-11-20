@@ -16,12 +16,34 @@ import { Textarea } from "@oneverse/ui/components/textarea";
 type Language = "en" | "fr";
 type Texts = Partial<Record<Language, AnnouncementText>>;
 
-/** What an announcement is saved with: its words, and (in Admin) who it's for. */
+/** What an announcement is saved with: its words, and who it's for (where the card offers a choice). */
 export interface AnnouncementDraft {
   texts: Partial<Record<Language, AnnouncementText | null>>;
   audience?: AnnouncementAudience;
   organizationId?: string | null;
+  teamIds?: string[];
+  withSubgroups?: boolean;
 }
+
+/** A team it can go to; one under another (an organisation's group) names it. */
+export interface AnnouncementTeam {
+  id: string;
+  name: string;
+  parentId?: string | null;
+}
+
+/** Pages of the app an announcement can lead to, by their name in the reader's language. */
+const PAGES = [
+  ["roles", "/dashboard#roles"],
+  ["settings", "/dashboard#settings"],
+  ["notifications", "/dashboard#notifications"],
+  ["calendar", "/calendar"],
+  ["sets", "/sets"],
+  ["library", "/library"],
+  ["teams", "/teams"],
+  ["people", "/people"],
+] as const;
+const WHATS_NEW: Record<Language, string> = { en: "https://docs.oneverse.top/whats-new/", fr: "https://docs.oneverse.top/fr/whats-new/" };
 
 /** How the card reaches the API: Admin's calls, or an organisation's. */
 export interface AnnouncementsActions {
@@ -43,15 +65,21 @@ export function AnnouncementsCard({
   actions,
   languages,
   audiences,
+  audienceLabel,
   organizations = [],
+  teams = [],
   title,
   description,
 }: {
   actions: AnnouncementsActions;
   languages: readonly Language[];
-  /** Who it can go to; left out, its organisation's members (the API decides). */
+  /** Who it can go to; left out, the page's own: its organisation's or its team's members (the API decides). */
   audiences?: readonly AnnouncementAudience[];
+  /** Each audience's name, when the page words them its own way ("All its members"). */
+  audienceLabel?: (audience: AnnouncementAudience) => string;
   organizations?: { id: string; name: string }[];
+  /** The teams TEAMS offers. */
+  teams?: AnnouncementTeam[];
   title: string;
   description: string;
 }) {
@@ -77,6 +105,14 @@ export function AnnouncementsCard({
     }
   }
 
+  const nameOf = audienceLabel ?? ((audience: AnnouncementAudience) => t(`announcements.audiences.${audience}`));
+  // Who a sent or drafted one is for, in a few words.
+  const reach = (item: Announcement) =>
+    item.audience === "TEAMS" && item.teams.length > 0
+      ? item.teams.map((team) => team.name ?? "?").join(", ") + (item.withSubgroups ? ` (+ ${t("announcements.withSubgroups").toLowerCase()})` : "")
+      : item.audience === "ORGANIZATION" && item.organizationName && !audienceLabel
+        ? item.organizationName
+        : nameOf(item.audience);
   const date = (iso: string) => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
 
   return (
@@ -103,7 +139,9 @@ export function AnnouncementsCard({
             announcement={editing === "new" ? null : editing}
             languages={languages}
             audiences={audiences}
+            audienceLabel={nameOf}
             organizations={organizations}
+            teams={teams}
             busy={busy === "save"}
             onCancel={() => setEditing(null)}
             onSave={(draft) =>
@@ -130,7 +168,7 @@ export function AnnouncementsCard({
                   </div>
                   {text?.body ? <p className="text-xs text-muted-foreground">{text.body}</p> : null}
                   <p className="text-xs text-muted-foreground" data-testid="announcement-reach">
-                    {audiences ? `${item.audience === "ORGANIZATION" && item.organizationName ? item.organizationName : t(`announcements.audiences.${item.audience}`)} · ` : null}
+                    {audiences ? `${reach(item)} · ` : null}
                     {item.sentAt ? t("announcements.sentOn", { date: date(item.sentAt), count: item.recipients }) : t("announcements.wouldReach", { count: item.recipients })}
                     {item.createdBy ? ` · ${t("announcements.by", { name: item.createdBy.displayName })}` : null}
                   </p>
@@ -199,7 +237,9 @@ function AnnouncementEditor({
   announcement,
   languages,
   audiences,
+  audienceLabel,
   organizations,
+  teams,
   busy,
   onCancel,
   onSave,
@@ -207,7 +247,9 @@ function AnnouncementEditor({
   announcement: Announcement | null;
   languages: readonly Language[];
   audiences?: readonly AnnouncementAudience[];
+  audienceLabel: (audience: AnnouncementAudience) => string;
   organizations: { id: string; name: string }[];
+  teams: AnnouncementTeam[];
   busy: boolean;
   onCancel: () => void;
   onSave: (draft: AnnouncementDraft) => void;
@@ -217,7 +259,10 @@ function AnnouncementEditor({
   // The languages offered, and any it was written in besides.
   const shown = [...new Set([...languages, ...(Object.keys(announcement?.texts ?? {}) as Language[])])];
   const [texts, setTexts] = useState<Texts>(() => Object.fromEntries(shown.map((language) => [language, { ...blank, ...announcement?.texts[language] }])));
-  const [audience, setAudience] = useState<AnnouncementAudience>(announcement?.audience ?? "EVERYONE");
+  const [audience, setAudience] = useState<AnnouncementAudience>(announcement?.audience ?? audiences?.[0] ?? "EVERYONE");
+  const [teamIds, setTeamIds] = useState<string[]>(announcement?.teams.map((team) => team.id) ?? []);
+  const [withSubgroups, setWithSubgroups] = useState(announcement?.withSubgroups ?? false);
+  const [filter, setFilter] = useState("");
   const [organizationId, setOrganizationId] = useState(announcement?.organizationId ?? organizations[0]?.id ?? "");
   const change = (language: Language, field: keyof AnnouncementText, value: string) => setTexts((all) => ({ ...all, [language]: { ...blank, ...all[language], [field]: value } }));
   // A language left blank isn't one it's written in.
@@ -230,7 +275,12 @@ function AnnouncementEditor({
       data-testid="announcement-editor"
       onSubmit={(event) => {
         event.preventDefault();
-        onSave({ texts: written, ...(audiences && !sent ? { audience, organizationId: audience === "ORGANIZATION" ? organizationId : null } : {}) });
+        onSave({
+          texts: written,
+          ...(audiences && !sent
+            ? { audience, organizationId: audience === "ORGANIZATION" ? organizationId : null, teamIds: audience === "TEAMS" ? teamIds : [], withSubgroups: audience === "TEAMS" && withSubgroups }
+            : {}),
+        });
       }}
     >
       {shown.map((language) => (
@@ -246,7 +296,32 @@ function AnnouncementEditor({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={`announcement-url-${language}`}>{t("announcements.urlLabel")}</Label>
-            <Input id={`announcement-url-${language}`} maxLength={500} value={texts[language]?.url ?? ""} placeholder="https://" onChange={(event) => change(language, "url", event.target.value)} data-testid={`announcement-url-${language}`} />
+            <div className="flex flex-wrap gap-2">
+              <Input
+                id={`announcement-url-${language}`}
+                className="min-w-48 flex-1"
+                maxLength={500}
+                value={texts[language]?.url ?? ""}
+                placeholder="https://"
+                onChange={(event) => change(language, "url", event.target.value)}
+                data-testid={`announcement-url-${language}`}
+              />
+              {/* A page of the app, by its name: Skills, Settings… (issue #536). */}
+              <NativeSelect
+                aria-label={t("announcements.pageInApp")}
+                value=""
+                onChange={(event) => event.target.value && change(language, "url", event.target.value)}
+                data-testid={`announcement-page-${language}`}
+              >
+                <option value="">{t("announcements.pageInApp")}</option>
+                {PAGES.map(([key, path]) => (
+                  <option key={key} value={path}>
+                    {t(`announcements.pages.${key}`)}
+                  </option>
+                ))}
+                <option value={WHATS_NEW[language]}>{t("announcements.pages.whatsNew")}</option>
+              </NativeSelect>
+            </div>
           </div>
         </fieldset>
       ))}
@@ -257,13 +332,13 @@ function AnnouncementEditor({
             <Label htmlFor="announcement-audience">{t("announcements.audience")}</Label>
             <NativeSelect id="announcement-audience" value={audience} onChange={(event) => setAudience(event.target.value as AnnouncementAudience)} data-testid="announcement-audience">
               {audiences.map((one) => (
-                <option key={one} value={one} disabled={one === "ORGANIZATION" && organizations.length === 0}>
-                  {t(`announcements.audiences.${one}`)}
+                <option key={one} value={one} disabled={(one === "ORGANIZATION" && organizations.length === 0) || (one === "TEAMS" && teams.length === 0)}>
+                  {audienceLabel(one)}
                 </option>
               ))}
             </NativeSelect>
           </div>
-          {audience === "ORGANIZATION" ? (
+          {audience === "ORGANIZATION" && organizations.length > 0 ? (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="announcement-organization">{t("announcements.organization")}</Label>
               <NativeSelect id="announcement-organization" value={organizationId} onChange={(event) => setOrganizationId(event.target.value)} data-testid="announcement-organization">
@@ -274,6 +349,9 @@ function AnnouncementEditor({
                 ))}
               </NativeSelect>
             </div>
+          ) : null}
+          {audience === "TEAMS" ? (
+            <TeamPicker teams={teams} chosen={teamIds} onChange={setTeamIds} filter={filter} onFilter={setFilter} withSubgroups={withSubgroups} onSubgroups={setWithSubgroups} />
           ) : null}
         </div>
       ) : null}
@@ -290,7 +368,7 @@ function AnnouncementEditor({
         </div>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="sm" disabled={busy || !preview} data-testid="announcement-save">
+        <Button type="submit" size="sm" disabled={busy || !preview || (!!audiences && !sent && audience === "TEAMS" && teamIds.length === 0)} data-testid="announcement-save">
           {busy ? t("announcements.saving") : sent ? t("announcements.saveSent") : t("announcements.save")}
         </Button>
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>
@@ -298,5 +376,62 @@ function AnnouncementEditor({
         </Button>
       </div>
     </form>
+  );
+}
+
+/** The teams it goes to, found by name; the groups under them too, where there are any. */
+function TeamPicker({
+  teams,
+  chosen,
+  onChange,
+  filter,
+  onFilter,
+  withSubgroups,
+  onSubgroups,
+}: {
+  teams: AnnouncementTeam[];
+  chosen: string[];
+  onChange: (ids: string[]) => void;
+  filter: string;
+  onFilter: (text: string) => void;
+  withSubgroups: boolean;
+  onSubgroups: (on: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const parentName = (team: AnnouncementTeam) => teams.find((one) => one.id === team.parentId)?.name;
+  const shown = teams.filter((team) => team.name.toLowerCase().includes(filter.trim().toLowerCase()));
+  const hasSubgroups = teams.some((team) => team.parentId);
+  return (
+    <div className="flex w-full flex-col gap-1.5" data-testid="announcement-teams">
+      <Label htmlFor="announcement-team-filter">{t("announcements.teams")}</Label>
+      {teams.length > 8 ? <Input id="announcement-team-filter" value={filter} placeholder={t("announcements.filterTeams")} onChange={(event) => onFilter(event.target.value)} /> : null}
+      <ul className="flex max-h-56 flex-col gap-1 overflow-y-auto rounded-md border p-2">
+        {shown.map((team) => (
+          <li key={team.id}>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="size-4"
+                checked={chosen.includes(team.id)}
+                onChange={(event) => onChange(event.target.checked ? [...chosen, team.id] : chosen.filter((id) => id !== team.id))}
+                data-testid="announcement-team"
+                data-team={team.name}
+              />
+              <span>
+                {team.name}
+                {parentName(team) ? <span className="text-xs text-muted-foreground"> · {parentName(team)}</span> : null}
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {chosen.length === 0 ? <p className="text-xs text-muted-foreground">{t("announcements.noTeams")}</p> : null}
+      {hasSubgroups ? (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4" checked={withSubgroups} onChange={(event) => onSubgroups(event.target.checked)} data-testid="announcement-subgroups" />
+          {t("announcements.withSubgroups")}
+        </label>
+      ) : null}
+    </div>
   );
 }

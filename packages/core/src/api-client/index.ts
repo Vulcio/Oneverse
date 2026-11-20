@@ -45,7 +45,7 @@ import type { SongbookSection } from "../songbook-sections/index.js";
 import type { StemPart } from "../stems/index.js";
 import type { NewNotes, NoteAnchor, NoteColor, NoteLook, NotePlace, NotePlacement, NoteShow, NoteSize } from "../notes/index.js";
 import type { AnnouncementTexts, NotificationData, NotificationKind, NotificationPreferences, QuietHours } from "../notifications/index.js";
-import type { AnnouncementAudience, CreateAnnouncementRequest, SaveOrganizationAnnouncementRequest, UpdateAnnouncementRequest } from "../requests/announcements.js";
+import type { AnnouncementAudience, CreateAnnouncementRequest, SaveOrganizationAnnouncementRequest, SaveTeamAnnouncementRequest, UpdateAnnouncementRequest } from "../requests/announcements.js";
 import type { LyricsMatch } from "../search-text/lyrics.js";
 import type { SecondChordRow } from "../display/chord-rows.js";
 import type { SectionProgression } from "../chords/progressions.js";
@@ -1936,6 +1936,12 @@ export interface Announcement {
   audience: AnnouncementAudience;
   organizationId: string | null;
   organizationName: string | null;
+  /** The team whose admins wrote it, for its members. */
+  teamId: string | null;
+  teamName: string | null;
+  /** TEAMS: which teams' members (a team since deleted has no name), and the groups under them too. */
+  teams: { id: string; name: string | null }[];
+  withSubgroups: boolean;
   /** The release it was drafted for, when a release drafted it. */
   release: string | null;
   createdBy: { id: string; displayName: string } | null;
@@ -3182,6 +3188,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<Announcement>(`/organizations/${organizationId}/announcements/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     sendOrganizationAnnouncement: (organizationId: string, id: string) => request<Announcement>(`/organizations/${organizationId}/announcements/${id}/send`, { method: "POST" }),
     deleteOrganizationAnnouncement: (organizationId: string, id: string) => request<void>(`/organizations/${organizationId}/announcements/${id}`, { method: "DELETE" }),
+    // A team's announcements to its members (issue #536), for its admins.
+    listTeamAnnouncements: (teamId: string) => request<Announcement[]>(`/teams/${teamId}/announcements`),
+    createTeamAnnouncement: (teamId: string, data: SaveTeamAnnouncementRequest) => request<Announcement>(`/teams/${teamId}/announcements`, { method: "POST", body: JSON.stringify(data) }),
+    updateTeamAnnouncement: (teamId: string, id: string, data: SaveTeamAnnouncementRequest) => request<Announcement>(`/teams/${teamId}/announcements/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    sendTeamAnnouncement: (teamId: string, id: string) => request<Announcement>(`/teams/${teamId}/announcements/${id}/send`, { method: "POST" }),
+    deleteTeamAnnouncement: (teamId: string, id: string) => request<void>(`/teams/${teamId}/announcements/${id}`, { method: "DELETE" }),
     createOrganizationInviteLink: (organizationId: string, data: CreateInviteLinkInput) =>
       request<TeamInviteLink>(`/organizations/${organizationId}/invite-links`, { method: "POST", body: JSON.stringify(data) }),
     revokeOrganizationInviteLink: (organizationId: string, linkId: string) => request<void>(`/organizations/${organizationId}/invite-links/${linkId}`, { method: "DELETE" }),

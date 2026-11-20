@@ -73,6 +73,8 @@ export const NOTIFICATION_KINDS = [
   "ANNOUNCEMENT",
   // News from the admins of an organisation one is in (issue #536).
   "ORGANIZATION_ANNOUNCEMENT",
+  // News from the admins of a team one is in (issue #536).
+  "TEAM_ANNOUNCEMENT",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -128,7 +130,7 @@ export interface AnnouncementText {
 export type AnnouncementTexts = Partial<Record<string, AnnouncementText>>;
 
 /** The kinds whose words are written by someone (issue #536) rather than made from their details. */
-export const ANNOUNCEMENT_KINDS: readonly NotificationKind[] = ["ANNOUNCEMENT", "ORGANIZATION_ANNOUNCEMENT"];
+export const ANNOUNCEMENT_KINDS: readonly NotificationKind[] = ["ANNOUNCEMENT", "ORGANIZATION_ANNOUNCEMENT", "TEAM_ANNOUNCEMENT"];
 
 /** An announcement's words for a reader in `locale`: theirs, else English, else the first written; null when none. */
 export function announcementText(texts: AnnouncementTexts | undefined, locale: string): AnnouncementText | null {
@@ -195,7 +197,9 @@ export function notificationText(kind: NotificationKind, data: NotificationData,
     // An announcement's own words (issue #536), in the reader's language.
     ...(ANNOUNCEMENT_KINDS.includes(kind) ? { title: announcementText(data.texts, locale)?.title ?? "", body: announcementText(data.texts, locale)?.body ?? "" } : {}),
   };
-  return { title: fill(words.title, values), body: fill(words.body, values) };
+  const body = fill(words.body, values);
+  // An announcement without a text: its organisation's or team's name alone, not "Grace Church · ".
+  return { title: fill(words.title, values), body: ANNOUNCEMENT_KINDS.includes(kind) ? body.replace(/ · $/, "") : body };
 }
 
 /** Where a notification goes besides the bell (issue #236): by email, by push to one's devices. */

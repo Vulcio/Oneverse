@@ -1,7 +1,7 @@
 import type { TeamRole } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RoleBadges } from "../components/role-badges";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
@@ -18,6 +18,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Input } from "@oneverse/ui/components/input";
 import { Pencil } from "lucide-react";
+import { AnnouncementsCard, type AnnouncementsActions } from "../components/announcements-card";
 import { CalendarFeedCard } from "../components/calendar-feed-card";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
@@ -347,8 +348,27 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
           onError={setError}
         />
       ) : null}
+      {/* News for its members (issue #536). */}
+      {isAdmin ? <TeamAnnouncements teamId={team.id} /> : null}
       </div>
       </div>
     </div>
   );
+}
+
+/** A team's announcements to its members (issue #536), written in its admin's language. */
+function TeamAnnouncements({ teamId }: { teamId: string }) {
+  const { api } = usePlanning();
+  const { t, i18n } = useTranslation();
+  const actions = useMemo<AnnouncementsActions>(
+    () => ({
+      list: () => api.listTeamAnnouncements(teamId),
+      create: (draft) => api.createTeamAnnouncement(teamId, { texts: draft.texts }),
+      update: (id, draft) => api.updateTeamAnnouncement(teamId, id, { texts: draft.texts }),
+      send: (id) => api.sendTeamAnnouncement(teamId, id),
+      remove: (id) => api.deleteTeamAnnouncement(teamId, id),
+    }),
+    [api, teamId],
+  );
+  return <AnnouncementsCard actions={actions} languages={[i18n.language.startsWith("fr") ? "fr" : "en"]} title={t("announcements.teamTitle")} description={t("announcements.teamDescription")} />;
 }
