@@ -64,49 +64,26 @@ const appIcons: Record<string, string> = {
             {t.heroPoints.map((point) => <li>{point}</li>)}
           </ul>
         </div>
-        {/* Oneverse's home, drawn rather than captured, with made-up dates. */}
-        <div class="home-mock" role="img" aria-label={t.homeAlt}>
-          <div class="mock-bar"><Logo /><span class="mock-avatar">A</span></div>
-          <p class="mock-hello">{t.home.hello}</p>
-          <ul class="mock-apps">
-            {t.home.apps.map(([key, name, text]) => (
-              <li class={`tint-${key}`}>
-                <span class="mock-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={appIcons[key]} /></span>
-                <span><b>{name}</b><small>{text}</small></span>
-              </li>
-            ))}
-          </ul>
-          <div class="mock-cols">
-            <div class="mock-card">
-              <p class="mock-title">{t.home.nextDates}</p>
-              {t.home.dates.map((date) => (
-                <div class="mock-date">
-                  <span class="mock-day"><b>{date.date}</b>{date.day}<small>{date.time}</small></span>
-                  <span class="mock-event">
-                    <b>{date.title}</b>
-                    <small>{date.team}</small>
-                    {date.on && <span class="mock-on">{date.on}</span>}
-                    <span class="mock-answers">
-                      {t.home.answers.map((answer, i) => <span class:list={{ picked: i === date.answer }}>{answer}</span>)}
-                    </span>
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div class="mock-card mock-news">
-              <p class="mock-title">{t.home.news}</p>
-              <p class="mock-item"><b>{t.home.newsTitle}</b><small>{t.home.newsText}</small></p>
-            </div>
-          </div>
-        </div>
+        {/* Oneverse and its apps, drawn as orbits around one centre. */}
+        <svg class="orbits" viewBox="0 0 600 600" aria-hidden="true">
+          <circle cx="300" cy="300" r="110" />
+          <circle cx="300" cy="300" r="190" />
+          <circle cx="300" cy="300" r="270" />
+          <circle class="core" cx="300" cy="300" r="16" />
+          <g class="planet"><circle cx="410" cy="300" r="7" /><text x="424" y="305">Songverse</text></g>
+          <g class="planet"><circle cx="166" cy="166" r="7" /><text x="180" y="171">Plan</text></g>
+          <g class="planet"><circle cx="300" cy="490" r="7" /><text x="314" y="495">Screen</text></g>
+          <g class="planet later"><circle cx="491" cy="491" r="6" /><text x="505" y="496">Slideverse</text></g>
+        </svg>
       </section>
     </div>
 
     <main>
-      <section class="wrap songverse" id="songverse">
-        <div class="songverse-text">
+      <section class="songverse" id="songverse">
+        <Image class="songverse-photo" src={stage} alt={t.songverseAlt} widths={[800, 1280, 1672]} sizes="100vw" />
+        <div class="wrap songverse-text">
           <p class="eyebrow">Songverse · {t.musicians}</p>
-          <h2>{t.songverseTitle[0]} <em>{t.songverseTitle[1]}</em></h2>
+          <h2>{t.songverseTitle[0]}<br /><em>{t.songverseTitle[1]}</em></h2>
           <p class="section-lead">{t.songverseText}</p>
           <ul class="points">
             {t.songversePoints.map((point) => (
@@ -118,9 +95,6 @@ const appIcons: Record<string, string> = {
           </ul>
           <p class="actions"><a class="button" href={SONGVERSE_URL}>{t.openSongverse} <span aria-hidden="true">→</span></a></p>
         </div>
-        <figure class="shot">
-          <Image src={stage} alt={t.songverseAlt} widths={[800, 1280, 1672]} sizes="(max-width: 860px) 100vw, 640px" />
-        </figure>
       </section>
 
       <section class="wrap around" id="apps">

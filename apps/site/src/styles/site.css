@@ -52,7 +52,21 @@ em { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-w
 }
 /* Fades the glow out at the bottom, so the hero has no edge. */
 .hero::after { content: ""; position: absolute; inset: auto 0 0; height: 8rem; z-index: -1; background: linear-gradient(0deg, var(--bg), transparent); }
-.hero-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(2rem, 5vw, 4rem); align-items: center; padding-block: clamp(2rem, 5vw, 4rem) clamp(3.5rem, 8vw, 6rem); }
+.hero { min-height: min(84vh, 760px); display: flex; flex-direction: column; }
+.hero-body { position: relative; flex: 1; display: flex; align-items: center; padding-block: clamp(2rem, 5vw, 4rem) clamp(3.5rem, 8vw, 6rem); }
+.hero-text { position: relative; z-index: 1; }
+/* The orbits sit behind the words, on the right, the apps turning slowly around Oneverse. */
+.orbits { position: absolute; z-index: 0; top: 50%; right: -6rem; width: min(46rem, 70vw); translate: 0 -50%; overflow: visible; pointer-events: none; }
+.orbits circle { fill: none; stroke: rgba(244, 241, 234, 0.1); stroke-width: 1; }
+.orbits .core { fill: var(--accent); stroke: none; filter: drop-shadow(0 0 18px rgba(246, 193, 119, 0.8)); }
+.orbits .planet circle { fill: var(--fg); stroke: none; filter: drop-shadow(0 0 8px rgba(244, 241, 234, 0.6)); }
+.orbits .planet text { fill: #d8d5ce; font-size: 15px; font-weight: 550; letter-spacing: 0.01em; }
+.orbits .planet.later circle { fill: none; stroke: var(--muted); stroke-dasharray: 2 3; filter: none; }
+.orbits .planet.later text { fill: var(--muted); font-style: italic; }
+.orbits { animation: spin 240s linear infinite; }
+.orbits text { animation: unspin 240s linear infinite; transform-box: fill-box; transform-origin: left center; }
+@keyframes spin { to { rotate: 360deg; } }
+@keyframes unspin { to { rotate: -360deg; } }
 h1 {
   margin: 0; font-size: clamp(2.6rem, 5.4vw, 4.4rem); line-height: 1.04;
   font-weight: 620; letter-spacing: -0.035em; max-width: 12ch;
@@ -69,14 +83,22 @@ section h2 { margin: 0; font-size: clamp(1.7rem, 3.6vw, 2.4rem); font-weight: 60
 .eyebrow { margin: 0 0 0.8rem; color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 section h2 em { color: var(--accent); font-size: 1.08em; }
 .section-lead { margin: 1rem 0 0; max-width: 34rem; color: #cfccc5; font-size: 1.08rem; }
-.songverse { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(2rem, 5vw, 4rem); align-items: center; padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(3rem, 7vw, 5rem); }
+.songverse { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; min-height: min(88vh, 780px); }
+.songverse-photo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; }
+.songverse::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(11, 11, 15, 0.94) 0%, rgba(11, 11, 15, 0.8) 38%, rgba(11, 11, 15, 0.1) 72%),
+    linear-gradient(0deg, var(--bg) 0%, rgba(11, 11, 15, 0) 22%),
+    linear-gradient(180deg, var(--bg) 0%, rgba(11, 11, 15, 0) 18%);
+}
+.songverse-text { padding-block: clamp(3rem, 7vw, 5rem); }
+.songverse-text > * { max-width: 34rem; }
 .points { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; gap: 1.2rem; }
-.points li { border-left: 2px solid var(--line); padding-left: 1rem; }
+.points li { border-left: 2px solid rgba(246, 193, 119, 0.5); padding-left: 1rem; }
 .points h3 { margin: 0 0 0.2rem; font-size: 1.02rem; font-weight: 600; letter-spacing: -0.01em; }
-.points p { margin: 0; color: var(--muted); font-size: 0.96rem; }
+.points p { margin: 0; color: #bcb9b2; font-size: 0.96rem; }
 .songverse .actions { margin-top: 2rem; }
-.shot { margin: 0; border-radius: var(--radius); overflow: hidden; box-shadow: 0 0 0 1px rgba(244, 241, 234, 0.12), 0 30px 80px -20px rgba(246, 193, 119, 0.25), 0 20px 50px rgba(0, 0, 0, 0.5); }
-.shot img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: 68% 50%; }
 
 /* The other apps: three cards, the one still to come quieter. */
 .around { padding-block: clamp(3rem, 7vw, 5rem); border-top: 1px solid var(--line); }
@@ -99,8 +121,6 @@ section h2 em { color: var(--accent); font-size: 1.08em; }
 .hero-points li::before { content: ""; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--accent); }
 
 @media (max-width: 860px) {
-  .songverse { grid-template-columns: 1fr; }
-  .songverse .shot { order: -1; }
   .app-cards { grid-template-columns: 1fr; }
 }
 
@@ -128,59 +148,24 @@ section h2 em { color: var(--accent); font-size: 1.08em; }
   .bottom nav { gap: 0.6rem 1.2rem; }
 }
 
-/* The drawing of Oneverse's home: light, like the app, tilted towards the words. */
-.home-mock {
-  --m-fg: #18181b; --m-muted: #71717a; --m-line: #e4e4e7;
-  padding: 1.1rem; border-radius: 18px; background: #fafafa; color: var(--m-fg); font-size: 0.8rem; line-height: 1.35;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 40px 90px -20px rgba(0, 0, 0, 0.7), 0 20px 60px -30px rgba(246, 193, 119, 0.4);
-  transform: perspective(1600px) rotateY(-6deg) rotateX(2deg); transform-origin: left center;
-}
-.home-mock b { font-weight: 600; }
-.home-mock small { display: block; color: var(--m-muted); font-size: 0.72rem; }
-.mock-bar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.8rem; border-bottom: 1px solid var(--m-line); }
-.mock-bar .logo { font-size: 0.9rem; }
-.mock-bar .mark { width: 1.6rem; height: 1.6rem; border-radius: 0.5rem; background: #18181b; color: #fafafa; }
-.mock-bar .mark svg { width: 14px; height: 14px; }
-.mock-avatar { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: #4f46e5; color: #fff; font-weight: 600; font-size: 0.72rem; }
-.mock-hello { margin: 0.9rem 0 0.7rem; font-size: 1.15rem; font-weight: 650; letter-spacing: -0.01em; }
-.mock-apps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-.mock-apps li { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1px var(--m-line); min-width: 0; }
-.mock-apps li > span:last-child { min-width: 0; }
-.mock-apps small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mock-icon { flex: none; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 9px; }
-.tint-plan .mock-icon { background: #ccfbf1; color: #0f766e; }
-.tint-songverse .mock-icon { background: #e0e7ff; color: #4338ca; }
-.tint-screen .mock-icon { background: #ffedd5; color: #c2410c; }
-.mock-cols { display: grid; grid-template-columns: 1.6fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
-.mock-card { padding: 0.8rem; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1px var(--m-line); }
-.mock-title { margin: 0 0 0.6rem; font-weight: 600; font-size: 0.85rem; }
-.mock-date { display: flex; gap: 0.6rem; padding-block: 0.55rem; }
-.mock-date + .mock-date { border-top: 1px solid var(--m-line); }
-.mock-day { flex: none; width: 2.6rem; padding: 0.3rem 0; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--m-line); text-align: center; font-size: 0.68rem; color: var(--m-muted); }
-.mock-day b { display: block; color: var(--m-fg); font-size: 0.95rem; }
-.mock-day small { font-size: 0.64rem; }
-.mock-event { min-width: 0; }
-.mock-on { display: inline-block; margin-top: 0.3rem; padding: 0.1rem 0.45rem; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 0.68rem; }
-.mock-answers { display: flex; margin-top: 0.4rem; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--m-line); overflow: hidden; width: fit-content; max-width: 100%; }
-.mock-answers span { padding: 0.2rem 0.45rem; font-size: 0.66rem; white-space: nowrap; }
-.mock-answers span + span { border-left: 1px solid var(--m-line); }
-.mock-answers .picked { background: #059669; color: #fff; }
-.mock-item { margin: 0; padding: 0.55rem 0.6rem; border-radius: 8px; background: #eef2ff; }
-.mock-item b::before { content: ""; display: inline-block; width: 0.4rem; height: 0.4rem; margin-right: 0.4rem; border-radius: 50%; background: #4f46e5; vertical-align: 0.1em; }
 
 @media (max-width: 960px) {
-  .hero-body { grid-template-columns: 1fr; }
-  .home-mock { transform: none; max-width: 36rem; }
+  .orbits { right: -45%; width: 125vw; opacity: 0.35; }
+  .orbits text { display: none; }
 }
+
 @media (max-width: 640px) {
-  .hero-body { padding-block: 1rem 3rem; }
-  .home-mock { padding: 0.8rem; font-size: 0.74rem; }
-  .mock-apps { grid-template-columns: 1fr 1fr 1fr; gap: 0.35rem; }
-  .mock-apps li { flex-direction: column; align-items: flex-start; padding: 0.5rem; }
-  .mock-apps small { white-space: normal; }
-  .mock-cols { grid-template-columns: 1fr; }
-  .mock-news { display: none; }
+  .hero { min-height: 0; }
+  /* On a phone the photo gets its own space, framed on the tablet and the hands, with the words below it. */
+  .songverse { display: block; min-height: 0; }
+  .songverse-photo {
+    position: relative; z-index: 0; height: 56svh; object-position: 64% 60%;
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 18%, #000 72%, transparent);
+    mask-image: linear-gradient(180deg, transparent, #000 18%, #000 72%, transparent);
+  }
+  .songverse::before { display: none; }
+  .songverse-text { padding-block: 0 3rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .home-mock { transform: none; }
+  .orbits, .orbits text { animation: none; }
 }
