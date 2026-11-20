@@ -18,6 +18,7 @@ Ce qui a changé à chaque version, de la plus récente à la plus ancienne. Qua
 - Qui peut jouer s'affiche sur la page du set, avec les parties que chacun aimerait jouer, l'hôte et le responsable musical.
 - Des types d'événements pour le calendrier d'une équipe et les groupes d'une organisation, des événements sans set, des parties requises et des places libres que chacun peut prendre.
 - Les groupes qui ne font que planifier peuvent aussi avoir des sets.
+- Planiverse s'appelle maintenant [Oneverse Plan](/fr/plan/), à plan.oneverse.top : même application, mêmes pages, sous le nom Oneverse. Les anciens liens planiverse.top y mènent.
 
 ### Chants et jeu
 

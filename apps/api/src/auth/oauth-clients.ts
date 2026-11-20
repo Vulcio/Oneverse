@@ -34,7 +34,7 @@ export function oauthAppClients(): OAuthAppClient[] {
   const screen = screenUrl();
   return [
     { clientId: "songverse", name: "Songverse", uri: songverseUrl() },
-    ...(planiverse ? [{ clientId: "planiverse", name: "Planiverse", uri: planiverse }] : []),
+    ...(planiverse ? [{ clientId: "planiverse", name: "Oneverse Plan", uri: planiverse }] : []),
     ...(screen ? [{ clientId: "screen", name: "Oneverse screen", uri: screen }] : []),
   ].map((client) => ({ ...client, redirectUri: `${client.uri}/auth/callback` }));
 }

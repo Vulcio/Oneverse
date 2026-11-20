@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     "./server": "./server/web-server.mjs",
+    "./server/redirect-hosts": "./server/redirect-hosts.mjs",
     "./components/*": "./src/components/*.tsx",
     "./*": "./src/*.ts"
   },

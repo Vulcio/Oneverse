@@ -61,7 +61,7 @@ try {
   await call(admin, "PATCH", welcomeDate, { cancelled: true });
   check("a date of a group that only plans cancelled: Planiverse's", await until(() => sql(`select count(*) from "Notification" where "userId"='${singer.id}' and app='planiverse'`) === "1"));
   check("…pushed to the device turned on in Planiverse, not the other", (await until(() => push.for(phone).length === 1)) && push.for(laptop).length === 0, `${push.for(phone).length} ${push.for(laptop).length}`);
-  check("…its email opens Planiverse", await until(() => workerLog().includes(`Open in Planiverse: ${PLANIVERSE}/calendar`)), workerLog().slice(-600));
+  check("…its email opens Planiverse", await until(() => workerLog().includes(`Open in Oneverse Plan: ${PLANIVERSE}/calendar`)), workerLog().slice(-600));
   check("someone with only a Songverse device gets it there", await until(() => push.for(usherLaptop).length === 1));
 
   await call(admin, "PATCH", musicDate, { cancelled: true });

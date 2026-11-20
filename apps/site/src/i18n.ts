@@ -1,6 +1,6 @@
 // The page's words, in each language. The apps and the docs are in the same two.
 export const SONGVERSE_URL = import.meta.env.PUBLIC_APP_URL ?? "https://songverse.top";
-export const PLANIVERSE_URL = import.meta.env.PUBLIC_PLANIVERSE_URL ?? "https://planiverse.top";
+export const PLANIVERSE_URL = import.meta.env.PUBLIC_PLANIVERSE_URL ?? "https://plan.oneverse.top";
 export const ACCOUNT_URL = import.meta.env.PUBLIC_ONEVERSE_URL ?? "https://account.oneverse.top";
 export const DOCS_URL = "https://docs.oneverse.top";
 
@@ -8,7 +8,7 @@ export const text = {
   en: {
     lang: "en",
     title: "Oneverse — songs, plans and screens for teams who play together",
-    description: "Oneverse brings together Songverse, for musicians and their charts, and Planiverse, for planning who serves when. One account, the same sets, on any screen.",
+    description: "Oneverse brings together Songverse, for musicians and their charts, and Oneverse Plan, for planning who serves when. One account, the same sets, on any screen.",
     docs: "Docs",
     signIn: "Sign in",
     openApp: "Open Songverse",
@@ -27,10 +27,10 @@ export const text = {
         open: "Open Songverse",
       },
       {
-        name: "Planiverse",
+        name: "Oneverse Plan",
         title: "Who's on, and when",
         text: "Events, rotas and calendars for an organisation's groups, with answers and line-ups — for everyone who plans without playing.",
-        open: "Open Planiverse",
+        open: "Open Oneverse Plan",
       },
     ],
     featuresTitle: "Shared by every app",
@@ -41,7 +41,7 @@ export const text = {
       },
       {
         title: "Teams and organisations",
-        text: "Teams, groups and their roles are the same everywhere: plan a date in Planiverse, play its set in Songverse.",
+        text: "Teams, groups and their roles are the same everywhere: plan a date in Oneverse Plan, play its set in Songverse.",
       },
       {
         title: "Sets on every screen",
@@ -57,7 +57,7 @@ export const text = {
   fr: {
     lang: "fr",
     title: "Oneverse — chants, plannings et écrans pour les équipes qui jouent ensemble",
-    description: "Oneverse réunit Songverse, pour les musiciens et leurs grilles, et Planiverse, pour planifier qui sert quand. Un seul compte, les mêmes listes, sur tous les écrans.",
+    description: "Oneverse réunit Songverse, pour les musiciens et leurs grilles, et Oneverse Plan, pour planifier qui sert quand. Un seul compte, les mêmes listes, sur tous les écrans.",
     docs: "Documentation",
     signIn: "Se connecter",
     openApp: "Ouvrir Songverse",
@@ -76,10 +76,10 @@ export const text = {
         open: "Ouvrir Songverse",
       },
       {
-        name: "Planiverse",
+        name: "Oneverse Plan",
         title: "Qui est là, et quand",
         text: "Événements, plannings et calendriers pour les groupes d'une organisation, avec les réponses et les équipes — pour tous ceux qui planifient sans jouer.",
-        open: "Ouvrir Planiverse",
+        open: "Ouvrir Oneverse Plan",
       },
     ],
     featuresTitle: "Commun à toutes les applications",
@@ -90,7 +90,7 @@ export const text = {
       },
       {
         title: "Équipes et organisations",
-        text: "Les équipes, les groupes et leurs rôles sont les mêmes partout : planifiez une date dans Planiverse, jouez sa liste dans Songverse.",
+        text: "Les équipes, les groupes et leurs rôles sont les mêmes partout : planifiez une date dans Oneverse Plan, jouez sa liste dans Songverse.",
       },
       {
         title: "Les listes sur tous les écrans",

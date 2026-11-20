@@ -92,7 +92,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle("Oneverse API")
-    .setDescription("The API of Oneverse's apps - Songverse, Planiverse, the screens and Pulse: songs, sets, teams, planning and live sessions.")
+    .setDescription("The API of Oneverse's apps - Songverse, Oneverse Plan, the screens and Pulse: songs, sets, teams, planning and live sessions.")
     // The product's one version (issue #164), as /health reports it.
     .setVersion(serverVersion().version)
     // 3.1: nullable fields are type lists ("string" or null), as zod describes them (issue #118).

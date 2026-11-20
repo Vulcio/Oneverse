@@ -20,7 +20,7 @@ function AccountPage() {
   const profile = Route.useLoaderData();
   const apps = [
     { name: "Songverse", address: publicEnvValue("SONGVERSE_URL") ?? "http://localhost:3000" },
-    ...(publicEnvValue("PLANIVERSE_URL") ? [{ name: "Planiverse", address: publicEnvValue("PLANIVERSE_URL") ?? "" }] : []),
+    ...(publicEnvValue("PLANIVERSE_URL") ? [{ name: "Oneverse Plan", address: publicEnvValue("PLANIVERSE_URL") ?? "" }] : []),
   ];
   return (
     <div className="flex flex-col gap-6">

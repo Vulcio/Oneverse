@@ -2,12 +2,13 @@
 
 This repository is Oneverse's monorepo (renamed from Songverse): the shared
 core - the API, the database, `@oneverse/core` - and the apps built on it,
-Songverse (`apps/web`) and Planiverse (`apps/planiverse`), and Oneverse
+Songverse (`apps/web`) and Oneverse Plan (`apps/planiverse`, called Planiverse
+until #539: code, env vars and stored values keep that name), and Oneverse
 (`apps/oneverse`), where people sign in. Where it's going:
 `docs/oneverse-architecture.md`, a direction rather than what's built. The
 workspace packages are `@oneverse/*` (`@songverse/*` before); each app has its own
 domain since #303 (sign-in at `account.oneverse.top`, the API at
-`api.oneverse.top`, `songverse.top`, `planiverse.top`, the docs at
+`api.oneverse.top`, `songverse.top`, Plan at `plan.oneverse.top`, the docs at
 `docs.oneverse.top`, and Oneverse's website at `oneverse.top`). The rules below are unchanged by the
 rename.
 

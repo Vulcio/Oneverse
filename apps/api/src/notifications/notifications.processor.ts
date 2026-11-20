@@ -155,7 +155,7 @@ export class NotificationsProcessor extends WorkerHost {
         const path = linkFor(first) ?? "/calendar";
         await sendNotificationEmail(user.email, {
           ...email,
-          open: messages.notifications.email.open.replace("{{app}}", first.app === "planiverse" && job.planiverseUrl ? "Planiverse" : "Songverse"),
+          open: messages.notifications.email.open.replace("{{app}}", first.app === "planiverse" && job.planiverseUrl ? "Oneverse Plan" : "Songverse"),
           url: linkOf(job, first.app, path),
           why: messages.notifications.email.why,
           settingsUrl: `${appUrl(job, first.app)}/account`,

@@ -3,7 +3,7 @@ title: Organisations
 description: A church, a club or a group whose teams plan together, on a server that has organisations.
 ---
 
-An organisation is the church, club or group your teams are part of: the music team, the welcome team, the tech team… It's where they plan together - who hosts each event, which groups each one needs - in Songverse, or in [Planiverse](/planiverse/), the planning on its own, where the server has it. Songverse works without any: a server has organisations only if its admins turned them on (see [Admin](/admin/#organisations)), and until then you won't see them.
+An organisation is the church, club or group your teams are part of: the music team, the welcome team, the tech team… It's where they plan together - who hosts each event, which groups each one needs - in Songverse, or in [Oneverse Plan](/plan/), the planning on its own, where the server has it. Songverse works without any: a server has organisations only if its admins turned them on (see [Admin](/admin/#organisations)), and until then you won't see them.
 
 ## Where to find them
 
@@ -28,7 +28,7 @@ A new organisation's admins find **Set up your organisation** at the top of its 
 4. **Keep your files in your own storage**, optional, where this server allows it (see [Your own storage](/own-storage/));
 5. **Run your own Songverse Sonic**, optional, where this server allows it (see [Your own stem separation server](/sonic/)).
 
-The cross puts it away; **Show the setup checklist**, under **Details**, brings it back. In [Planiverse](/planiverse/), the last three are set up in Songverse, on the organisation's page.
+The cross puts it away; **Show the setup checklist**, under **Details**, brings it back. In [Oneverse Plan](/plan/), the last three are set up in Songverse, on the organisation's page.
 
 ## An organisation's page
 

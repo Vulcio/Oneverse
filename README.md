@@ -11,7 +11,7 @@ This repository holds the core and the web apps built on it:
 | **Oneverse core** | Accounts, personal spaces, teams and organisations, roles, sets, scriptures, screens and their layers, live sessions and the operator, behind one API | `apps/api`, `packages/db`, `packages/core` |
 | **Oneverse** | Where people sign in, and their account, for every app ("Sign in with Oneverse") | `apps/oneverse` (account.oneverse.top) |
 | **Songverse** | Songs and musicians: the library, charts and chords, arrangements, songbooks, practice and Live | `apps/web` (songverse.top) |
-| **Planiverse** | Planning: events, rotas, groups and calendars, with the same accounts | `apps/planiverse` (planiverse.top) |
+| **Oneverse Plan** (Planiverse before #539) | Planning: events, rotas, groups and calendars, with the same accounts | `apps/planiverse` (plan.oneverse.top) |
 | Shared web parts | The UI, signing in and the account, the planning screens | `packages/ui`, `packages/app`, `packages/planning` |
 | Docs and website | The user documentation in English and French, and Oneverse's website | `apps/docs` (docs.oneverse.top), `apps/site` (oneverse.top) |
 
@@ -89,7 +89,7 @@ playing on Sunday, and share it with the people playing with you.
   variables.
 - **English and French**, and usable on a phone.
 
-## Planiverse
+## Oneverse Plan (Planiverse)
 
 The planning on its own (issue #241), for people who plan without playing:
 My calendar, organisations and their groups (sub-groups, positions of their
@@ -109,7 +109,7 @@ as Songverse; a date's set opens in Songverse.
 | Storage | Cloudflare R2 (S3-compatible) or local disk, content-addressed |
 | Docs (`apps/docs`) | Astro Starlight, English and French, screenshots taken by Playwright |
 | Website (`apps/site`) | A static Astro page at the root domain, English and French |
-| Deployment | Docker images for the API/worker, Songverse, Planiverse, the docs and the website, run on Dokploy |
+| Deployment | Docker images for the API/worker, Songverse, Oneverse Plan, the docs and the website, run on Dokploy |
 
 ## Credits
 
@@ -168,7 +168,7 @@ cp apps/api/.env.example apps/api/.env       # then fill in the values
 cp apps/web/.env.example apps/web/.env
 cp packages/db/.env.example packages/db/.env
 pnpm db:migrate
-pnpm dev                                     # Songverse :3000, API :3001, Planiverse :3002, Oneverse :3003 (sign-in), docs :4321, website :4322
+pnpm dev                                     # Songverse :3000, API :3001, Oneverse Plan :3002, Oneverse :3003 (sign-in), docs :4321, website :4322
 ```
 
 `pnpm lint`, `pnpm type-check` and `pnpm test` run the checks across the

@@ -3,7 +3,7 @@ title: Organisations
 description: Une église, un club ou un groupe dont les équipes planifient ensemble, sur un serveur qui a des organisations.
 ---
 
-Une organisation, c'est l'église, le club ou le groupe dont font partie vos équipes : l'équipe de louange, d'accueil, technique… C'est là qu'elles planifient ensemble - qui accueille chaque événement, de quels groupes chacun a besoin - dans Songverse, ou dans [Planiverse](/fr/planiverse/), la planification à part, quand le serveur l'a. Songverse fonctionne sans : un serveur n'a d'organisations que si ses administrateurs les ont activées (voir [Administration](/fr/admin/#organisations)), et d'ici là vous ne les voyez pas.
+Une organisation, c'est l'église, le club ou le groupe dont font partie vos équipes : l'équipe de louange, d'accueil, technique… C'est là qu'elles planifient ensemble - qui accueille chaque événement, de quels groupes chacun a besoin - dans Songverse, ou dans [Oneverse Plan](/fr/plan/), la planification à part, quand le serveur l'a. Songverse fonctionne sans : un serveur n'a d'organisations que si ses administrateurs les ont activées (voir [Administration](/fr/admin/#organisations)), et d'ici là vous ne les voyez pas.
 
 ## Où les trouver
 
@@ -28,7 +28,7 @@ Les administrateurs d'une nouvelle organisation trouvent **Mettre en place votre
 4. **Gardez vos fichiers dans votre propre stockage**, facultatif, là où ce serveur le permet (voir [Votre propre stockage](/fr/own-storage/)) ;
 5. **Faites tourner votre propre Songverse Sonic**, facultatif, là où ce serveur le permet (voir [Votre propre serveur de séparation](/fr/sonic/)).
 
-La croix la range ; **Afficher la liste de démarrage**, sous **Détails**, la fait revenir. Dans [Planiverse](/fr/planiverse/), les trois dernières se font dans Songverse, sur la page de l'organisation.
+La croix la range ; **Afficher la liste de démarrage**, sous **Détails**, la fait revenir. Dans [Oneverse Plan](/fr/plan/), les trois dernières se font dans Songverse, sur la page de l'organisation.
 
 ## La page d'une organisation
 

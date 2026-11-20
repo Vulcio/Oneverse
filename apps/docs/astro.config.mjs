@@ -11,7 +11,7 @@ import starlightLinksValidator from "starlight-links-validator";
 export default defineConfig({
   site: "https://docs.oneverse.top",
   // Arrangements are called versions since #78: old links still land.
-  redirects: { "/arrangements/": "/versions/", "/fr/arrangements/": "/fr/versions/" },
+  redirects: { "/arrangements/": "/versions/", "/fr/arrangements/": "/fr/versions/", "/planiverse/": "/plan/", "/fr/planiverse/": "/fr/plan/" },
   integrations: [
     starlight({
       title: "Songverse",
@@ -71,7 +71,7 @@ export default defineConfig({
             { slug: "organizations" },
             { slug: "own-storage" },
             { slug: "sonic" },
-            { slug: "planiverse" },
+            { slug: "plan" },
             { slug: "people" },
             { slug: "offline" },
           ],
