@@ -226,6 +226,9 @@ importers:
       '@oneverse/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@oneverse/planning':
+        specifier: workspace:*
+        version: link:../../packages/planning
       '@oneverse/ui':
         specifier: workspace:*
         version: link:../../packages/ui

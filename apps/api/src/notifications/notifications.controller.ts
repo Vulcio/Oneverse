@@ -16,7 +16,7 @@ export class NotificationsController {
   /** Newest first, with how many are unread. */
   @Get()
   list(@SignedIn() user: AuthenticatedUser, @Query() query: NotificationsQueryDto) {
-    return this.notifications.list(user.id, query.before, query.limit);
+    return this.notifications.list(user.id, query.before, query.limit, query.announcements);
   }
 
   /** How many are unread: for the bell's badge, asked for often. */

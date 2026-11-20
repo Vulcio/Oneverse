@@ -1,20 +1,27 @@
+import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { LogOut } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
+import { NotificationBell } from "@oneverse/planning/components/notification-bell";
 import { authClient } from "@oneverse/app/auth-client";
 import { ThemeSwitch } from "@oneverse/app/components/theme-switch";
 import { Button } from "@oneverse/ui/components/button";
 import { OneverseBrand } from "#/components/brand";
 
-/** Oneverse's name, light or dark (issue #422), and signing out of it. */
+/** Oneverse's name, leading home (issue #538); the bell, the account, light or dark (issue #422), and signing out. */
 export function AppHeader() {
   const { t } = useTranslation();
   return (
     <header className="border-b">
-      <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2 font-semibold">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <Link to="/" className="flex items-center gap-2 font-semibold" data-testid="home-link">
           <OneverseBrand />
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
+        <NotificationBell />
+        <Button variant="ghost" size="sm" aria-label={t("nav.account")} render={<Link to="/account" data-testid="account-link" />}>
+          <UserRound />
+          <span className="hidden sm:inline">{t("nav.account")}</span>
+        </Button>
         <ThemeSwitch />
         <Button
           variant="ghost"
@@ -25,9 +32,10 @@ export function AppHeader() {
             });
           }}
           data-testid="sign-out"
+          aria-label={t("nav.signOut")}
         >
           <LogOut />
-          {t("nav.signOut")}
+          <span className="hidden sm:inline">{t("nav.signOut")}</span>
         </Button>
         </div>
       </div>

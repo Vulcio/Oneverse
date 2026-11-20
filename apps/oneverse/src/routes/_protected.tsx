@@ -5,6 +5,8 @@ import { createI18n, loadLocale } from "@oneverse/app/i18n";
 import { getSession } from "@oneverse/app/server-auth";
 import { AppHeader } from "#/components/app-header";
 import { AppToaster } from "@oneverse/app/components/app-toaster";
+import { PlanningProvider } from "@oneverse/planning/host";
+import { planningHost } from "#/lib/apps";
 
 /** Every signed-in page: signed out, signing in first. */
 export const Route = createFileRoute("/_protected")({
@@ -23,10 +25,13 @@ function ProtectedLayout() {
   const i18n = useMemo(() => createI18n(session.locale), [session.locale]);
   return (
     <I18nextProvider i18n={i18n}>
-      <AppHeader />
-      <main className="@container mx-auto max-w-4xl px-4 py-6">
-        <Outlet />
-      </main>
+      {/* The planning screens' parts the home shows, and the bell (issue #538). */}
+      <PlanningProvider host={planningHost()}>
+        <AppHeader />
+        <main className="@container mx-auto max-w-6xl px-4 py-6">
+          <Outlet />
+        </main>
+      </PlanningProvider>
       <AppToaster />
     </I18nextProvider>
   );

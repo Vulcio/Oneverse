@@ -1,8 +1,9 @@
 @import "tailwindcss";
 /* The shared tokens, theme and base styles (packages/ui); dark follows the device (__root.tsx). */
 @import "@oneverse/ui/theme.css";
-/* The shared pages' classes: signing in and the account (packages/app). */
+/* The shared pages' classes: signing in and the account (packages/app); the planning parts the home shows (packages/planning, issue #538). */
 @source "../../../../packages/app/src";
+@source "../../../../packages/planning/src";
 
 /* Oneverse's own look: indigo, light or dark. */
 :root {

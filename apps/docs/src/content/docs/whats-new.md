@@ -18,6 +18,7 @@ What changed in each version, newest first. When your server is updated, its adm
 - Who can play shows on the set's page, with the parts people would like to play, the host and the music leader.
 - Event types for a team's calendar and an organisation's groups, events without a set, required parts and open places anyone can take.
 - Groups that only plan can have sets too.
+- Oneverse has a home: sign in there and see your apps, your next dates to answer, open places, news, your teams and your organisation's links (see [Oneverse's home](/getting-started/#oneverses-home)).
 - Planiverse is now [Oneverse Plan](/plan/), at plan.oneverse.top: same app, same pages, under the Oneverse name. Old planiverse.top links lead there.
 
 ### Songs and playing

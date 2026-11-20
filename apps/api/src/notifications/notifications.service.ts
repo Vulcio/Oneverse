@@ -1,6 +1,6 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { isPushEndpoint, notificationPreferences, quietHoursOf, withNotificationChanges, type CreatePushSubscriptionRequest, type NotificationData, type NotificationKind, type UpdateNotificationPreferencesRequest } from "@oneverse/core";
+import { ANNOUNCEMENT_KINDS, isPushEndpoint, notificationPreferences, quietHoursOf, withNotificationChanges, type CreatePushSubscriptionRequest, type NotificationData, type NotificationKind, type UpdateNotificationPreferencesRequest } from "@oneverse/core";
 import type { Prisma } from "@oneverse/db";
 import type { Queue } from "bullmq";
 import { NOTIFICATIONS_QUEUE } from "../jobs/jobs.constants.js";
@@ -86,10 +86,11 @@ export class NotificationsService {
   }
 
   /** Someone's notifications, newest first: `limit` of them after `before` (the last one shown), and how many are unread. */
-  async list(userId: string, before?: string, limit = 30) {
+  async list(userId: string, before?: string, limit = 30, announcements = false) {
     const cursor = before ? await this.prisma.client.notification.findFirst({ where: { id: before, userId }, select: { createdAt: true, id: true } }) : null;
     const rows = await this.prisma.client.notification.findMany({
-      where: { userId, ...(cursor ? { OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }] } : {}) },
+      // Only announcements (issue #536): Oneverse's home shows them as news (issue #538).
+      where: { userId, ...(announcements ? { kind: { in: [...ANNOUNCEMENT_KINDS] } } : {}), ...(cursor ? { OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }] } : {}) },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit + 1,
     });

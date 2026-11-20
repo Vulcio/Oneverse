@@ -7,7 +7,7 @@ until #539: code, env vars and stored values keep that name), and Oneverse
 (`apps/oneverse`), where people sign in. Where it's going:
 `docs/oneverse-architecture.md`, a direction rather than what's built. The
 workspace packages are `@oneverse/*` (`@songverse/*` before); each app has its own
-domain since #303 (sign-in at `account.oneverse.top`, the API at
+domain since #303 (sign-in and Oneverse's home at `app.oneverse.top`, the API at
 `api.oneverse.top`, `songverse.top`, Plan at `plan.oneverse.top`, the docs at
 `docs.oneverse.top`, and Oneverse's website at `oneverse.top`). The rules below are unchanged by the
 rename.

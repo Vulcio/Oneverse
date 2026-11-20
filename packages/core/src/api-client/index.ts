@@ -3279,8 +3279,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     addMyAway: (data: CreateAwayRequest) => request<AwayDays>("/users/me/away", { method: "POST", body: JSON.stringify(data) }),
     updateMyAway: (id: string, data: UpdateAwayRequest) => request<AwayDays>(`/users/me/away/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     removeMyAway: (id: string) => request<void>(`/users/me/away/${id}`, { method: "DELETE" }),
-    listMyNotifications: (before?: string, limit?: number) =>
-      request<NotificationPage>(`/users/me/notifications?${new URLSearchParams({ ...(before ? { before } : {}), ...(limit ? { limit: String(limit) } : {}) })}`),
+    /** One's notifications, newest first; `announcements`: only those (issue #538, Oneverse's news). */
+    listMyNotifications: (before?: string, limit?: number, announcements = false) =>
+      request<NotificationPage>(`/users/me/notifications?${new URLSearchParams({ ...(before ? { before } : {}), ...(limit ? { limit: String(limit) } : {}), ...(announcements ? { announcements: "true" } : {}) })}`),
     getMyUnreadNotifications: () => request<{ unread: number }>("/users/me/notifications/unread"),
     getMyNotificationPreferences: () => request<MyNotificationPreferences>("/users/me/notifications/settings"),
     updateMyNotificationPreferences: (data: UpdateNotificationPreferencesRequest) =>

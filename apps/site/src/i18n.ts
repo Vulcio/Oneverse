@@ -1,7 +1,7 @@
 // The page's words, in each language. The apps and the docs are in the same two.
 export const SONGVERSE_URL = import.meta.env.PUBLIC_APP_URL ?? "https://songverse.top";
 export const PLANIVERSE_URL = import.meta.env.PUBLIC_PLANIVERSE_URL ?? "https://plan.oneverse.top";
-export const ACCOUNT_URL = import.meta.env.PUBLIC_ONEVERSE_URL ?? "https://account.oneverse.top";
+export const ACCOUNT_URL = import.meta.env.PUBLIC_ONEVERSE_URL ?? "https://app.oneverse.top";
 export const DOCS_URL = "https://docs.oneverse.top";
 
 export const text = {

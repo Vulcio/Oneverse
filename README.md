@@ -9,7 +9,7 @@ This repository holds the core and the web apps built on it:
 | Part | What it is | Where |
 | --- | --- | --- |
 | **Oneverse core** | Accounts, personal spaces, teams and organisations, roles, sets, scriptures, screens and their layers, live sessions and the operator, behind one API | `apps/api`, `packages/db`, `packages/core` |
-| **Oneverse** | Where people sign in, and their account, for every app ("Sign in with Oneverse") | `apps/oneverse` (account.oneverse.top) |
+| **Oneverse** | Where people sign in, and their account, for every app ("Sign in with Oneverse") | `apps/oneverse` (app.oneverse.top), with its home (#538) |
 | **Songverse** | Songs and musicians: the library, charts and chords, arrangements, songbooks, practice and Live | `apps/web` (songverse.top) |
 | **Oneverse Plan** (Planiverse before #539) | Planning: events, rotas, groups and calendars, with the same accounts | `apps/planiverse` (plan.oneverse.top) |
 | Shared web parts | The UI, signing in and the account, the planning screens | `packages/ui`, `packages/app`, `packages/planning` |
