@@ -6,6 +6,7 @@ import "../styles/site.css";
 import stage from "../assets/stage.webp";
 import { DOCS_URL, ONEVERSE_URL, PLANIVERSE_URL, SCREEN_URL, SONGVERSE_URL, type Text } from "../i18n";
 import Logo from "./Logo.astro";
+import SolarSystem from "./SolarSystem.astro";
 
 interface Props {
   t: Text;
@@ -53,6 +54,7 @@ const appIcons: Record<string, string> = {
         </nav>
       </header>
       <section class="wrap hero-body">
+        <SolarSystem />
         <div class="hero-text">
           <h1>{t.heroTitle[0]}<br /><em>{t.heroTitle[1]}</em></h1>
           <p class="lead">{t.heroText}</p>
@@ -64,17 +66,6 @@ const appIcons: Record<string, string> = {
             {t.heroPoints.map((point) => <li>{point}</li>)}
           </ul>
         </div>
-        {/* Oneverse and its apps, drawn as orbits around one centre. */}
-        <svg class="orbits" viewBox="0 0 600 600" aria-hidden="true">
-          <circle cx="300" cy="300" r="110" />
-          <circle cx="300" cy="300" r="190" />
-          <circle cx="300" cy="300" r="270" />
-          <circle class="core" cx="300" cy="300" r="9" />
-          <circle class="planet" cx="410" cy="300" r="4" />
-          <circle class="planet" cx="166" cy="166" r="4" />
-          <circle class="planet" cx="300" cy="490" r="4" />
-          <circle class="planet later" cx="491" cy="491" r="3.5" />
-        </svg>
       </section>
     </div>
 
@@ -115,6 +106,32 @@ const appIcons: Record<string, string> = {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      <section class="wrap scale">
+        <h2>{t.scaleTitle[0]} <em>{t.scaleTitle[1]}</em></h2>
+        <p class="section-lead">{t.scaleText}</p>
+        <ol class="steps">
+          {t.scale.map((step, i) => (
+            <li style={`--step: ${i}`}>
+              <span class="dots" aria-hidden="true">{Array.from({ length: [1, 4, 12][i] }, () => <i />)}</span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section class="wrap highlights">
+        <h2>{t.highlightsTitle[0]} <em>{t.highlightsTitle[1]}</em></h2>
+        <ul>
+          {t.highlights.map((item) => (
+            <li>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </li>
+          ))}
         </ul>
       </section>
 
