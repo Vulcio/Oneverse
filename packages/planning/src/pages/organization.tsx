@@ -9,6 +9,7 @@ import { AnnouncementsCard, type AnnouncementsActions } from "../components/anno
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
 import { OrganizationSetupCard } from "../components/organization-setup";
+import { OrganizationComingUp } from "../components/organization-coming-up";
 import { OrganizationEventTypesButton } from "../components/organization-event-types";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
 import { Badge } from "@oneverse/ui/components/badge";
@@ -130,6 +131,9 @@ export function OrganizationPage({
       {isAdmin && organization.setup && !organization.setup.dismissed ? (
         <OrganizationSetupCard setup={organization.setup} onPage={setupOnPage} onDismiss={() => void run("setup", () => api.updateOrganization(organization.id, { onboardingDone: true }))} />
       ) : null}
+
+      {/* Its calendar first (issue #549): the next dates, then the whole calendar. */}
+      <OrganizationComingUp organizationId={organization.id} isAdmin={isAdmin} />
 
       <div className="grid grid-cols-1 items-start gap-6 @6xl:grid-cols-2">
         <div className="flex flex-col gap-6">

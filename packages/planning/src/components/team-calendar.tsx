@@ -1,6 +1,6 @@
 import { addDays, coversPart, GIVEN_PARTS, INSTRUMENTS, isGivenPart, partsForTeam, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Ban, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { Ban, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LineupDialog, LineupLine, partOf, usePartLabel } from "./lineup";
 import { LocationField, useLocations } from "./locations";
@@ -69,6 +70,10 @@ export function TeamCalendar({
   const [types, setTypes] = useState<TeamEventType[]>([]);
   const [typesOpen, setTypesOpen] = useState(false);
   const [editing, setEditing] = useState<TeamEvent | "new" | null>(null);
+  // Dates, or each event once (issue #549): a series is changed as a whole from there.
+  const [view, setView] = useState<"dates" | "events">("dates");
+  // A date changed on its own (issue #549): its title and start time.
+  const [editingDate, setEditingDate] = useState<TeamEventDateSummary | null>(null);
   const [answersOf, setAnswersOf] = useState<TeamEventDateSummary | null>(null);
   // The date whose line-up is open, by event and date: shown fresh from `dates` after each change.
   const [lineupOf, setLineupOf] = useState<{ eventId: string; date: string } | null>(null);
@@ -174,6 +179,24 @@ export function TeamCalendar({
             ) : null}
           </div>
         ))}
+        {/* The coming dates, or each event once (issue #549). */}
+        <Tabs value={view} onValueChange={(value) => setView(value as "dates" | "events")}>
+          <TabsList aria-label={t("teamCalendar.title")}>
+            <TabsTrigger value="dates" data-testid="calendar-view-dates">
+              <CalendarDays />
+              {t("teamCalendar.viewDates")}
+            </TabsTrigger>
+            <TabsTrigger value="events" data-testid="calendar-view-events">
+              <Repeat />
+              {t("teamCalendar.viewEvents")}
+              {events.length > 0 ? <span className="text-xs text-muted-foreground tabular-nums">{events.length}</span> : null}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {view === "events" ? (
+          <EventSeriesList events={events} types={types} isAdmin={isAdmin} partLabel={partLabel} onEdit={setEditing} />
+        ) : (
+        <>
         {dates === null ? null : dates.length === 0 ? (
           <p className="text-sm text-muted-foreground">{isAdmin ? (makesSets ? t("teamCalendar.noEventsAdmin") : t("teamCalendar.noEventsAdminPlanning")) : t("teamCalendar.noEvents")}</p>
         ) : (
@@ -204,6 +227,7 @@ export function TeamCalendar({
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className={cn("text-sm font-medium", date.cancelled && "line-through")}>{date.title}</span>
                       {date.repeats ? <Repeat className="size-3.5 text-muted-foreground" aria-label={t("teamCalendar.repeats")} /> : null}
+                      {date.changed ? <Badge variant="muted" data-testid="calendar-date-changed">{t("teamCalendar.dateChanged")}</Badge> : null}
                       {rehearsal ? <Badge variant="muted" data-testid="calendar-rehearsal">{t("teamCalendar.rehearsalBadge")}</Badge> : null}
                       {/* Planned by the team's organisation (issue #241), with its host. */}
                       {event?.planned ? (
@@ -304,10 +328,17 @@ export function TeamCalendar({
                             {date.setReadyAt ? t("teamCalendar.setReadyAgain") : t("teamCalendar.setReady")}
                           </DropdownMenuItem>
                         ) : null}
+                        {/* One date on its own (issue #549): a series' date, not a rehearsal's or an organisation's. */}
+                        {event && event.repeat && !rehearsal && !event.planned ? (
+                          <DropdownMenuItem onClick={() => setEditingDate(date)} data-testid="calendar-edit-date">
+                            <CalendarClock />
+                            {t("teamCalendar.editDate")}
+                          </DropdownMenuItem>
+                        ) : null}
                         {event ? (
                           <DropdownMenuItem onClick={() => setEditing(event)} data-testid="calendar-edit-event">
                             <Pencil />
-                            {t("teamCalendar.editEvent")}
+                            {event.repeat ? t("teamCalendar.editSeries") : t("teamCalendar.editEvent")}
                           </DropdownMenuItem>
                         ) : null}
                       </DropdownMenuContent>
@@ -352,6 +383,8 @@ export function TeamCalendar({
             </Button>
           ) : null}
         </div>
+        </>
+        )}
         {isAdmin && makesSets ? <SetsAhead teamId={teamId} onSaved={load} /> : null}
       </CardContent>
       {answersOf ? (
@@ -404,6 +437,24 @@ export function TeamCalendar({
           partLabel={partLabel}
           onChanged={load}
           onClose={() => setTypesOpen(false)}
+        />
+      ) : null}
+      {editingDate ? (
+        <DateDialog
+          date={editingDate}
+          title={dayFormat.format(new Date(`${editingDate.date}T12:00:00Z`))}
+          series={events.find((one) => one.id === editingDate.eventId) ?? null}
+          onClose={() => setEditingDate(null)}
+          onSave={(body) =>
+            act(async () => {
+              await api.updateTeamEventDate(teamId, editingDate.eventId, editingDate.date, body);
+              setEditingDate(null);
+            })
+          }
+          onEditSeries={(series) => {
+            setEditingDate(null);
+            setEditing(series);
+          }}
         />
       ) : null}
       {editing ? (
@@ -509,6 +560,155 @@ function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: st
           <Button variant="outline" onClick={onClose}>
             {t("teamCalendar.close")}
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Each of the team's events once (issue #549): a series with how it repeats,
+ * a one-off with its date, a rehearsal with its event - to change one as a
+ * whole, not date by date.
+ */
+function EventSeriesList({ events, types, isAdmin, partLabel, onEdit }: { events: TeamEvent[]; types: TeamEventType[]; isAdmin: boolean; partLabel: (part: EventPart) => string; onEdit: (event: TeamEvent) => void }) {
+  const { t, i18n } = useTranslation();
+  if (events.length === 0) return <p className="text-sm text-muted-foreground">{t("teamCalendar.noSeries")}</p>;
+  const today = localDate(new Date(), browserZone());
+  // Coming first, by their first date; those over last.
+  const over = (event: TeamEvent) => (event.repeat ? (event.repeat.until ?? "9999") < today : event.date < today);
+  const sorted = [...events].sort((a, b) => Number(over(a)) - Number(over(b)) || a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  return (
+    <ul className="flex flex-col divide-y" aria-label={t("teamCalendar.viewEvents")} data-testid="calendar-series">
+      {sorted.map((event) => {
+        const parent = event.rehearsalFor ? events.find((one) => one.id === event.rehearsalFor!.eventId) : null;
+        const type = types.find((one) => one.id === event.typeId);
+        return (
+          <li key={event.id} className={cn("flex items-start gap-3 py-2.5 first:pt-0 last:pb-0", over(event) && "text-muted-foreground")} data-series={event.id}>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-sm font-medium">{event.title}</span>
+                {type ? <Badge variant="muted">{type.name}</Badge> : null}
+                {event.planned ? <Badge variant="outline">{t("teamCalendar.plannedBy", { organization: event.planned.organizationName })}</Badge> : null}
+                {over(event) ? <Badge variant="outline">{t("teamCalendar.seriesPast")}</Badge> : null}
+              </div>
+              <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground" data-testid="series-when">
+                {parent && event.rehearsalFor ? (
+                  t("teamCalendar.seriesRehearsal", { title: parent.title, days: event.rehearsalFor.daysBefore })
+                ) : event.repeat ? (
+                  <>
+                    <Repeat className="size-3" aria-hidden />
+                    {[
+                      t("teamCalendar.everyNWeeks", { count: event.repeat.everyWeeks }),
+                      t("teamCalendar.seriesOn", { weekday: weekdayOf(event.date, i18n.language), time: event.startTime }),
+                      t("teamCalendar.seriesFrom", { date: formatSetDate(event.date, i18n.language) }),
+                      event.repeat.until ? t("teamCalendar.seriesUntil", { date: formatSetDate(event.repeat.until, i18n.language) }) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </>
+                ) : (
+                  t("teamCalendar.seriesOnce", { date: formatSetDate(event.date, i18n.language), time: event.startTime })
+                )}
+              </span>
+              {event.parts.length > 0 ? <span className="text-xs text-muted-foreground">{event.parts.map((part) => `${partLabel(part)}${part.count > 1 ? ` ×${part.count}` : ""}`).join(", ")}</span> : null}
+              {event.place ? (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="size-3" aria-hidden />
+                  {event.place}
+                </span>
+              ) : null}
+            </div>
+            {isAdmin ? (
+              <Button variant="outline" size="sm" onClick={() => onEdit(event)} data-testid="series-edit">
+                <Pencil />
+                {event.repeat ? t("teamCalendar.editSeries") : t("teamCalendar.editEvent")}
+              </Button>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** A weekday's long name, for a YYYY-MM-DD date. */
+function weekdayOf(date: string, language: string): string {
+  return new Intl.DateTimeFormat(language, { weekday: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+}
+
+/** One date of a series changed on its own (issue #549): its title and start time, or back to the series'. */
+function DateDialog({
+  date,
+  title,
+  series,
+  onClose,
+  onSave,
+  onEditSeries,
+}: {
+  date: TeamEventDateSummary;
+  title: string;
+  series: TeamEvent | null;
+  onClose: () => void;
+  onSave: (body: { title: string | null; startTime: string | null }) => Promise<void>;
+  onEditSeries: (series: TeamEvent) => void;
+}) {
+  const { t } = useTranslation();
+  const [ownTitle, setOwnTitle] = useState(date.title);
+  const [start, setStart] = useState(date.startTime);
+  const [busy, setBusy] = useState(false);
+  const save = (body: { title: string | null; startTime: string | null }) => {
+    setBusy(true);
+    void onSave(body).finally(() => setBusy(false));
+  };
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md" data-testid="date-dialog">
+        <DialogHeader>
+          <DialogTitle>{t("teamCalendar.editDate")}</DialogTitle>
+          <p className="text-sm text-muted-foreground">{t("teamCalendar.editDateHint", { date: title })}</p>
+        </DialogHeader>
+        <form
+          id="date-form"
+          className="grid grid-cols-1 gap-3"
+          onSubmit={(submitted) => {
+            submitted.preventDefault();
+            // The series' own values aren't kept as the date's.
+            save({ title: series && ownTitle.trim() === series.title ? null : ownTitle.trim() || null, startTime: series && start === series.startTime ? null : start });
+          }}
+        >
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="date-title">{t("teamCalendar.dateOwnTitle")}</Label>
+            <Input id="date-title" value={ownTitle} maxLength={120} required onChange={(e) => setOwnTitle(e.target.value)} data-testid="date-title" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="date-start">{t("teamCalendar.dateOwnStart")}</Label>
+            <Input id="date-start" type="time" value={start} required onChange={(e) => setStart(e.target.value)} data-testid="date-start" />
+          </div>
+        </form>
+        <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {series ? (
+              <Button type="button" variant="ghost" onClick={() => onEditSeries(series)} data-testid="date-edit-series">
+                <Repeat />
+                {t("teamCalendar.editSeries")}
+              </Button>
+            ) : null}
+            {date.changed ? (
+              <Button type="button" variant="ghost" disabled={busy} onClick={() => save({ title: null, startTime: null })} data-testid="date-reset">
+                <RotateCcw />
+                {t("teamCalendar.dateBackToSeries")}
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              {t("teamCalendar.cancel")}
+            </Button>
+            <Button type="submit" form="date-form" disabled={busy} data-testid="date-save">
+              {busy ? t("teamCalendar.saving") : t("teamCalendar.saveDate")}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,6 @@
 import { addDays, localDate, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type OrganizationEventPreset, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Ban, CircleCheck, MapPin, MoreHorizontal, Pencil, RotateCcw, Users, X } from "lucide-react";
+import { ArrowLeft, Ban, CalendarDays, CircleCheck, MapPin, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LocationField, useLocations } from "../components/locations";
 import { HostLink, usePlanning } from "../host";
@@ -24,6 +25,7 @@ import { loadOrganizationEventsPage } from "../loaders";
 
 export { loadOrganizationEventsPage };
 import { cn } from "@oneverse/ui/lib/utils";
+import { formatSetDate } from "@oneverse/ui/lib/dates";
 import { FieldError } from "@oneverse/ui/components/field";
 
 const SHOWN_WEEKS = 8;
@@ -46,6 +48,8 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
   const [dates, setDates] = useState<OrganizationEventDate[] | null>(null);
   const [editing, setEditing] = useState<OrganizationEvent | "new" | null>(null);
+  // Its dates, or each event once (issue #549): a series is changed as a whole from there.
+  const [view, setView] = useState<"dates" | "events">("dates");
   const [error, setError] = useState<string | null>(null);
   const dayFormat = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short" });
   const timeFormat = (zone: string) => new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit", timeZone: zone });
@@ -90,6 +94,23 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
 
       <Card>
         <CardContent className="flex flex-col gap-3">
+          <Tabs value={view} onValueChange={(value) => setView(value as "dates" | "events")}>
+            <TabsList aria-label={t("organizations.events")}>
+              <TabsTrigger value="dates" data-testid="org-view-dates">
+                <CalendarDays />
+                {t("teamCalendar.viewDates")}
+              </TabsTrigger>
+              <TabsTrigger value="events" data-testid="org-view-events">
+                <Repeat />
+                {t("teamCalendar.viewEvents")}
+                {events.length > 0 ? <span className="text-xs text-muted-foreground tabular-nums">{events.length}</span> : null}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {view === "events" ? (
+            <OrganizationSeriesList events={events} onEdit={setEditing} />
+          ) : (
+          <>
           {dates === null ? null : dates.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("organizations.noEventsYet")}</p>
           ) : (
@@ -132,7 +153,7 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setEditing(event)} data-testid="org-edit-event">
                               <Pencil />
-                              {t("organizations.editEvent")}
+                              {event.repeat ? t("teamCalendar.editSeries") : t("organizations.editEvent")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -189,6 +210,8 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
               {t("teamCalendar.showMore")}
             </Button>
           ) : null}
+          </>
+          )}
         </CardContent>
       </Card>
 
@@ -239,6 +262,56 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
         />
       ) : null}
     </div>
+  );
+}
+
+/** Each of the organisation's events once (issue #549): how it repeats, its host and groups, to change it as a whole. */
+function OrganizationSeriesList({ events, onEdit }: { events: OrganizationEvent[]; onEdit: (event: OrganizationEvent) => void }) {
+  const { t, i18n } = useTranslation();
+  if (events.length === 0) return <p className="text-sm text-muted-foreground">{t("organizations.noEventsYet")}</p>;
+  const today = localDate(new Date(), browserZone());
+  const over = (event: OrganizationEvent) => (event.repeat ? (event.repeat.until ?? "9999") < today : event.date < today);
+  const weekday = (date: string) => new Intl.DateTimeFormat(i18n.language, { weekday: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+  const sorted = [...events].sort((a, b) => Number(over(a)) - Number(over(b)) || a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  return (
+    <ul className="flex flex-col divide-y" aria-label={t("teamCalendar.viewEvents")} data-testid="org-series">
+      {sorted.map((event) => (
+        <li key={event.id} className={cn("flex items-start gap-3 py-2.5 first:pt-0 last:pb-0", over(event) && "text-muted-foreground")} data-series={event.id}>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-sm font-medium">{event.title}</span>
+              {over(event) ? <Badge variant="outline">{t("teamCalendar.seriesPast")}</Badge> : null}
+            </div>
+            <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground" data-testid="series-when">
+              {event.repeat ? (
+                <>
+                  <Repeat className="size-3" aria-hidden />
+                  {[
+                    t("teamCalendar.everyNWeeks", { count: event.repeat.everyWeeks }),
+                    t("teamCalendar.seriesOn", { weekday: weekday(event.date), time: event.startTime }),
+                    t("teamCalendar.seriesFrom", { date: formatSetDate(event.date, i18n.language) }),
+                    event.repeat.until ? t("teamCalendar.seriesUntil", { date: formatSetDate(event.repeat.until, i18n.language) }) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </>
+              ) : (
+                t("teamCalendar.seriesOnce", { date: formatSetDate(event.date, i18n.language), time: event.startTime })
+              )}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {[event.host ? t("organizations.hostedBy", { name: event.host.displayName }) : null, event.needs.map((need) => need.teamName).join(", ") || null].filter(Boolean).join(" · ")}
+            </span>
+          </div>
+          {event.canManage ? (
+            <Button variant="outline" size="sm" onClick={() => onEdit(event)} data-testid="series-edit">
+              <Pencil />
+              {event.repeat ? t("teamCalendar.editSeries") : t("organizations.editEvent")}
+            </Button>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 
