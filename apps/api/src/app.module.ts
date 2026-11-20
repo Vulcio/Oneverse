@@ -29,6 +29,7 @@ import { MusicBrainzModule } from "./musicbrainz/musicbrainz.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 import { SongbookCatalogModule } from "./songbook-catalog/songbook-catalog.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
+import { AnnouncementsModule } from "./announcements/announcements.module.js";
 import { OfflineModule } from "./offline/offline.module.js";
 import { SetlistsModule } from "./setlists/setlists.module.js";
 import { SongbooksModule } from "./songbooks/songbooks.module.js";
@@ -82,6 +83,7 @@ import { LookupsModule } from "./lookups/lookups.module.js";
     OrganizationsModule,
     TeamEventsModule,
     NotificationsModule,
+    AnnouncementsModule,
     WorksModule,
     SongVersionsModule,
     ArrangementsModule,

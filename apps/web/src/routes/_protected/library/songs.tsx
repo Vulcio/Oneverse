@@ -1,4 +1,4 @@
-import { parseLyricsQuery, resolveTranslation, type LocaleValue, type LyricsMatch, type SongSort, type SongVersionSummary, type Tag } from "@oneverse/core";
+import { parseLyricsQuery, tagLabel, tagPickerGroups, type LocaleValue, type LyricsMatch, type SongSort, type SongVersionSummary, type Tag } from "@oneverse/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListFilter, Quote, Search, Star, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
@@ -173,10 +173,14 @@ function LibraryIndex() {
             />
             <NativeSelect value={search.tagId ?? ""} onChange={(event) => setFilter({ tagId: event.target.value || undefined })} aria-label={t("library.filterTag")}>
               <option value="">{t("library.allTags")}</option>
-              {tags.map((tag) => (
-                <option key={tag.id} value={tag.id}>
-                  {resolveTranslation(tag.label, tag.translations, i18n.language as LocaleValue)}
-                </option>
+              {tagPickerGroups(tags, i18n.language as LocaleValue, search.tagId ? [search.tagId] : []).map((group) => (
+                <optgroup key={group.key} label={group.label}>
+                  {group.tags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>
+                      {tagLabel(tag, i18n.language as LocaleValue)}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </NativeSelect>
             <Button

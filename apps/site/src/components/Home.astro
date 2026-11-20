@@ -4,23 +4,28 @@ import "@fontsource/instrument-serif/400-italic.css";
 import { Image } from "astro:assets";
 import "../styles/site.css";
 import stage from "../assets/stage.webp";
-import { ACCOUNT_URL, DOCS_URL, PLANIVERSE_URL, SONGVERSE_URL, type Text } from "../i18n";
+import { DOCS_URL, ONEVERSE_URL, PLANIVERSE_URL, SCREEN_URL, SONGVERSE_URL, type Text } from "../i18n";
 import Logo from "./Logo.astro";
+import SolarSystem from "./SolarSystem.astro";
 
 interface Props {
   t: Text;
 }
 const { t } = Astro.props;
 const docs = t.lang === "fr" ? `${DOCS_URL}/fr/` : `${DOCS_URL}/`;
-const appUrls = [SONGVERSE_URL, PLANIVERSE_URL];
-const icons = [
-  // A person: one account.
-  '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
-  // Layers: teams within organisations.
-  '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>',
+// Where each app opens; Slideverse has none yet. Screen opens on its
+// operator's console, as Oneverse's home does.
+const appUrls: Record<string, string | undefined> = { plan: PLANIVERSE_URL, screen: `${SCREEN_URL}/operate` };
+const appIcons: Record<string, string> = {
+  // A calendar.
+  plan: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  // A note.
+  songverse: '<circle cx="7" cy="18" r="3"/><circle cx="17" cy="16" r="3"/><path d="M10 18V5l10-2v13"/>',
   // A screen.
-  '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
-];
+  screen: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  // Slides, one over the other.
+  slideverse: '<rect x="6" y="3" width="15" height="11" rx="2"/><path d="M3 8v9a2 2 0 0 0 2 2h12"/>',
+};
 ---
 
 <!doctype html>
@@ -40,48 +45,93 @@ const icons = [
   </head>
   <body>
     <div class="hero">
-      <Image class="hero-photo" src={stage} alt={t.pictureAlt} widths={[800, 1280, 1672]} sizes="100vw" loading="eager" fetchpriority="high" />
+      <div class="hero-stage">
       <header class="wrap top">
         <a href={t.lang === "fr" ? "/fr/" : "/"} aria-label="Oneverse"><Logo /></a>
         <nav>
           <a href={docs}>{t.docs}</a>
           <a href={t.otherLanguage.href} lang={t.lang === "fr" ? "en" : "fr"}>{t.otherLanguage.label}</a>
-          <a href={ACCOUNT_URL}>{t.signIn}</a>
-          <a class="button small" href={SONGVERSE_URL}>{t.openApp}</a>
+          <a class="button small" href={ONEVERSE_URL}>{t.signIn}</a>
         </nav>
       </header>
-      <section class="wrap hero-text">
-        <h1>{t.heroTitle[0]}<br /><em>{t.heroTitle[1]}</em></h1>
-        <p class="lead">{t.heroText}</p>
-        <p class="actions">
-          <a class="button" href="#apps">{t.getStarted} <span aria-hidden="true">→</span></a>
-          <a class="button ghost" href={docs}>{t.readDocs}</a>
-        </p>
+      <section class="wrap hero-body">
+        <SolarSystem />
+        <div class="hero-text">
+          <h1>{t.heroTitle[0]}<br /><em>{t.heroTitle[1]}</em></h1>
+          <p class="lead">{t.heroText}</p>
+          <p class="actions">
+            <a class="button" href={ONEVERSE_URL}>{t.openOneverse} <span aria-hidden="true">→</span></a>
+            <a class="button ghost" href={docs}>{t.readDocs}</a>
+          </p>
+          <ul class="hero-points">
+            {t.heroPoints.map((point) => <li>{point}</li>)}
+          </ul>
+        </div>
       </section>
+      </div>
     </div>
 
     <main>
-      <section class="wrap features apps" id="apps">
-        <h2>{t.appsTitle}</h2>
-        <ul>
-          {t.apps.map((app, i) => (
-            <li>
-              <h3><span class="app-name">{app.name}</span> {app.title}</h3>
-              <p>{app.text}</p>
-              <p class="actions"><a class="button small" href={appUrls[i]}>{app.open} <span aria-hidden="true">→</span></a></p>
-            </li>
-          ))}
+      <section class="songverse" id="songverse">
+        <Image class="songverse-photo" src={stage} alt={t.songverseAlt} widths={[800, 1280, 1672]} sizes="100vw" />
+        <div class="wrap songverse-text">
+          <p class="eyebrow">Songverse · {t.musicians}</p>
+          <h2>{t.songverseTitle[0]}<br /><em>{t.songverseTitle[1]}</em></h2>
+          <p class="section-lead">{t.songverseText}</p>
+          <ul class="points">
+            {t.songversePoints.map((point) => (
+              <li>
+                <h3>{point.title}</h3>
+                <p>{point.text}</p>
+              </li>
+            ))}
+          </ul>
+          <p class="actions"><a class="button" href={SONGVERSE_URL}>{t.openSongverse} <span aria-hidden="true">→</span></a></p>
+        </div>
+      </section>
+
+      <section class="wrap around" id="apps">
+        <h2>{t.aroundTitle[0]} <em>{t.aroundTitle[1]}</em></h2>
+        <p class="section-lead">{t.aroundText}</p>
+        <ul class="app-cards">
+          {t.apps.map((app) => {
+            const href = appUrls[app.key];
+            return (
+              <li class:list={["app-card", { later: !href }]}>
+                <span class="app-icon">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={appIcons[app.key]} />
+                </span>
+                <p class="app-name">{app.name}{!href && <span class="badge">{t.later}</span>}</p>
+                <h3>{app.title}</h3>
+                <p>{app.text}</p>
+                {href && <p class="card-action"><a href={href}>{app.open} <span aria-hidden="true">→</span></a></p>}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
-      <section class="wrap features">
-        <h2>{t.featuresTitle}</h2>
+      <section class="wrap scale">
+        <h2>{t.scaleTitle[0]} <em>{t.scaleTitle[1]}</em></h2>
+        <p class="section-lead">{t.scaleText}</p>
+        <ol class="steps">
+          {t.scale.map((step, i) => (
+            <li style={`--step: ${i}`}>
+              <span class="dots" aria-hidden="true">{Array.from({ length: [1, 4, 12][i] }, () => <i />)}</span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section class="wrap highlights">
+        <h2>{t.highlightsTitle[0]} <em>{t.highlightsTitle[1]}</em></h2>
         <ul>
-          {t.features.map((feature, i) => (
+          {t.highlights.map((item) => (
             <li>
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={icons[i]} />
-              <h3>{feature.title}</h3>
-              <p>{feature.text}</p>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
             </li>
           ))}
         </ul>
@@ -92,7 +142,7 @@ const icons = [
         <p>{t.forWhoText}</p>
         <p class="cta"><em>{t.ctaTitle}</em></p>
         <p class="actions center">
-          <a class="button" href="#apps">{t.getStarted} <span aria-hidden="true">→</span></a>
+          <a class="button" href={ONEVERSE_URL}>{t.openOneverse} <span aria-hidden="true">→</span></a>
         </p>
       </section>
     </main>
@@ -100,9 +150,10 @@ const icons = [
     <footer class="wrap bottom">
       <Logo />
       <nav>
+        <a href={ONEVERSE_URL}>Oneverse</a>
         <a href={SONGVERSE_URL}>Songverse</a>
-        <a href={PLANIVERSE_URL}>Planiverse</a>
-        <a href={ACCOUNT_URL}>{t.footerAccount}</a>
+        <a href={PLANIVERSE_URL}>Oneverse Plan</a>
+        <a href={`${SCREEN_URL}/operate`}>Screen</a>
         <a href={docs}>{t.footerDocs}</a>
         <a href={t.otherLanguage.href} lang={t.lang === "fr" ? "en" : "fr"}>{t.otherLanguage.label}</a>
       </nav>

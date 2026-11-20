@@ -136,6 +136,8 @@ self.addEventListener("notificationclick", (event) => {
   const url = new URL(event.notification.data?.url ?? "/", self.location.origin).href;
   event.waitUntil(
     (async () => {
+      // A page elsewhere (an announcement's link to the docs, issue #536): opened on its own.
+      if (new URL(url).origin !== self.location.origin) return self.clients.openWindow(url);
       const tabs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       const tab = tabs.find((client) => new URL(client.url).origin === self.location.origin);
       if (tab) {

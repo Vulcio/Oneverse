@@ -310,6 +310,7 @@ model User {
 
   // Relations
   teamMemberships           TeamMembership[]
+  announcementsWritten      Announcement[]           @relation("AnnouncementsWritten")
   organizationMemberships   OrganizationMembership[]
   hostedOrganizationEvents  OrganizationEvent[]      @relation("OrganizationEventHost")
   createdOrganizationEvents OrganizationEvent[]      @relation("OrganizationEventCreatedBy")
@@ -712,6 +713,8 @@ model Team {
   usesSongverse        Boolean                @default(true)
   parentId             String?
   parent               Team?                  @relation("Subgroups", fields: [parentId], references: [id], onDelete: SetNull)
+  // News its admins sent its members (issue #536).
+  announcements        Announcement[]
   subgroups            Team[]                 @relation("Subgroups")
   positions            TeamPosition[]
   screenWidgetDefaults ScreenWidgetDefault[]
@@ -783,6 +786,8 @@ model Organization {
 
   memberships     OrganizationMembership[]
   inviteLinks     OrganizationInviteLink[]
+  // News its admins sent its members (issue #536).
+  announcements   Announcement[]
   teams           Team[]
   events          OrganizationEvent[]
   eventPresets    OrganizationEventPreset[]
@@ -1028,6 +1033,13 @@ model Tag {
   ownerTeamId  String? // set when scope = TEAM
   isApproved   Boolean  @default(false) // user-suggested tags start false; admin approves
   sortOrder    Int      @default(0)
+  // A theme's group (issue #37): TAG_GROUPS in @oneverse/core, e.g. "salvation".
+  group        String?
+  // Other words for the same idea, per locale: {"en": ["gracious"], "fr": ["faveur"]}.
+  // Names to match (imports, search, music services' genres), never shown as tags.
+  aliases      Json?
+  // Hidden from pickers, kept on the songs that have it (a slug is never reused).
+  retired      Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -1684,11 +1696,51 @@ model Notification {
   emailedAt DateTime?
   // When it went to their devices, or was looked at and not sent (no device, the person's choice, push not set up).
   pushedAt  DateTime?
+  // The announcement it brings (issue #536): its words are the announcement's, changed with it, gone with it.
+  announcementId String?
   createdAt DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([announcementId])
+}
+
+// News for people (issue #536): new versions and features, from the
+// server's admins (Admin > Announcements), or from an organisation's admins
+// to its members. Written in one or more languages, kept as a draft until
+// sent; sending makes one notification per person (ANNOUNCEMENT or
+// ORGANIZATION_ANNOUNCEMENT), which carries its words.
+model Announcement {
+  id             String    @id @default(cuid())
+  // AnnouncementTexts in @oneverse/core: { en: { title, body, url? }, fr: … }.
+  texts          Json
+  // Who it's for: EVERYONE, SONGVERSE, PLANIVERSE, ORGANIZATION (its members) or TEAMS (theirs).
+  audience       String    @default("EVERYONE")
+  // The organisation it's from (its admins wrote it, or it's for its members).
+  organizationId String?
+  // The team whose admins wrote it, for its members.
+  teamId         String?
+  // TEAMS: which teams' members (each person once), and the groups under them too.
+  teamIds        String[]  @default([])
+  withSubgroups  Boolean   @default(false)
+  // The release it was drafted for (a tagged version), one draft each.
+  release        String?   @unique
+  createdById    String?
+  sentAt         DateTime?
+  // How many people it was sent to.
+  recipients     Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization  Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  team          Team?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy     User?          @relation("AnnouncementsWritten", fields: [createdById], references: [id], onDelete: SetNull)
+  notifications Notification[]
+
+  @@index([organizationId, createdAt])
+  @@index([teamId, createdAt])
 }
 
 // Days someone is away (issue #235), across all their teams: every date in

@@ -20,10 +20,11 @@ export class TagsService {
    * Lists tags visible to the user: approved global tags, plus their own
    * private tags, plus their teams' private tags.
    */
-  async findVisibleToUser(userId: string): Promise<Prisma.TagGetPayload<object>[]> {
+  async findVisibleToUser(userId: string): Promise<Prisma.TagGetPayload<{ include: { category: { select: { slug: true } } } }>[]> {
     return this.prisma.client.tag.findMany({
       where: await this.access.tagsVisibleTo({ id: userId }),
-      orderBy: [{ categoryId: "asc" }, { sortOrder: "asc" }],
+      include: { category: { select: { slug: true } } },
+      orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
     });
   }
 

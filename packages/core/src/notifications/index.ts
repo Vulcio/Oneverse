@@ -69,6 +69,12 @@ export const NOTIFICATION_KINDS = [
   // The organisation one asked for is made, or declined (with the reviewer's reason).
   "ORGANIZATION_APPROVED",
   "ORGANIZATION_DECLINED",
+  // News from the server's admins: a new version, new features (issue #536).
+  "ANNOUNCEMENT",
+  // News from the admins of an organisation one is in (issue #536).
+  "ORGANIZATION_ANNOUNCEMENT",
+  // News from the admins of a team one is in (issue #536).
+  "TEAM_ANNOUNCEMENT",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -108,6 +114,38 @@ export interface NotificationData {
   organization?: string;
   /** The request to connect it's about: accepted or declined from the notification. */
   connectionId?: string;
+  /** An announcement's own words (issue #536), by language ("en", "fr"): the reader's, else English, else the first. */
+  texts?: AnnouncementTexts;
+}
+
+/** An announcement's words in one language (issue #536): a title, a few lines, and where it leads, if anywhere. */
+export interface AnnouncementText {
+  title: string;
+  body: string;
+  /** A page in the app ("/sets") or anywhere ("https://docs.oneverse.top/whats-new/"). */
+  url?: string | null;
+}
+
+/** An announcement's words in each language it's written in. */
+export type AnnouncementTexts = Partial<Record<string, AnnouncementText>>;
+
+/** The kinds whose words are written by someone (issue #536) rather than made from their details. */
+export const ANNOUNCEMENT_KINDS: readonly NotificationKind[] = ["ANNOUNCEMENT", "ORGANIZATION_ANNOUNCEMENT", "TEAM_ANNOUNCEMENT"];
+
+/** An announcement's words for a reader in `locale`: theirs, else English, else the first written; null when none. */
+export function announcementText(texts: AnnouncementTexts | undefined, locale: string): AnnouncementText | null {
+  if (!texts || typeof texts !== "object") return null;
+  const language = locale.split("-")[0]!.toLowerCase();
+  return texts[language] ?? texts.en ?? Object.values(texts).find((text) => !!text) ?? null;
+}
+
+/** Where a notification leads for a reader in `locale`: an announcement's link in their language, else the one stored with it. */
+export function notificationUrl(item: { kind: NotificationKind; data: NotificationData; url?: string | null }, locale: string): string | null {
+  if (ANNOUNCEMENT_KINDS.includes(item.kind)) {
+    const text = announcementText(item.data.texts, locale);
+    if (text) return text.url || null;
+  }
+  return item.url ?? null;
 }
 
 /** How long notifications are kept (issue #149): read ones 90 days, unread ones a year. */
@@ -156,8 +194,12 @@ export function notificationText(kind: NotificationKind, data: NotificationData,
     access: data.canEdit === undefined ? "" : data.canEdit ? messages.notifications.toEdit : messages.notifications.toView,
     note: data.note ?? "",
     organization: data.organization ?? "",
+    // An announcement's own words (issue #536), in the reader's language.
+    ...(ANNOUNCEMENT_KINDS.includes(kind) ? { title: announcementText(data.texts, locale)?.title ?? "", body: announcementText(data.texts, locale)?.body ?? "" } : {}),
   };
-  return { title: fill(words.title, values), body: fill(words.body, values) };
+  const body = fill(words.body, values);
+  // An announcement without a text: its organisation's or team's name alone, not "Grace Church · ".
+  return { title: fill(words.title, values), body: ANNOUNCEMENT_KINDS.includes(kind) ? body.replace(/ · $/, "") : body };
 }
 
 /** Where a notification goes besides the bell (issue #236): by email, by push to one's devices. */
@@ -167,9 +209,11 @@ export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 /** For each kind, whether it goes by each channel. */
 export type NotificationPreferences = Record<NotificationKind, Record<NotificationChannel, boolean>>;
 
-/** Until someone chooses: every kind by every channel - they're few, and about dates one plays. */
+/** Until someone chooses: every kind by every channel - they're few, and about dates one plays - except announcements by email (issue #536): pushed, not mailed. */
 export function defaultNotificationPreferences(): NotificationPreferences {
-  return Object.fromEntries(NOTIFICATION_KINDS.map((kind) => [kind, Object.fromEntries(NOTIFICATION_CHANNELS.map((channel) => [channel, true]))])) as NotificationPreferences;
+  return Object.fromEntries(
+    NOTIFICATION_KINDS.map((kind) => [kind, Object.fromEntries(NOTIFICATION_CHANNELS.map((channel) => [channel, !(channel === "email" && ANNOUNCEMENT_KINDS.includes(kind))]))]),
+  ) as NotificationPreferences;
 }
 
 /**

@@ -5,7 +5,7 @@ import { THEME_SCRIPT } from "@oneverse/app/theme";
 import appCss from "#/styles/app.css?url";
 
 export const Route = createRootRoute({
-  head: () => appHead({ title: "Planiverse", css: appCss, links: [{ rel: "manifest", href: "/manifest.webmanifest" }] }),
+  head: () => appHead({ title: "Oneverse Plan", css: appCss, links: [{ rel: "manifest", href: "/manifest.webmanifest" }] }),
   shellComponent: RootDocument,
 });
 

@@ -3,7 +3,7 @@
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serveWebApp } from "@oneverse/app/server";
-import { redirectToWebUrl } from "./redirect-hosts.mjs";
+import { redirectToWebUrl } from "@oneverse/app/server/redirect-hosts";
 
 await serveWebApp({
   dir: dirname(fileURLToPath(import.meta.url)),

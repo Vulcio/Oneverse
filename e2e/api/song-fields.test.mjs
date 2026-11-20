@@ -91,7 +91,7 @@ await call(admin, "POST", `/songbook-catalogs/${en.id}/entries/import`, { conten
 const fr = (await call(admin, "POST", "/songbook-catalogs", { name: `French ${stamp}`, abbreviation: `FR${stamp % 100000}`, language: "fr" })).body;
 const frCsv = [
   "Number,Title,SortTitle,Subtitle,OriginalSong,Language,Artist,Composer,Lyricist,Album,Year,Key,Time,Tempo,Duration,Copyright,CCLI,ISRC,Reference,Tags,Notes",
-  `7,Grâce infinie,Grace infinie,Quelle grâce,${abbrEn} 12,en,Chris Tomlin; Hillsong,John Newton; Trad.,John Newton,Worship Hits,1779,G,3/4,72,4:05,Public domain,22025,USRC17607839,Éphésiens 2:8,"PAQUES; christmas; not-a-tag",Chanter doucement`,
+  `7,Grâce infinie,Grace infinie,Quelle grâce,${abbrEn} 12,en,Chris Tomlin; Hillsong,John Newton; Trad.,John Newton,Worship Hits,1779,G,3/4,72,4:05,Public domain,22025,USRC17607839,Éphésiens 2:8,"PAQUES; christmas; not-a-tag; gracious; Acoustique",Chanter doucement`,
 ].join("\n");
 r = await call(admin, "POST", `/songbook-catalogs/${fr.id}/entries/import`, { content: frCsv });
 check("a catalogue with every column imports", r.body.created === 1 && r.body.problems.length === 0, JSON.stringify(r.body.problems));
@@ -115,7 +115,11 @@ check(
 );
 const credits = created.contributors.map((c) => `${c.source}:${[...c.roles].sort().join("+")}`).join(" | ");
 check("several artists, composers and lyricists become credits, merged per person", credits === "Chris Tomlin:PERFORMER | Hillsong:PERFORMER | John Newton:COMPOSER+LYRICIST | Trad.:COMPOSER", credits);
-check("tags that match existing ones are added (any language, any case); the rest are dropped", created.tags.map((t) => t.slug).sort().join() === "christmas,easter", created.tags.map((t) => t.slug).join());
+check(
+  "tags that match existing ones are added (any language, any case, other words for them: issue #37); a retired one leads to its replacement; the rest are dropped",
+  created.tags.map((t) => t.slug).sort().join() === "christmas,easter,folk,grace",
+  created.tags.map((t) => t.slug).join(),
+);
 check(
   "the original song becomes its parent, in the same Work, as a translation",
   created.parentVersion?.id === enSong.songVersionId && created.relationshipType === "DIRECT_TRANSLATION" && created.workId === (await call(admin, "GET", `/song-versions/${enSong.songVersionId}`)).body.workId,

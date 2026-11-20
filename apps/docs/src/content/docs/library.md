@@ -36,6 +36,10 @@ To search, use **Search** at the top of every page, or the box above **Songs**.
 - **Sort** by a column by clicking its heading.
 - The **Status** column says where a song stands: **Personal** or **Team** for one never offered to the global catalogue, then where its submission is (**Waiting for review**, **Published**...).
 
+### Tags
+
+Tags say what a song is about and when it fits, to find songs for a set: **themes** (love, hope, grief, freedom, grace, the cross...), in groups such as **Love & relationships**, **Hard times** or **Salvation**; a **season** (Christmas, Easter, summer...); an **occasion** (a wedding, a funeral, communion, the opening...); and a **genre** (pop, gospel, hymn, contemporary worship...). They're for any music, not only worship. Pick them in the song's **Song info**: typing finds a tag by any of its names, in English or French ("grâce", "grace" and "gracious" all find **Grace**). The **All tags** filter lists them by group.
+
 ## Artists
 
 **Artists** shows everyone credited as an artist on the songs you can see, as a grid: their picture (or their initials), their name and how many songs they have; the search box narrows them. Names written differently (with or without capitals or accents) count as one artist.

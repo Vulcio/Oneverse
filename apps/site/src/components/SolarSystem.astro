@@ -1,0 +1,140 @@
+---
+// Oneverse and its apps as a solar system, seen from the side: a sun and
+// four planets that pass in front of it and behind it, each lit from the sun
+// (a planet in front shows its night side), the whole system tilting,
+// turning and growing as the page scrolls. Drawn by the script below from
+// these bodies; still when someone asks for less motion.
+const bodies = [
+  { key: "songverse", orbit: 0.4, size: 0.15, angle: 0.5, speed: 0.045 },
+  { key: "plan", orbit: 0.62, size: 0.095, angle: 2.5, speed: 0.03 },
+  { key: "screen", orbit: 0.84, size: 0.075, angle: 4.3, speed: 0.021 },
+  { key: "slideverse", orbit: 1.05, size: 0.05, angle: 1.3, speed: 0.015 },
+  // Further out, off the screen at first: they come in as the page scrolls.
+  { key: "ice", orbit: 1.4, size: 0.13, angle: 0.35, speed: 0.01 },
+  { key: "rock", orbit: 1.75, size: 0.06, angle: 0.95, speed: 0.008 },
+];
+---
+
+<div class="system" aria-hidden="true" data-solar-system>
+  <div class="plane">
+    <svg class="rings" preserveAspectRatio="none">
+      {bodies.map(() => <ellipse />)}
+    </svg>
+    <span class="body sun"><span class="corona"></span></span>
+    {bodies.map((b) => (
+      <span class={`body planet is-${b.key}`} data-orbit={b.orbit} data-size={b.size} data-angle={b.angle} data-speed={b.speed}>
+        <span class="surface"></span>
+        <span class="shade"></span>
+      </span>
+    ))}
+  </div>
+</div>
+
+<script>
+  for (const system of document.querySelectorAll<HTMLElement>("[data-solar-system]")) {
+    const plane = system.querySelector<HTMLElement>(".plane")!;
+    const hero = system.closest<HTMLElement>(".hero") ?? document.body;
+    const sun = system.querySelector<HTMLElement>(".sun")!;
+    const orbits = [...system.querySelectorAll<SVGEllipseElement>("ellipse")];
+    const planets = [...system.querySelectorAll<HTMLElement>(".planet")].map((el) => ({
+      el,
+      orbit: Number(el.dataset.orbit),
+      size: Number(el.dataset.size),
+      angle: Number(el.dataset.angle),
+      speed: Number(el.dataset.speed),
+    }));
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    let width = 0;
+    let height = 0;
+    const measure = () => {
+      width = system.clientWidth;
+      height = system.clientHeight;
+    };
+    measure();
+    new ResizeObserver(measure).observe(system);
+
+    const start = performance.now();
+    const draw = (now: number) => {
+      // How far the page has scrolled through the hero, 0 to 1: while it's
+      // pinned on a wide screen, or until it's gone on a phone.
+      const travel = hero.offsetHeight - (hero.offsetHeight > innerHeight * 1.5 ? innerHeight : 0);
+      const scrolled = Math.min(1, Math.max(0, (scrollY - hero.offsetTop) / Math.max(1, travel)));
+      const time = still.matches ? 0 : (now - start) / 1000;
+      // Seen nearly edge-on, opening up as the page scrolls.
+      const flat = 0.15 + 0.4 * scrolled;
+      const reach = Math.min(width * 0.55, height * 1.5);
+      const cx = width / 2;
+      const cy = height / 2;
+      plane.style.transform = `translate(${-scrolled * width * 0.15}px, ${-scrolled * height * 0.08}px) rotate(${-16 + 30 * scrolled}deg) scale(${1 + 0.6 * scrolled})`;
+
+      const sunSize = reach * 0.36;
+      sun.style.cssText = `width:${sunSize}px;height:${sunSize}px;left:${cx - sunSize / 2}px;top:${cy - sunSize / 2}px;z-index:100`;
+
+      planets.forEach((planet, i) => {
+        const r = planet.orbit * reach;
+        const orbit = orbits[i];
+        orbit.setAttribute("cx", String(cx));
+        orbit.setAttribute("cy", String(cy));
+        orbit.setAttribute("rx", String(r));
+        orbit.setAttribute("ry", String(r * flat));
+        const angle = planet.angle + time * planet.speed + scrolled * (1.4 + planet.speed * 25);
+        const depth = Math.sin(angle); // 1 in front of the sun, -1 behind it
+        const size = planet.size * reach * 2 * (1 + 0.35 * depth);
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + depth * r * flat;
+        // The lit side faces the sun; in front of it, we see mostly night.
+        const toSun = Math.atan2(cy - y, cx - x);
+        const night = (depth + 1) / 2;
+        planet.el.style.cssText =
+          `width:${size}px;height:${size}px;left:${x - size / 2}px;top:${y - size / 2}px;z-index:${100 + Math.round(depth * 50)};` +
+          `--lx:${50 + Math.cos(toSun) * 38}%;--ly:${50 + Math.sin(toSun) * 38}%;--lit:${58 - 40 * night}%;` +
+          // Out of focus as it comes close, like a camera focused on the sun.
+          `filter:blur(${(Math.max(0, depth) * size * 0.035 + Math.max(0, -depth) * 0.6).toFixed(1)}px)`;
+      });
+      if (!still.matches) requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+    // With motion off, it's drawn again only when the page scrolls.
+    addEventListener("scroll", () => still.matches && requestAnimationFrame(draw), { passive: true });
+  }
+</script>
+
+<style>
+  .system { position: absolute; inset: 0 -48% 0 28%; z-index: 0; pointer-events: none; }
+  .plane { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .rings { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .rings ellipse { fill: none; stroke: rgba(244, 241, 234, 0.12); stroke-width: 1; }
+  .body { position: absolute; border-radius: 50%; }
+
+  /* The sun: white hot at the core, darker at the limb, a soft corona. */
+  .sun {
+    background: radial-gradient(circle at 46% 44%, #fff3d6 0%, #f9d58f 35%, #eeb062 70%, #c98443 100%);
+  }
+  /* The glow, drawn as a gradient: wide shadows band into squares on some screens. */
+  .corona { position: absolute; inset: -150%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, rgba(255, 200, 110, 0.55) 15%, rgba(255, 170, 70, 0.22) 21%, rgba(255, 150, 60, 0.08) 33%, rgba(255, 140, 50, 0) 50%); }
+
+  .planet > span { position: absolute; border-radius: 50%; }
+  .surface, .shade { inset: 0; }
+  .surface { overflow: hidden; }
+  /* Light from the sun's side, night on the other, a thin atmosphere at the edge. */
+  .shade {
+    background: radial-gradient(circle at var(--lx) var(--ly), rgba(255, 245, 225, 0.18) 0%, rgba(0, 0, 0, 0) var(--lit), rgba(3, 3, 8, 0.93) calc(var(--lit) + 34%));
+    box-shadow: inset 0 0 0.15em rgba(255, 255, 255, 0.12);
+  }
+
+  /* Smooth gradients in quiet colours, no surface detail. */
+  .is-songverse .surface { background: linear-gradient(160deg, #b8b2d8 0%, #7c74a8 50%, #4a4470 100%); }
+  .is-plan .surface { background: linear-gradient(160deg, #a9c9c1 0%, #6c948b 50%, #3e5c56 100%); }
+  .is-screen .surface { background: linear-gradient(160deg, #dcb7a2 0%, #b07d64 50%, #6e4a3a 100%); }
+  .is-slideverse .surface { background: linear-gradient(160deg, #a8a7ad 0%, #807f86 50%, #55545a 100%); }
+  .is-ice .surface { background: linear-gradient(160deg, #aebcd3 0%, #7487a6 50%, #445470 100%); }
+  .is-rock .surface { background: linear-gradient(160deg, #bdb2a6 0%, #8f8478 50%, #5e554c 100%); }
+
+  @media (max-width: 960px) {
+    .system { left: 5%; right: -60%; opacity: 0.5; }
+  }
+  @media (max-width: 640px) {
+    /* On a phone the system gets its own space above the words. */
+    .system { position: relative; inset: auto; height: 17rem; margin: 0 -1rem; opacity: 1; overflow: hidden; }
+  }
+</style>

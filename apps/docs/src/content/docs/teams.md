@@ -141,6 +141,10 @@ Under **Bible**, the team's admins tick **Show the Bible in the sidebar**: its m
 
 Under **Songs played often**, the team's admins choose over how many weeks a song's plays in the team's sets are counted (6 by default) and, with **Flag a song played this many times or more**, a limit. Past it, a song is flagged in the team's sets and in **Add to set**, but can still be added (see [Songs played often](/sets/#songs-played-often)). A set counts once it's dated before today.
 
+## Announcements
+
+A team's admins send news to its members from its page: **Announcements**, then **New announcement** - a **Title**, a **Text** and, if you like, a **Link**, typed or picked under **Or a page of the app** (**What I play or do (Dashboard > Roles)**, **Account settings**, **My calendar**…). **Under the bell** shows how it will look; it stays a **Draft** until **Send**, which says how many members it goes to. Members get it under the bell with the team's name, and on their devices; by email only if they turn that on. A sent one can still be fixed for everyone (**Save: fixes it for everyone**) or taken back (**Take back**). It goes to the team's own members, not the groups under it; an organisation's admins can send to several groups at once (see [Organisations](/organizations/#announcements)).
+
 ## Leaving or deleting a team
 
 **Leave team** takes you out of it. If you're its only admin, promote another member first. An admin can **Rename** it - the pencil beside its name; an organisation's group too - or **Delete team**.

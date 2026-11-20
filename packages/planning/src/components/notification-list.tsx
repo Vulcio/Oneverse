@@ -1,4 +1,4 @@
-import { ApiError, notificationText, type AppNotification, type Messages } from "@oneverse/core";
+import { ANNOUNCEMENT_KINDS, ApiError, notificationText, notificationUrl, type AppNotification, type Messages } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { Check, X } from "lucide-react";
 import { useState } from "react";
@@ -45,6 +45,9 @@ export function NotificationList({ items, onRead, onOpened }: { items: AppNotifi
     <ul className="divide-y" data-testid="notification-items">
       {items.map((item) => {
         const text = notificationText(item.kind, item.data, messages, i18n.language);
+        // An announcement's link in the reader's language (issue #536); one elsewhere (the docs) opens on its own.
+        const url = notificationUrl(item, i18n.language);
+        const elsewhere = ANNOUNCEMENT_KINDS.includes(item.kind) && !!url && /^https?:\/\//.test(url);
         return (
           <li key={item.id} className={cn(!item.read && "bg-primary/5")} data-notification={item.kind} data-read={item.read}>
             <button
@@ -53,7 +56,8 @@ export function NotificationList({ items, onRead, onOpened }: { items: AppNotifi
               onClick={() => {
                 if (!item.read) onRead([item.id]);
                 onOpened?.();
-                if (item.url) open(item.url);
+                if (url && elsewhere) window.open(url, "_blank", "noopener");
+                else if (url) open(url);
               }}
             >
               <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-primary")} />

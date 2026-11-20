@@ -586,6 +586,159 @@
             "title": "The set for Morning service on Sun, Oct 18 is ready",
             "body": "Worship team - 6 song(s)"
           }
+        },
+        {
+          "name": "an announcement, in the reader's language (issue #536)",
+          "args": [
+            "ANNOUNCEMENT",
+            {
+              "texts": {
+                "en": {
+                  "title": "What's new in version 0.10.0",
+                  "body": "See what changed."
+                },
+                "fr": {
+                  "title": "Les nouveautés de la version 0.10.0",
+                  "body": "Découvrez ce qui a changé."
+                }
+              }
+            },
+            "fr"
+          ],
+          "expected": {
+            "title": "Les nouveautés de la version 0.10.0",
+            "body": "Découvrez ce qui a changé."
+          }
+        },
+        {
+          "name": "an announcement not written in theirs: in English",
+          "args": [
+            "ANNOUNCEMENT",
+            {
+              "texts": {
+                "fr": {
+                  "title": "Répétition annulée",
+                  "body": ""
+                },
+                "en": {
+                  "title": "Rehearsal cancelled",
+                  "body": ""
+                }
+              }
+            },
+            "de"
+          ],
+          "expected": {
+            "title": "Rehearsal cancelled",
+            "body": ""
+          }
+        },
+        {
+          "name": "an organisation's announcement, written in one language",
+          "args": [
+            "ORGANIZATION_ANNOUNCEMENT",
+            {
+              "organization": "Grace Church",
+              "texts": {
+                "fr": {
+                  "title": "Nouveau site",
+                  "body": "On se retrouve rue Neuve."
+                }
+              }
+            },
+            "en"
+          ],
+          "expected": {
+            "title": "Nouveau site",
+            "body": "Grace Church · On se retrouve rue Neuve."
+          }
+        },
+        {
+          "name": "a team's announcement without a text: the team's name alone",
+          "args": [
+            "TEAM_ANNOUNCEMENT",
+            {
+              "team": "Worship team",
+              "texts": {
+                "en": {
+                  "title": "Rehearsal moved to 7pm",
+                  "body": ""
+                }
+              }
+            },
+            "en"
+          ],
+          "expected": {
+            "title": "Rehearsal moved to 7pm",
+            "body": "Worship team"
+          }
+        }
+      ]
+    },
+    "notificationUrl": {
+      "about": "Where a notification leads (issue #536): an announcement's link in the reader's language, else the one stored with it.",
+      "params": [
+        "item",
+        "locale"
+      ],
+      "cases": [
+        {
+          "name": "a notification's own",
+          "args": [
+            {
+              "kind": "SET_READY",
+              "data": {
+                "event": "Morning service"
+              },
+              "url": "/sets/abc"
+            },
+            "fr"
+          ],
+          "expected": "/sets/abc"
+        },
+        {
+          "name": "an announcement's, in French",
+          "args": [
+            {
+              "kind": "ANNOUNCEMENT",
+              "data": {
+                "texts": {
+                  "en": {
+                    "title": "New",
+                    "body": "",
+                    "url": "https://docs.oneverse.top/whats-new/"
+                  },
+                  "fr": {
+                    "title": "Nouveau",
+                    "body": "",
+                    "url": "https://docs.oneverse.top/fr/whats-new/"
+                  }
+                }
+              },
+              "url": "https://docs.oneverse.top/whats-new/"
+            },
+            "fr"
+          ],
+          "expected": "https://docs.oneverse.top/fr/whats-new/"
+        },
+        {
+          "name": "an announcement without a link",
+          "args": [
+            {
+              "kind": "ANNOUNCEMENT",
+              "data": {
+                "texts": {
+                  "en": {
+                    "title": "New",
+                    "body": ""
+                  }
+                }
+              },
+              "url": null
+            },
+            "en"
+          ],
+          "expected": null
         }
       ]
     },
@@ -596,7 +749,7 @@
       ],
       "cases": [
         {
-          "name": "nothing chosen: everything on",
+          "name": "nothing chosen: everything on, but announcements not by email (issue #536)",
           "args": [
             null
           ],
@@ -731,6 +884,18 @@
             },
             "ORGANIZATION_DECLINED": {
               "email": true,
+              "push": true
+            },
+            "ANNOUNCEMENT": {
+              "email": false,
+              "push": true
+            },
+            "ORGANIZATION_ANNOUNCEMENT": {
+              "email": false,
+              "push": true
+            },
+            "TEAM_ANNOUNCEMENT": {
+              "email": false,
               "push": true
             }
           }
@@ -884,6 +1049,18 @@
             },
             "ORGANIZATION_DECLINED": {
               "email": true,
+              "push": true
+            },
+            "ANNOUNCEMENT": {
+              "email": false,
+              "push": true
+            },
+            "ORGANIZATION_ANNOUNCEMENT": {
+              "email": false,
+              "push": true
+            },
+            "TEAM_ANNOUNCEMENT": {
+              "email": false,
               "push": true
             }
           }
@@ -1045,6 +1222,18 @@
               },
               "ORGANIZATION_DECLINED": {
                 "email": true,
+                "push": true
+              },
+              "ANNOUNCEMENT": {
+                "email": false,
+                "push": true
+              },
+              "ORGANIZATION_ANNOUNCEMENT": {
+                "email": false,
+                "push": true
+              },
+              "TEAM_ANNOUNCEMENT": {
+                "email": false,
                 "push": true
               }
             }

@@ -1,10 +1,11 @@
 import type { OrganizationTeam, TeamRole } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { CalendarDays } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
+import { AnnouncementsCard, type AnnouncementsActions } from "../components/announcements-card";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
 import { OrganizationSetupCard } from "../components/organization-setup";
@@ -278,10 +279,39 @@ export function OrganizationPage({
               onChanged={() => router.invalidate()}
               onError={setError}
             />
+            {/* News for its members (issue #536). */}
+            <OrganizationAnnouncements organizationId={organization.id} groups={organization.teams} />
           </div>
         ) : null}
       </div>
     </div>
+  );
+}
+
+/** An organisation's announcements (issue #536), written in its admin's language: to all its members, or to some of its groups'. */
+function OrganizationAnnouncements({ organizationId, groups }: { organizationId: string; groups: OrganizationTeam[] }) {
+  const { api } = usePlanning();
+  const { t, i18n } = useTranslation();
+  const actions = useMemo<AnnouncementsActions>(
+    () => ({
+      list: () => api.listOrganizationAnnouncements(organizationId),
+      create: (draft) => api.createOrganizationAnnouncement(organizationId, { texts: draft.texts, teamIds: draft.teamIds, withSubgroups: draft.withSubgroups }),
+      update: (id, draft) => api.updateOrganizationAnnouncement(organizationId, id, { texts: draft.texts, teamIds: draft.teamIds, withSubgroups: draft.withSubgroups }),
+      send: (id) => api.sendOrganizationAnnouncement(organizationId, id),
+      remove: (id) => api.deleteOrganizationAnnouncement(organizationId, id),
+    }),
+    [api, organizationId],
+  );
+  return (
+    <AnnouncementsCard
+      actions={actions}
+      languages={[i18n.language.startsWith("fr") ? "fr" : "en"]}
+      audiences={groups.length > 0 ? ["ORGANIZATION", "TEAMS"] : ["ORGANIZATION"]}
+      audienceLabel={(audience) => t(`announcements.organizationAudiences.${audience === "TEAMS" ? "TEAMS" : "ORGANIZATION"}`)}
+      teams={groups.map((group) => ({ id: group.id, name: group.name, parentId: group.parentId }))}
+      title={t("announcements.organizationTitle")}
+      description={t("announcements.organizationDescription")}
+    />
   );
 }
 

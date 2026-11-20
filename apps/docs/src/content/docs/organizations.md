@@ -3,7 +3,7 @@ title: Organisations
 description: A church, a club or a group whose teams plan together, on a server that has organisations.
 ---
 
-An organisation is the church, club or group your teams are part of: the music team, the welcome team, the tech team… It's where they plan together - who hosts each event, which groups each one needs - in Songverse, or in [Planiverse](/planiverse/), the planning on its own, where the server has it. Songverse works without any: a server has organisations only if its admins turned them on (see [Admin](/admin/#organisations)), and until then you won't see them.
+An organisation is the church, club or group your teams are part of: the music team, the welcome team, the tech team… It's where they plan together - who hosts each event, which groups each one needs - in Songverse, or in [Oneverse Plan](/plan/), the planning on its own, where the server has it. Songverse works without any: a server has organisations only if its admins turned them on (see [Admin](/admin/#organisations)), and until then you won't see them.
 
 ## Where to find them
 
@@ -36,7 +36,7 @@ A new organisation's admins find **Set up your organisation** at the top of its 
 4. **Keep your files in your own storage**, optional, where this server allows it (see [Your own storage](/own-storage/));
 5. **Run your own Songverse Sonic**, optional, where this server allows it (see [Your own stem separation server](/sonic/)).
 
-The cross puts it away; **Show the setup checklist**, under **Details**, brings it back. In [Planiverse](/planiverse/), the last three are set up in Songverse, on the organisation's page.
+The cross puts it away; **Show the setup checklist**, under **Details**, brings it back. In [Oneverse Plan](/plan/), the last three are set up in Songverse, on the organisation's page.
 
 ## An organisation's page
 
@@ -119,6 +119,10 @@ Its admins make roles of their own under **Roles** on its page, with **New role*
 - running, moving on, routing and managing its teams' screens.
 
 Tick who has each under the role. A role that keeps files can also be given to **whole teams**: their members have it, and its storage tier is the team's share. Its names are its own; this server's admins don't see them in Admin > Roles, and they count nowhere else. A team's admins make roles of their own too, for its own Sonic server and its screens (see [Teams](/teams/#roles-on-the-team)).
+
+## Announcements
+
+An organisation's admins send news to its members from its page: **Announcements**, then **New announcement** - a **Title**, a **Text** and, if you like, a **Link** (a web address, or a page of the app, typed such as `/calendar` or picked under **Or a page of the app**). **Who gets it**: **All its members**, or **Some of its groups' members** - tick the groups, and **And the groups under them** to include those too; each person gets it once. **Under the bell** shows how it will look; it stays a **Draft** until **Send**, which says how many members it goes to. Members get it under the bell with the organisation's name, and on their devices; by email only if they turn that on. A sent one can still be fixed for everyone (**Save: fixes it for everyone**) or taken back (**Take back**).
 
 ## Its own storage
 

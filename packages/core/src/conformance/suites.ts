@@ -44,7 +44,7 @@ import { UpdateUserSchema } from "../requests/accounts.js";
 import { checkRequest } from "../requests/messages.js";
 import { AnswerEventDateSchema, CreateAwaySchema, CreateTeamEventSchema } from "../requests/events.js";
 import { calendarFeed } from "../calendar/ical.js";
-import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
+import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, notificationUrl, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
 import { type AssignmentStatus, type EventPart, coversPart, missingRequired, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
@@ -2839,6 +2839,25 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a place offered", args: ["SWAP_OFFERED", { event: "Morning service", date: "2026-10-18", team: "Worship team", part: "BACKING_VOCALS", by: "Sam" }, "en"] },
           { name: "a part with its own name", args: ["SCHEDULE_DECLINED", { event: "Morning service", date: "2026-10-18", team: "Worship team", partName: "Slides", by: "Sam" }, "en"] },
           { name: "the set is ready", args: ["SET_READY", { event: "Morning service", date: "2026-10-18", team: "Worship team", count: 6 }, "en"] },
+          {
+            name: "an announcement, in the reader's language (issue #536)",
+            args: ["ANNOUNCEMENT", { texts: { en: { title: "What's new in version 0.10.0", body: "See what changed." }, fr: { title: "Les nouveautés de la version 0.10.0", body: "Découvrez ce qui a changé." } } }, "fr"] },
+          { name: "an announcement not written in theirs: in English", args: ["ANNOUNCEMENT", { texts: { fr: { title: "Répétition annulée", body: "" }, en: { title: "Rehearsal cancelled", body: "" } } }, "de"] },
+          { name: "an organisation's announcement, written in one language", args: ["ORGANIZATION_ANNOUNCEMENT", { organization: "Grace Church", texts: { fr: { title: "Nouveau site", body: "On se retrouve rue Neuve." } } }, "en"] },
+          { name: "a team's announcement without a text: the team's name alone", args: ["TEAM_ANNOUNCEMENT", { team: "Worship team", texts: { en: { title: "Rehearsal moved to 7pm", body: "" } } }, "en"] },
+        ],
+      },
+      notificationUrl: {
+        about: "Where a notification leads (issue #536): an announcement's link in the reader's language, else the one stored with it.",
+        params: ["item", "locale"],
+        run: notificationUrl,
+        cases: [
+          { name: "a notification's own", args: [{ kind: "SET_READY", data: { event: "Morning service" }, url: "/sets/abc" }, "fr"] },
+          {
+            name: "an announcement's, in French",
+            args: [{ kind: "ANNOUNCEMENT", data: { texts: { en: { title: "New", body: "", url: "https://docs.oneverse.top/whats-new/" }, fr: { title: "Nouveau", body: "", url: "https://docs.oneverse.top/fr/whats-new/" } } }, url: "https://docs.oneverse.top/whats-new/" }, "fr"],
+          },
+          { name: "an announcement without a link", args: [{ kind: "ANNOUNCEMENT", data: { texts: { en: { title: "New", body: "" } } }, url: null }, "en"] },
         ],
       },
       notificationPreferences: {
@@ -2846,7 +2865,7 @@ export const CONFORMANCE: ConformanceArea[] = [
         params: ["stored"],
         run: notificationPreferences,
         cases: [
-          { name: "nothing chosen: everything on", args: [null] },
+          { name: "nothing chosen: everything on, but announcements not by email (issue #536)", args: [null] },
           { name: "email off for one kind; junk ignored", args: [{ kinds: { EVENT_DATE_CHANGED: { email: false, sms: true }, NOPE: { email: false }, EVENT_CANCELLED: { push: "no" } } }] },
         ],
       },

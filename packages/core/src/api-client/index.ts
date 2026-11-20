@@ -44,7 +44,8 @@ import type { SectionInstance, SectionV2, SongDocumentV2 } from "../schemas/song
 import type { SongbookSection } from "../songbook-sections/index.js";
 import type { StemPart } from "../stems/index.js";
 import type { NewNotes, NoteAnchor, NoteColor, NoteLook, NotePlace, NotePlacement, NoteShow, NoteSize } from "../notes/index.js";
-import type { NotificationData, NotificationKind, NotificationPreferences, QuietHours } from "../notifications/index.js";
+import type { AnnouncementTexts, NotificationData, NotificationKind, NotificationPreferences, QuietHours } from "../notifications/index.js";
+import type { AnnouncementAudience, CreateAnnouncementRequest, SaveOrganizationAnnouncementRequest, SaveTeamAnnouncementRequest, UpdateAnnouncementRequest } from "../requests/announcements.js";
 import type { LyricsMatch } from "../search-text/lyrics.js";
 import type { SecondChordRow } from "../display/chord-rows.js";
 import type { SectionProgression } from "../chords/progressions.js";
@@ -1949,6 +1950,29 @@ export interface PushDevice {
   lastErrorAt: string | null;
 }
 
+/** An announcement (issue #536): a draft, or sent (and to how many people). */
+export interface Announcement {
+  id: string;
+  texts: AnnouncementTexts;
+  audience: AnnouncementAudience;
+  organizationId: string | null;
+  organizationName: string | null;
+  /** The team whose admins wrote it, for its members. */
+  teamId: string | null;
+  teamName: string | null;
+  /** TEAMS: which teams' members (a team since deleted has no name), and the groups under them too. */
+  teams: { id: string; name: string | null }[];
+  withSubgroups: boolean;
+  /** The release it was drafted for, when a release drafted it. */
+  release: string | null;
+  createdBy: { id: string; displayName: string } | null;
+  sentAt: string | null;
+  /** Sent: how many it went to; a draft: how many it would go to now. */
+  recipients: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface NotificationServerSettingsSummary {
   source: "database" | "env" | "none";
   settings: { emailEnabled: SecuritySetting<boolean> };
@@ -2288,16 +2312,26 @@ export interface TagCategory {
   label: string;
   translations: Record<string, string> | null;
   isGlobal: boolean;
+  sortOrder: number;
 }
 
 export interface Tag {
   id: string;
   categoryId: string;
+  /** Its category's slug: theme, season, occasion, style (shown as Genre), mood, instrumentation, or an admin's own. */
+  category: { slug: string };
   slug: string;
   label: string;
   translations: Record<string, string> | null;
   scope: string;
   isApproved: boolean;
+  sortOrder: number;
+  /** A theme's group (issue #37): one of TAG_GROUPS. */
+  group: string | null;
+  /** Other words for it, per locale; names to match, not to show. */
+  aliases: Partial<Record<string, string[]>> | null;
+  /** Hidden from pickers, still shown on the songs that have it. */
+  retired: boolean;
 }
 
 export interface SongVersionSummary {
@@ -3169,6 +3203,20 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     removeOrganizationMember: (organizationId: string, userId: string) => request<void>(`/organizations/${organizationId}/members/${userId}`, { method: "DELETE" }),
     leaveOrganization: (organizationId: string) => request<void>(`/organizations/${organizationId}/leave`, { method: "POST" }),
     listOrganizationInviteLinks: (organizationId: string) => request<TeamInviteLink[]>(`/organizations/${organizationId}/invite-links`),
+    // An organisation's announcements to its members (issue #536), for its admins.
+    listOrganizationAnnouncements: (organizationId: string) => request<Announcement[]>(`/organizations/${organizationId}/announcements`),
+    createOrganizationAnnouncement: (organizationId: string, data: SaveOrganizationAnnouncementRequest) =>
+      request<Announcement>(`/organizations/${organizationId}/announcements`, { method: "POST", body: JSON.stringify(data) }),
+    updateOrganizationAnnouncement: (organizationId: string, id: string, data: SaveOrganizationAnnouncementRequest) =>
+      request<Announcement>(`/organizations/${organizationId}/announcements/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    sendOrganizationAnnouncement: (organizationId: string, id: string) => request<Announcement>(`/organizations/${organizationId}/announcements/${id}/send`, { method: "POST" }),
+    deleteOrganizationAnnouncement: (organizationId: string, id: string) => request<void>(`/organizations/${organizationId}/announcements/${id}`, { method: "DELETE" }),
+    // A team's announcements to its members (issue #536), for its admins.
+    listTeamAnnouncements: (teamId: string) => request<Announcement[]>(`/teams/${teamId}/announcements`),
+    createTeamAnnouncement: (teamId: string, data: SaveTeamAnnouncementRequest) => request<Announcement>(`/teams/${teamId}/announcements`, { method: "POST", body: JSON.stringify(data) }),
+    updateTeamAnnouncement: (teamId: string, id: string, data: SaveTeamAnnouncementRequest) => request<Announcement>(`/teams/${teamId}/announcements/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    sendTeamAnnouncement: (teamId: string, id: string) => request<Announcement>(`/teams/${teamId}/announcements/${id}/send`, { method: "POST" }),
+    deleteTeamAnnouncement: (teamId: string, id: string) => request<void>(`/teams/${teamId}/announcements/${id}`, { method: "DELETE" }),
     createOrganizationInviteLink: (organizationId: string, data: CreateInviteLinkInput) =>
       request<TeamInviteLink>(`/organizations/${organizationId}/invite-links`, { method: "POST", body: JSON.stringify(data) }),
     revokeOrganizationInviteLink: (organizationId: string, linkId: string) => request<void>(`/organizations/${organizationId}/invite-links/${linkId}`, { method: "DELETE" }),
@@ -3254,8 +3302,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     addMyAway: (data: CreateAwayRequest) => request<AwayDays>("/users/me/away", { method: "POST", body: JSON.stringify(data) }),
     updateMyAway: (id: string, data: UpdateAwayRequest) => request<AwayDays>(`/users/me/away/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     removeMyAway: (id: string) => request<void>(`/users/me/away/${id}`, { method: "DELETE" }),
-    listMyNotifications: (before?: string, limit?: number) =>
-      request<NotificationPage>(`/users/me/notifications?${new URLSearchParams({ ...(before ? { before } : {}), ...(limit ? { limit: String(limit) } : {}) })}`),
+    /** One's notifications, newest first; `announcements`: only those (issue #538, Oneverse's news). */
+    listMyNotifications: (before?: string, limit?: number, announcements = false) =>
+      request<NotificationPage>(`/users/me/notifications?${new URLSearchParams({ ...(before ? { before } : {}), ...(limit ? { limit: String(limit) } : {}), ...(announcements ? { announcements: "true" } : {}) })}`),
     getMyUnreadNotifications: () => request<{ unread: number }>("/users/me/notifications/unread"),
     getMyNotificationPreferences: () => request<MyNotificationPreferences>("/users/me/notifications/settings"),
     updateMyNotificationPreferences: (data: UpdateNotificationPreferencesRequest) =>
@@ -4077,6 +4126,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminSaveNotificationSettings: (data: SaveNotificationServerSettingsRequest) => request<void>("/admin/notifications", { method: "PUT", body: JSON.stringify(data) }),
     adminClearNotificationSettings: () => request<void>("/admin/notifications", { method: "DELETE" }),
     adminGeneratePushKeys: () => request<{ publicKey: string }>("/admin/notifications/vapid-keys", { method: "POST" }),
+    // Announcements (issue #536): drafts and sent ones, newest first.
+    adminListAnnouncements: () => request<Announcement[]>("/admin/announcements"),
+    adminCreateAnnouncement: (data: CreateAnnouncementRequest) => request<Announcement>("/admin/announcements", { method: "POST", body: JSON.stringify(data) }),
+    adminUpdateAnnouncement: (id: string, data: UpdateAnnouncementRequest) => request<Announcement>(`/admin/announcements/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    adminSendAnnouncement: (id: string) => request<Announcement>(`/admin/announcements/${id}/send`, { method: "POST" }),
+    adminDeleteAnnouncement: (id: string) => request<void>(`/admin/announcements/${id}`, { method: "DELETE" }),
   };
 }
 

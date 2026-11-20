@@ -38,7 +38,7 @@ them.
 | `CCLI` | `ccli` | CCLI song number | Up to 20 |
 | `ISRC` | `isrc` | Recording code | 12 characters, e.g. `USRC17607839`; dashes and spaces are dropped |
 | `Reference` | `reference` | A reference to go with the song — for Christian songs, usually the scripture it draws on: `Psalm 23; John 10:11` | Up to 300 |
-| `Tags` | `tags` | Themes or keywords | CSV: separated by `;` (`grace; hope`). JSON: a list. Up to 30, each up to 50 characters |
+| `Tags` | `tags` | Themes, seasons, occasions or genres (the built-in list, `TAG_VOCABULARY` in `@oneverse/core`) | CSV: separated by `;` (`grace; hope`). JSON: a list. Up to 30, each up to 50 characters |
 | `Links` | `links` | Recordings to listen to: YouTube videos (`youtube.com/watch?v=…`, `youtu.be/…`), Spotify tracks, Apple Music songs, Deezer tracks | CSV: separated by `;` (spaces and line breaks work too). JSON: a list. Each is recognised by its host and kept as the address rebuilt from its ID; an address on any other site is a problem with its row. Up to 10 |
 | `Notes` | `notes` | Anything else | Up to 2000; may span lines |
 
@@ -82,7 +82,8 @@ copyright, CCLI, ISRC, reference and notes as song fields; its links as
 the song's YouTube, Spotify, Apple Music and Deezer links (the first of
 each, so Practice offers the video straight away); artists,
 composers and lyricists as credits (one per name); tags that match
-existing tags (by name, in any language, ignoring case and accents — the
+existing tags (by name or one of their other words, in any language - "Grâce",
+"grace" and "gracious" are all the Grace theme - ignoring case and accents — the
 others are left out); and, when the "Original song" entry has itself
 become a song, the new song is filed as a translation of it, as another
 version of the same song.

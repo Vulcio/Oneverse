@@ -7,7 +7,7 @@ import { getApiUrl, publicEnvValue } from "./public-env";
  *   back to the provider, which sends them on to the app;
  * - `return` (an app's sign-in with an invitation's `pass`): that address,
  *   only when it's one of the apps' (SONGVERSE_URL, PLANIVERSE_URL);
- * - else Oneverse's own account page.
+ * - else Oneverse's home (issue #538).
  */
 export function signInContinuation(search: Record<string, unknown>): string {
   const query = new URLSearchParams();
@@ -19,7 +19,7 @@ export function signInContinuation(search: Record<string, unknown>): string {
   }
   const back = query.get("return");
   if (back && isAppAddress(back)) return back;
-  return "/account";
+  return "/";
 }
 
 /** An address in one of the apps that sign in through Oneverse. */

@@ -3,11 +3,14 @@ import { fileURLToPath } from "node:url";
 import {
   SEED_TAG_CATEGORIES,
   SEED_TUNING_PRESETS,
+  TAG_VOCABULARY,
+  type VocabularyTag,
   parseArrangementDocumentV2,
   parseMidiItemTriggers,
   parseSongDocumentV2,
   slugify,
 } from "@oneverse/core";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./index.js";
 
 // Fixtures live under seeds/, one level up from this file (both in src/
@@ -19,42 +22,22 @@ function loadFixture(name: string): unknown {
 }
 
 async function seedTagCategories(log: (line: string) => void) {
-  for (const category of SEED_TAG_CATEGORIES) {
+  for (const [sortOrder, category] of SEED_TAG_CATEGORIES.entries()) {
     const translations = { fr: category.fr };
     await prisma.tagCategory.upsert({
       where: { slug: category.slug },
-      update: { label: category.label, translations },
-      create: { slug: category.slug, label: category.label, translations, isGlobal: true },
+      update: { label: category.label, translations, sortOrder },
+      create: { slug: category.slug, label: category.label, translations, sortOrder, isGlobal: true },
     });
   }
   log(`Seeded ${SEED_TAG_CATEGORIES.length} tag categories.`);
 }
 
-// A modest curated starting set per category - enough to make tagging
-// useful immediately. Users/teams can add their own scoped tags later;
-// this seed only covers the admin-curated global ones. `en` is the
-// canonical label (and slug source); `fr` seeds Tag.translations.
+// Moods and instrumentation: a modest starting set. Themes, seasons,
+// occasions and genres are the built-in list in @oneverse/core
+// (TAG_VOCABULARY, issue #37). `en` is the canonical label (and slug
+// source); `fr` seeds Tag.translations.
 const SEED_TAGS: Record<string, Array<{ en: string; fr: string }>> = {
-  theme: [
-    { en: "Christmas", fr: "Noël" },
-    { en: "Easter", fr: "Pâques" },
-    { en: "Communion", fr: "Communion" },
-    { en: "Baptism", fr: "Baptême" },
-    { en: "Advent", fr: "Avent" },
-    { en: "Thanksgiving", fr: "Action de grâce" },
-    { en: "Funeral & Memorial", fr: "Funérailles" },
-    { en: "Wedding", fr: "Mariage" },
-  ],
-  style: [
-    { en: "Contemporary", fr: "Contemporain" },
-    { en: "Traditional Hymn", fr: "Hymne traditionnel" },
-    { en: "Gospel", fr: "Gospel" },
-    { en: "Folk", fr: "Folk" },
-    { en: "Acoustic", fr: "Acoustique" },
-    { en: "Rock", fr: "Rock" },
-    { en: "Orchestral", fr: "Orchestral" },
-    { en: "Jazz", fr: "Jazz" },
-  ],
   mood: [
     { en: "Joyful", fr: "Joyeux" },
     { en: "Reflective", fr: "Méditatif" },
@@ -80,16 +63,24 @@ function tagSlug(label: string): string {
 async function seedTags(log: (line: string) => void) {
   let count = 0;
   for (const category of SEED_TAG_CATEGORIES) {
-    const entries = SEED_TAGS[category.slug] ?? [];
+    const vocabulary = TAG_VOCABULARY[category.slug];
+    const entries: readonly VocabularyTag[] = vocabulary ?? (SEED_TAGS[category.slug] ?? []).map(({ en, fr }) => ({ slug: tagSlug(en), en, fr }));
     if (entries.length === 0) continue;
     const { id: categoryId } = await prisma.tagCategory.findUniqueOrThrow({ where: { slug: category.slug } });
-    for (const [index, { en: label, fr }] of entries.entries()) {
-      const slug = tagSlug(label);
-      const translations = { fr };
+    for (const [index, entry] of entries.entries()) {
+      const fields = {
+        label: entry.en,
+        translations: { fr: entry.fr },
+        sortOrder: index,
+        // The built-in list owns where its tags sit and what they answer to.
+        ...(vocabulary && { categoryId, group: entry.group ?? null, aliases: entry.aliases ?? Prisma.DbNull, retired: entry.retired ?? false }),
+      };
+      const existing = await prisma.tag.findUnique({ where: { slug: entry.slug }, select: { scope: true } });
+      if (existing && existing.scope !== "GLOBAL") continue;
       await prisma.tag.upsert({
-        where: { slug },
-        update: { label, translations, sortOrder: index },
-        create: { categoryId, slug, label, translations, scope: "GLOBAL", isApproved: true, sortOrder: index },
+        where: { slug: entry.slug },
+        update: fields,
+        create: { categoryId, slug: entry.slug, scope: "GLOBAL", isApproved: true, ...fields },
       });
       count++;
     }

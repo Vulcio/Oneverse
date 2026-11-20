@@ -12,7 +12,7 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: ReactNode }) {
   return (
     // The apps' addresses: where a sign-in may go back to (sign-in-continuation.ts), and their links.
-    <AppDocument app="oneverse" env={["SONGVERSE_URL", "PLANIVERSE_URL", "ONEVERSE_URL"]} themeScript={THEME_SCRIPT}>
+    <AppDocument app="oneverse" env={["SONGVERSE_URL", "PLANIVERSE_URL", "ONEVERSE_URL", "SCREEN_URL"]} themeScript={THEME_SCRIPT}>
       {children}
     </AppDocument>
   );
