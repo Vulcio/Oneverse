@@ -36,7 +36,7 @@ Vous vous connectez sur Oneverse, puis revenez dans l'application ouverte. Une f
 Quand vous vous connectez vous-même sur Oneverse (pas depuis une application), vous arrivez sur son accueil, à l'adresse où vous vous connectez. Il montre ce qui vous concerne, et chaque partie ouvre l'application où cela se fait :
 
 - **Vos applications** : [Oneverse Plan](/fr/plan/) quand votre serveur l'a, Songverse, et **Screen** (la console qui pilote les écrans, voir [Écrans](/fr/screens/)) quand votre serveur l'a et que vous êtes dans une équipe Songverse.
-- **Vos prochaines dates** : les dates à venir de vos équipes et groupes, auxquelles vous répondez sur place - Disponible, Si besoin, Pas disponible - comme dans [Mon calendrier](/fr/teams/#calendrier). **Ouvrir le calendrier** les montre toutes.
+- **Vos prochaines dates** : les dates à venir de vos équipes et groupes, auxquelles vous répondez sur place - Je participe, Si besoin, Je ne peux pas - comme dans [Mon calendrier](/fr/teams/#calendrier). **Ouvrir le calendrier** les montre toutes.
 - **Postes ouverts** : les parties qu'un autre groupe de votre organisation a ouvertes au vôtre (voir [Organisations](/fr/organizations/)), à prendre d'ici.
 - **Nouvelles** : les annonces qui vous ont été envoyées - de votre organisation, de vos équipes, de votre serveur. **Toutes les notifications** ouvre le reste. La cloche en haut liste tout, de toutes les applications.
 - **Vos équipes** : chacune s'ouvre là où elle est planifiée - Songverse pour une équipe qui a des chants, Oneverse Plan pour un groupe qui ne fait que planifier.

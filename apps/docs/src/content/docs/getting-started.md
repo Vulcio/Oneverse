@@ -36,7 +36,7 @@ You sign in at Oneverse, then come back to the app you opened. Once you're signe
 Signing in at Oneverse yourself (not from an app) lands you on its home, at the same address you sign in at. It shows what's for you, and each part opens the app where it's done:
 
 - **Your apps**: [Oneverse Plan](/plan/) when your server has it, Songverse, and **Screen** (the console that runs the screens, see [Screens](/screens/)) when your server has it and you're in a Songverse team.
-- **Your next dates**: the coming dates of your teams and groups, answered right there - Available, If needed, Not available - as in [My calendar](/teams/#calendar). **Open the calendar** shows them all.
+- **Your next dates**: the coming dates of your teams and groups, answered right there - Sign up, If needed, Can't make it - as in [My calendar](/teams/#calendar). **Open the calendar** shows them all.
 - **Open places**: parts another group of your organisation opened to yours (see [Organisations](/organizations/)), taken from here.
 - **News**: the announcements you were sent - your organisation's, your teams', your server's. **All notifications** opens the rest. The bell at the top lists everything, from every app.
 - **Your teams**: each opens where it's planned - Songverse for a team with songs, Oneverse Plan for a group that only plans.

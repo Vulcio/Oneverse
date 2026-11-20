@@ -15,7 +15,7 @@ Choisissez **Listes de chants** > **Nouvelle liste** :
 
 ### Qui peut jouer
 
-Une liste faite pour une date du calendrier de l'équipe montre, à ceux qui peuvent la modifier, **Qui peut jouer** ce jour-là : les membres de l'équipe sous **Disponible**, **Si besoin**, **Pas disponible** (avec **Absent** pour les absences) et **Pas de réponse**, chacun avec ce qu'il aimerait jouer et sa place dans l'équipe du jour. La **Présidence** et le **Responsable musique** de la date sont nommés en haut quand elle en a. Toutes les dates n'ont pas besoin d'une présidence : c'est seulement quand l'événement en demande une (dans **Postes nécessaires**) et que personne n'y est encore placé que c'est signalé, avec ceux qui aimeraient l'être. Les notes ne sont montrées qu'aux administrateurs de l'équipe. **Ouvrir le calendrier** mène au calendrier de l'équipe.
+Une liste faite pour une date du calendrier de l'équipe montre, à ceux qui peuvent la modifier, **Qui peut jouer** ce jour-là : les membres de l'équipe sous **Je participe**, **Si besoin**, **Je ne peux pas** (avec **Absent** pour les absences) et **Pas de réponse**, chacun avec ce qu'il aimerait jouer et sa place dans l'équipe du jour. La **Présidence** et le **Responsable musique** de la date sont nommés en haut quand elle en a. Toutes les dates n'ont pas besoin d'une présidence : c'est seulement quand l'événement en demande une (dans **Postes nécessaires**) et que personne n'y est encore placé que c'est signalé, avec ceux qui aimeraient l'être. Les notes ne sont montrées qu'aux administrateurs de l'équipe. **Ouvrir le calendrier** mène au calendrier de l'équipe.
 
 ## Les chants d'une liste
 
