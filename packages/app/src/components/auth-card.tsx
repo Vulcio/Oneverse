@@ -12,6 +12,7 @@ import { Separator } from "@oneverse/ui/components/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { PasswordInput } from "./password-input";
 import { GoogleLogo } from "./provider-logos";
+import { OrganizationSignupStep, newOrganizationSignupDraft } from "./organization-signup-step";
 
 type View = "auth" | "forgot-password" | "forgot-password-sent" | "signup-check-email";
 
@@ -22,6 +23,10 @@ interface AuthCardProps {
   hasGoogleAuth: boolean;
   /** Only invited people can create an account (issue #198). */
   signupInviteOnly?: boolean;
+  /** Besides invitations, sign-up by asking for an organisation (issue #533): its step comes first. */
+  signupOrganizationRequests?: boolean;
+  /** Addresses suggested as they're typed in the organisation's (issue #533). */
+  addressSuggestions?: boolean;
   /** The invitation this page came with (an invitation's link, a team's invite link, a set's share link): it lets them sign up. */
   invitePass?: SignupPassRequest;
   /** Filled in, and the sign-up tab open: an invitation's page. */
@@ -49,6 +54,7 @@ const KNOWN_ERRORS = [
   "PASSWORD_TOO_SHORT",
   "INVALID_TOKEN",
   "SIGNUP_INVITE_ONLY",
+  "ACCOUNT_AWAITING_APPROVAL",
 ] as const;
 
 export function useAuthErrorText() {
@@ -67,7 +73,7 @@ interface SocialProvider {
 }
 const SOCIAL_PROVIDERS: SocialProvider[] = [{ id: "google", label: "auth.continueWithGoogle", Logo: GoogleLogo }];
 
-export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = false, invitePass, email: invitedEmail }: AuthCardProps) {
+export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = false, signupOrganizationRequests = false, addressSuggestions = false, invitePass, email: invitedEmail }: AuthCardProps) {
   const { t } = useTranslation();
   const errorText = useAuthErrorText();
   const [view, setView] = useState<View>("auth");
@@ -86,7 +92,13 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
       .catch(() => setInvited(false));
   }, [invitePass?.kind, invitePass?.token]);
   const providers = SOCIAL_PROVIDERS.filter((provider) => provider.id !== "google" || hasGoogleAuth);
-  const canSignUp = !signupInviteOnly || invited || !!invitedEmail;
+  // Asking for an organisation (issue #533): kept by the API for the account made next.
+  const [organizationDraft, setOrganizationDraft] = useState(newOrganizationSignupDraft);
+  const [organizationKept, setOrganizationKept] = useState(false);
+  const canSignUp = !signupInviteOnly || invited || !!invitedEmail || organizationKept;
+  const [tab, setTab] = useState<"signin" | "signup">(invitedEmail ? "signup" : "signin");
+  // The organisation's form is wider than signing in.
+  const organizationStep = tab === "signup" && !canSignUp && signupOrganizationRequests;
   // Back from Google without an account made: by invitation only, most likely.
   useEffect(() => {
     const failed = new URLSearchParams(window.location.search).get("error");
@@ -247,13 +259,19 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className={organizationStep ? "w-full max-w-lg" : "w-full max-w-sm"}>
       <CardHeader>
         <CardTitle>{t("auth.welcome")}</CardTitle>
         <CardDescription>{t("auth.welcomeDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <Tabs defaultValue={invitedEmail ? "signup" : "signin"} onValueChange={resetMessages}>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => {
+            setTab(value as "signin" | "signup");
+            resetMessages();
+          }}
+        >
           <TabsList className="w-full">
             <TabsTrigger value="signin">{t("auth.signIn")}</TabsTrigger>
             <TabsTrigger value="signup">{t("auth.signUp")}</TabsTrigger>
@@ -301,7 +319,9 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
           </TabsContent>
 
           <TabsContent value="signup" className="mt-4">
-            {!canSignUp ? (
+            {!canSignUp && signupOrganizationRequests ? (
+              <OrganizationSignupStep addressSuggestions={addressSuggestions} draft={organizationDraft} onDraftChange={setOrganizationDraft} onKept={() => setOrganizationKept(true)} />
+            ) : !canSignUp ? (
               <p className="text-sm text-muted-foreground" data-testid="signup-invite-only">
                 {t("auth.inviteOnly")}
               </p>
@@ -313,9 +333,24 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
                 void submit("signup", event.currentTarget);
               }}
             >
+              {organizationKept ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted p-3 text-sm" data-testid="organization-signup-kept">
+                  <span>{t("organizations.signup.kept", { name: organizationDraft.name })}</span>
+                  <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => setOrganizationKept(false)}>
+                    {t("organizations.signup.change")}
+                  </Button>
+                </div>
+              ) : null}
               <div className="flex flex-col gap-2">
                 <Label htmlFor="signup-name">{t("auth.displayName")}</Label>
-                <Input id="signup-name" name="name" required autoComplete="name" />
+                <Input
+                  id="signup-name"
+                  name="name"
+                  required
+                  autoComplete="name"
+                  // Most often the person responsible, who signs up for it.
+                  defaultValue={organizationKept ? `${organizationDraft.responsibleFirstName} ${organizationDraft.responsibleLastName}`.trim() : undefined}
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="signup-email">{t("auth.email")}</Label>

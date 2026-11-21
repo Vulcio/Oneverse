@@ -177,6 +177,7 @@ export const SaveSecuritySettingsSchema = z.strictObject({
   apiDocsPublic: z.boolean().nullable().optional(),
   contentSecurityPolicy: z.enum(["ENFORCE", "REPORT_ONLY", "OFF"]).nullable().optional(),
   signupInviteOnly: z.boolean().nullable().optional(),
+  signupOrganizationRequests: z.boolean().nullable().optional().describe("By invitation only, anyone may still sign up by asking for an organisation, approved by a global admin (issue #533)"),
 });
 export type SaveSecuritySettingsRequest = z.input<typeof SaveSecuritySettingsSchema>;
 

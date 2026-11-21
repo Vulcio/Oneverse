@@ -3,6 +3,8 @@ import { ApiExcludeEndpoint } from "@nestjs/swagger";
 import { Public } from "../common/decorators/public.decorator.js";
 import { getEffectiveAuthSettings } from "./auth-settings.js";
 import { getEffectiveSecuritySettings } from "../security/security-settings.js";
+import { organizationSignupOpen } from "../invitations/signup-gate.js";
+import { getEffectiveOrganizationSettings } from "../organizations/organization-settings.js";
 
 /**
  * The one piece of auth config unauthenticated pages need to know: whether
@@ -17,8 +19,13 @@ export class AuthConfigController {
   @Get("public-config")
   @ApiExcludeEndpoint()
   async publicConfig() {
-    const [settings, security] = await Promise.all([getEffectiveAuthSettings(), getEffectiveSecuritySettings()]);
+    const [settings, security, organizations] = await Promise.all([getEffectiveAuthSettings(), getEffectiveSecuritySettings(), getEffectiveOrganizationSettings()]);
     // Whether to offer sign-up to anyone, or only with an invitation (issue #198).
-    return { hasGoogleAuth: Boolean(settings.googleClientId && settings.googleClientSecret), signupInviteOnly: security.signupInviteOnly };
+    // Or, besides invitations, by asking for an organisation (issue #533).
+    return {
+      hasGoogleAuth: Boolean(settings.googleClientId && settings.googleClientSecret), signupInviteOnly: security.signupInviteOnly, signupOrganizationRequests: await organizationSignupOpen(),
+      // Addresses suggested as they're typed (issue #533).
+      addressSuggestions: organizations.addressLookup && organizations.mode === "MULTI",
+    };
   }
 }

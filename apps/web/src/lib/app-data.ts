@@ -30,6 +30,8 @@ let pending: { promise: Promise<AppData | null>; version: number } | null = null
 async function loadOnline(): Promise<AppData | null> {
   const session = await getSession();
   if (!session) return null;
+  // Waiting for their organisation's approval (issue #533): nothing else is open to them; Oneverse shows where it stands.
+  if (session.awaitingApproval) return { session, teams: [], songbooks: [], setlists: [] };
   const [teams, songbooks, setlists] = await Promise.all([apiClient.listTeams(), apiClient.listSongbooks(), apiClient.listSetlists()]);
   return { session, teams, songbooks, setlists };
 }

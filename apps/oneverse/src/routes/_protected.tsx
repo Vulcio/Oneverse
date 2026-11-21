@@ -10,9 +10,11 @@ import { planningHost } from "#/lib/apps";
 
 /** Every signed-in page: signed out, signing in first. */
 export const Route = createFileRoute("/_protected")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const session = await getSession();
     if (!session) throw redirect({ to: "/sign-in" });
+    // Waiting for their organisation's approval (issue #533): only the account page, where it stands.
+    if (session.awaitingApproval && location.pathname !== "/account") throw redirect({ to: "/account" });
     await loadLocale(session.locale);
     return { session };
   },
@@ -27,7 +29,7 @@ function ProtectedLayout() {
     <I18nextProvider i18n={i18n}>
       {/* The planning screens' parts the home shows, and the bell (issue #538). */}
       <PlanningProvider host={planningHost()}>
-        <AppHeader />
+        <AppHeader awaitingApproval={!!session.awaitingApproval} />
         <main className="@container mx-auto max-w-6xl px-4 py-6">
           <Outlet />
         </main>

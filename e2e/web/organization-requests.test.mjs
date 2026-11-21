@@ -25,6 +25,13 @@ async function fill(page, city) {
   await form.getByLabel("Name", { exact: true }).fill(name);
   await form.getByLabel("What it is").selectOption("CHURCH");
   await form.getByLabel("City").fill(city);
+  // Its address and the person responsible (issue #533).
+  await form.locator("#request-street").fill("2 rue du Port");
+  await form.locator("#request-postal-code").fill("29200");
+  await form.locator("#request-country").selectOption("FR");
+  await form.locator("#request-first-name").fill("Alice");
+  await form.locator("#request-last-name").fill("Le Gall");
+  await form.locator("#request-phone").fill("+33 2 98 00 00 00");
   await form.getByLabel("Contact person").fill("Alice Le Gall");
   await form.getByLabel("Contact email").fill("alice@example.org");
 }

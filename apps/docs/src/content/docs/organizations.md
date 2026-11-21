@@ -14,9 +14,19 @@ An organisation is the church, club or group your teams are part of: the music t
 
 ### Asking for one
 
-On a server whose admins review each organisation first, **Ask for an organisation** takes its **Name**, **What it is** (a church, a school, a choir…), its **City**, a **Contact person** and **Contact email** - you, or someone who runs it - and, if you like, its **Website**, about how many people it has and a **Description**. **Send request**, and this server's admins are told; you're told too when they approve it - it's made, with you as its admin - or decline it, with their reason. **Your requests** lists those waiting, which you can **Withdraw**.
+On a server whose admins review each organisation first, **Ask for an organisation** takes its **Name**, **What it is** (a church, a school, a choir…), its **Address** - **Number and street**, **Postal code**, **City** and **Country** - the **Person responsible** (**First name** and **Last name**) and a **Phone number** to reach them, a **Contact person** and **Contact email** - you, or someone who runs it - and, if you like, its **Website**, about how many people it has and a **Description**. **Send request**, and this server's admins are told; you're told too when they approve it - it's made, with you as its admin - or decline it, with their reason. **Your requests** lists those waiting, which you can **Withdraw**.
 
-If it looks like an organisation already here, or one someone else asked for - nearly the same name, in the same city - it isn't sent: the form lists those it looks like. If one of them is yours, ask its admins for an invite link instead. If it isn't the same, say why under **Why it isn't the same** and send it again: the admins see your note beside the ones it looks like.
+The country is picked from the list, and the postal code is checked against that country's format as you type it (none is asked for in a country without postal codes). The phone number is checked as one that can exist, written as in the address's country or with its own code (like +44); nothing is sent to it, and it's shown only to this server's admins.
+
+Where this server's admins turned address suggestions on, the street suggests addresses as you type it: pick one and the postal code, city and country are filled in. In France they come from the Base Adresse Nationale, elsewhere from OpenStreetMap; what you type of the address is sent there to find them. You can always type the address yourself instead.
+
+If it looks like an organisation already here, or one someone else asked for - nearly the same name in the same city, or another name at the same address - it isn't sent: the form lists those it looks like. If one of them is yours, ask its admins for an invite link instead. If it isn't the same, say why under **Why it isn't the same** and send it again: the admins see your note beside the ones it looks like. Nearly the same name at the same address is the same organisation: it can't be asked for again, even with a note.
+
+### Signing up with your organisation
+
+Some servers let people sign up only by invitation, or by asking for their organisation. There, **Sign up** at Oneverse starts with your organisation - the same details as above - and **Next: your account** checks it, then shows the usual form, your name filled in with the person responsible's. Create your account (or continue with Google) within the hour.
+
+Until this server's admins approve your organisation, your account only shows where your request stands, on your Oneverse account page: Songverse and Planiverse send you there. You can **Withdraw** it, and ask again if it was declined (with their reason). Once it's approved, it's made with you as its admin, and your account is open. Invitations always work: open a team's or an organisation's invite link, and you're in straight away.
 
 ## Setting it up
 

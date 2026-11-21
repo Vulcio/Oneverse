@@ -13,6 +13,8 @@ Si votre Songverse le propose, vous pouvez aussi utiliser **Continuer avec Googl
 
 Certains serveurs n'acceptent que les personnes invitées : **S'inscrire** l'indique alors. Ouvrez le lien d'invitation reçu (il remplit votre adresse e-mail), ou le lien d'invitation d'une équipe ou le lien de partage d'une liste de chants qu'on vous a donné, et créez votre compte depuis là.
 
+Sur certains d'entre eux, vous pouvez aussi vous inscrire en demandant votre organisation : **S'inscrire** commence alors par elle - son nom, son adresse et la personne responsable (voir [S'inscrire avec son organisation](/fr/organizations/#sinscrire-avec-son-organisation)) - puis **Suivant : votre compte** mène au formulaire habituel.
+
 ## Vos premiers pas
 
 Une fois votre adresse vérifiée, vous arrivez dans votre bibliothèque, vide pour l'instant. Songverse demande **Que jouez-vous ou que faites-vous ?** (voir [Rôles](/fr/account/#rôles)), et la bibliothèque affiche **Pour commencer**, trois étapes de votre premier chant à une liste avec votre groupe, cochées au fur et à mesure :

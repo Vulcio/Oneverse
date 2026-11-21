@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { slugify, type CreateOrganizationRequest, type DeclineOrganizationRequestRequest, type RequestOrganizationRequest, type TeamRoleValue } from "@oneverse/core";
+import { readPhone, slugify, type OrganizationLookalike, type CreateOrganizationRequest, type DeclineOrganizationRequestRequest, type RequestOrganizationRequest, type TeamRoleValue } from "@oneverse/core";
 import type { Prisma, PrismaClient } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
@@ -9,8 +9,10 @@ import type { UpdateOrganizationDto } from "./dto/update-organization.dto.js";
 import { ownServersPolicy } from "../stem-separation/sonic-servers.js";
 import { getEffectiveOrganizationSettings } from "./organization-settings.js";
 import { leaveTeams } from "../teams/leave-teams.js";
+import { findLookalikes } from "./organization-signup.js";
+import { checkAddress } from "./address-lookup.js";
 
-type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin">;
+type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin" | "awaitingApproval">;
 type Db = PrismaClient | Prisma.TransactionClient;
 
 /** The one organisation of a single-organisation instance: the oldest. */
@@ -150,6 +152,15 @@ export class OrganizationsService {
     description: true,
     kind: true,
     city: true,
+    street: true,
+    postalCode: true,
+    country: true,
+    responsibleFirstName: true,
+    responsibleLastName: true,
+    phone: true,
+    addressFound: true,
+    addressFoundAs: true,
+    atSignup: true,
     contactName: true,
     contactEmail: true,
     website: true,
@@ -166,25 +177,9 @@ export class OrganizationsService {
   /** The most requests someone has waiting at once. */
   private static readonly MAX_PENDING_REQUESTS = 3;
 
-  /**
-   * Organisations and waiting requests that look like this one (issue #364):
-   * a name near enough (as search compares them: accents, case and
-   * punctuation aside, then pg_trgm) in the same city, near enough too. The
-   * city tells two of the same name apart; an organisation made before
-   * cities were asked has none, so its name alone counts.
-   */
-  private async lookalikes(name: string, city: string, exceptRequestId?: string) {
-    return this.prisma.client.$queryRaw<{ source: "organization" | "request"; id: string; name: string; city: string | null }[]>`
-      WITH q AS (SELECT search_fold(${name}) AS name, search_fold(${city}) AS city)
-      SELECT 'organization' AS source, o.id, o.name, o.city FROM "Organization" o, q
-        WHERE similarity(search_fold(o.name), q.name) >= 0.45
-          AND (o.city IS NULL OR similarity(search_fold(o.city), q.city) >= 0.6)
-      UNION ALL
-      SELECT 'request' AS source, r.id, r.name, r.city FROM "OrganizationRequest" r, q
-        WHERE r.status = 'PENDING' AND r.id <> ${exceptRequestId ?? ""}
-          AND similarity(search_fold(r.name), q.name) >= 0.45
-          AND similarity(search_fold(r.city), q.city) >= 0.6
-      LIMIT 5`;
+  /** Organisations and waiting requests that look like this one (issues #364, #533): see findLookalikes. */
+  private lookalikes(query: Parameters<typeof findLookalikes>[1], exceptRequestId?: string) {
+    return findLookalikes(this.prisma.client, query, exceptRequestId);
   }
 
   /**
@@ -194,13 +189,14 @@ export class OrganizationsService {
    */
   async request(viewer: Viewer, dto: RequestOrganizationRequest) {
     await this.mode();
-    if (!(await this.canRequest(viewer))) throw new ForbiddenException("Organisations aren't requested here");
+    // Signed up asking for one (issue #533): a declined or withdrawn request is sent again from the waiting page.
+    if (!viewer.awaitingApproval && !(await this.canRequest(viewer))) throw new ForbiddenException("Organisations aren't requested here");
     const waiting = await this.prisma.client.organizationRequest.count({ where: { requestedById: viewer.id, status: "PENDING" } });
     if (waiting >= OrganizationsService.MAX_PENDING_REQUESTS) throw new ConflictException(`You already have ${waiting} requests waiting for review`);
-    const looksLike = await this.lookalikes(dto.name, dto.city);
-    if (looksLike.length > 0 && !dto.duplicateNote) {
-      throw new ConflictException({ statusCode: 409, code: "ORGANIZATION_LOOKS_LIKE", message: "This looks like an organisation that's already here or asked for: say why it isn't the same to ask anyway", looksLike });
-    }
+    const looksLike = await this.lookalikes(dto);
+    assertNotLookalike(looksLike, dto.duplicateNote);
+    // For the reviewer: whether the address exists (when the lookup is on); never a reason to refuse.
+    const found = await checkAddress(dto);
     const request = await this.prisma.client.organizationRequest.create({
       data: {
         requestedById: viewer.id,
@@ -208,21 +204,56 @@ export class OrganizationsService {
         description: dto.description ?? null,
         kind: dto.kind,
         city: dto.city,
+        street: dto.street ?? null,
+        postalCode: dto.postalCode ?? null,
+        country: dto.country ?? null,
+        responsibleFirstName: dto.responsibleFirstName ?? null,
+        responsibleLastName: dto.responsibleLastName ?? null,
+        phone: dto.phone ? (readPhone(dto.phone, dto.country)?.e164 ?? null) : null,
+        addressFound: found?.found ?? null,
+        addressFoundAs: found?.as ?? null,
+        atSignup: !!viewer.awaitingApproval,
+        announcedAt: new Date(),
         contactName: dto.contactName,
         contactEmail: dto.contactEmail,
         website: dto.website ?? null,
         peopleCount: dto.peopleCount ?? null,
         duplicateNote: looksLike.length > 0 ? (dto.duplicateNote ?? null) : null,
-        looksLike,
+        looksLike: looksLike as unknown as Prisma.InputJsonValue,
       },
       select: OrganizationsService.requestSelect,
     });
+    await this.tellAdmins(viewer.id, request.name);
+    return request;
+  }
+
+  /** Global admins are told someone asked for an organisation. */
+  private async tellAdmins(requestedById: string, organization: string) {
     const [by, admins] = await Promise.all([
-      this.prisma.client.user.findUnique({ where: { id: viewer.id }, select: { displayName: true } }),
+      this.prisma.client.user.findUnique({ where: { id: requestedById }, select: { displayName: true } }),
       this.prisma.client.user.findMany({ where: { isGlobalAdmin: true }, select: { id: true } }),
     ]);
-    await this.notifications.notify(admins.map((admin) => ({ userId: admin.id, kind: "ORGANIZATION_REQUESTED" as const, data: { by: by?.displayName ?? "", organization: request.name }, url: "/admin/organizations" })));
-    return request;
+    await this.notifications.notify(admins.map((admin) => ({ userId: admin.id, kind: "ORGANIZATION_REQUESTED" as const, data: { by: by?.displayName ?? "", organization }, url: "/admin/organizations" })));
+  }
+
+  /**
+   * One's own requests (issue #533), and whether the account waits for one
+   * to be approved: the waiting page. A request made at sign-up is announced
+   * to global admins here, the first time its account is signed in - its
+   * email verified, so a mistyped address asks nobody.
+   */
+  async myRequests(viewer: Viewer) {
+    const unannounced = await this.prisma.client.organizationRequest.findMany({ where: { requestedById: viewer.id, status: "PENDING", announcedAt: null }, select: { id: true, name: true } });
+    for (const one of unannounced) {
+      const { count } = await this.prisma.client.organizationRequest.updateMany({ where: { id: one.id, announcedAt: null }, data: { announcedAt: new Date() } });
+      if (count > 0) await this.tellAdmins(viewer.id, one.name);
+    }
+    const requests = await this.prisma.client.organizationRequest.findMany({
+      where: { requestedById: viewer.id, OR: [{ status: "PENDING" }, { status: "DECLINED", reviewedAt: { gte: new Date(Date.now() - 90 * 86_400_000) } }] },
+      orderBy: { createdAt: "desc" },
+      select: OrganizationsService.requestSelect,
+    });
+    return { awaitingApproval: !!viewer.awaitingApproval, requests };
   }
 
   /** Who asked takes it back, while it waits. */
@@ -233,13 +264,13 @@ export class OrganizationsService {
 
   /** Admin > Organisations: the requests waiting, oldest first, then the last ones reviewed. */
   async adminRequests() {
-    const select = { ...OrganizationsService.requestSelect, requestedBy: { select: { id: true, displayName: true, email: true } }, reviewedBy: { select: { id: true, displayName: true } } } as const;
+    const select = { ...OrganizationsService.requestSelect, requestedBy: { select: { id: true, displayName: true, email: true, emailVerified: true } }, reviewedBy: { select: { id: true, displayName: true } } } as const;
     const [pending, reviewed] = await Promise.all([
       this.prisma.client.organizationRequest.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" }, select }),
       this.prisma.client.organizationRequest.findMany({ where: { status: { not: "PENDING" } }, orderBy: { reviewedAt: "desc" }, take: 20, select }),
     ]);
     // What each looks like now: one made since it was sent counts too.
-    const withMatches = await Promise.all(pending.map(async (one) => ({ ...one, looksLike: await this.lookalikes(one.name, one.city, one.id) })));
+    const withMatches = await Promise.all(pending.map(async (one) => ({ ...one, looksLike: await this.lookalikes(one, one.id) })));
     return { pending: withMatches, reviewed };
   }
 
@@ -265,6 +296,12 @@ export class OrganizationsService {
           description: request.description,
           kind: request.kind,
           city: request.city,
+          street: request.street,
+          postalCode: request.postalCode,
+          country: request.country,
+          responsibleFirstName: request.responsibleFirstName,
+          responsibleLastName: request.responsibleLastName,
+          phone: request.phone,
           contactName: request.contactName,
           contactEmail: request.contactEmail,
           website: request.website,
@@ -273,6 +310,8 @@ export class OrganizationsService {
         select: { id: true, name: true },
       });
       await tx.organizationRequest.update({ where: { id: requestId }, data: { organizationId: made.id } });
+      // Signed up with it (issue #533): in now.
+      if (request.atSignup) await tx.user.update({ where: { id: request.requestedById }, data: { awaitingApprovalSince: null } });
       return made;
     });
     await this.notifications.notify([{ userId: request.requestedById, kind: "ORGANIZATION_APPROVED", data: { organization: organization.name }, url: `/organizations/${organization.id}` }]);
@@ -340,6 +379,12 @@ export class OrganizationsService {
       ...this.summary(organization, role),
       kind: organization.kind,
       city: organization.city,
+      street: organization.street,
+      postalCode: organization.postalCode,
+      country: organization.country,
+      responsibleFirstName: organization.responsibleFirstName,
+      responsibleLastName: organization.responsibleLastName,
+      phone: organization.phone,
       contactName: organization.contactName,
       contactEmail: organization.contactEmail,
       website: organization.website,
@@ -395,6 +440,12 @@ export class OrganizationsService {
         ...(dto.color !== undefined && { color: dto.color }),
         ...(dto.bible !== undefined && { bible: dto.bible }),
         ...(dto.city !== undefined && { city: dto.city }),
+        ...(dto.street !== undefined && { street: dto.street }),
+        ...(dto.postalCode !== undefined && { postalCode: dto.postalCode }),
+        ...(dto.country !== undefined && { country: dto.country || null }),
+        ...(dto.responsibleFirstName !== undefined && { responsibleFirstName: dto.responsibleFirstName }),
+        ...(dto.responsibleLastName !== undefined && { responsibleLastName: dto.responsibleLastName }),
+        ...(dto.phone !== undefined && { phone: dto.phone ? (readPhone(dto.phone, dto.country || undefined)?.e164 ?? null) : null }),
         ...(dto.contactName !== undefined && { contactName: dto.contactName }),
         ...(dto.contactEmail !== undefined && { contactEmail: dto.contactEmail || null }),
         ...(dto.website !== undefined && { website: dto.website || null }),
@@ -585,5 +636,21 @@ export class OrganizationsService {
       await leaveOrganization(tx, teams.map((team) => team.id));
       await tx.organization.delete({ where: { id: organizationId } });
     });
+  }
+}
+
+/**
+ * Refuses an organisation that looks like one already here or asked for
+ * (issues #364, #533): nearly the same name at the same address always
+ * (`ORGANIZATION_EXISTS`: ask its admins for an invitation instead), one
+ * only close unless a note says why it isn't the same.
+ */
+export function assertNotLookalike(looksLike: OrganizationLookalike[], duplicateNote: string | undefined | null) {
+  const same = looksLike.filter((one) => one.match === "same");
+  if (same.length > 0) {
+    throw new ConflictException({ statusCode: 409, code: "ORGANIZATION_EXISTS", message: "This organisation is already here or asked for: ask its admins to invite you", looksLike: same });
+  }
+  if (looksLike.length > 0 && !duplicateNote) {
+    throw new ConflictException({ statusCode: 409, code: "ORGANIZATION_LOOKS_LIKE", message: "This looks like an organisation that's already here or asked for: say why it isn't the same to ask anyway", looksLike });
   }
 }

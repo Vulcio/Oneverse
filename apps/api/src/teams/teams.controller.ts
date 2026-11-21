@@ -13,6 +13,8 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { WhileAwaitingApproval } from "../common/decorators/while-awaiting-approval.decorator.js";
+import { letInByInvitation } from "../organizations/organization-signup.js";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
@@ -51,12 +53,16 @@ export class TeamsController {
 
   @RateLimit("heavy")
   @Post("join/:token")
+  @WhileAwaitingApproval()
   @ApiCreatedResponse({ type: TeamResponseDto })
-  joinByToken(
+  async joinByToken(
     @SignedIn() user: AuthenticatedUser,
     @Param("token") token: string,
-  ): ReturnType<TeamsService["joinByToken"]> {
-    return this.teamsService.joinByToken(user.id, token);
+  ): Promise<Awaited<ReturnType<TeamsService["joinByToken"]>>> {
+    const team = await this.teamsService.joinByToken(user.id, token);
+    // Invitations always work (issue #533): waiting for an organisation's approval or not.
+    if (user.awaitingApproval) await letInByInvitation(user.id);
+    return team;
   }
 
   @Get(":teamId")

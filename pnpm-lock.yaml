@@ -688,9 +688,15 @@ importers:
 
   packages/core:
     dependencies:
+      libphonenumber-js:
+        specifier: ^1.13.17
+        version: 1.13.17
       nanoid:
         specifier: ^5.0.9
         version: 5.1.16
+      postcode-validator:
+        specifier: ^3.10.33
+        version: 3.10.33
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -5423,8 +5429,8 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  libphonenumber-js@1.13.13:
-    resolution: {integrity: sha512-hV6SmWnyQ8U1QXhhqbqYBHIStNnscG7A5XbGodgdHhf/8N5PwhYpJA5U/yHDjYwPYTd8uNGXqq416XctuvK2PA==}
+  libphonenumber-js@1.13.17:
+    resolution: {integrity: sha512-V92dxRHhYTsHF5B6IjR8rtKW6qL7xKuERPFFqZt7XQl8A+NikbwEzjhxGpM+R6JnWjaL7/wokWSdTG/eyYAscQ==}
 
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
@@ -6066,6 +6072,10 @@ packages:
 
   postal-mime@2.7.6:
     resolution: {integrity: sha512-UUlyE2KlxmvwMGq060onF/VWU3zD6dVW31FwokQ5v26jWd35fbs2MoTFzh+jXnPwAyV2MULMKXcBInGOl5TO6Q==}
+
+  postcode-validator@3.10.33:
+    resolution: {integrity: sha512-VvtRVBUnuQ0f374rFqmGiJ4mLScRlgz8MaQK624IFGQMq0buCWtebvsRQJ5Rtx8ldaoNs0jA9amwkp0/6RPRvw==}
+    engines: {node: '>=20.8.1'}
 
   postcss-nested@6.2.0:
     resolution: {integrity: sha512-HQbt28KulC5AJzG+cZtj9kvKB93CFCdLvog1WFLf1D+xmMvPGlBstkpTEZfK5+AN9hfJocyBFCNiqyS48bpgzQ==}
@@ -10483,7 +10493,7 @@ snapshots:
   class-validator@0.14.4:
     dependencies:
       '@types/validator': 13.15.10
-      libphonenumber-js: 1.13.13
+      libphonenumber-js: 1.13.17
       validator: 13.15.35
     optional: true
 
@@ -11356,8 +11366,7 @@ snapshots:
     dependencies:
       isomorphic.js: 0.2.5
 
-  libphonenumber-js@1.13.13:
-    optional: true
+  libphonenumber-js@1.13.17: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true
@@ -12110,6 +12119,8 @@ snapshots:
   pngjs@7.0.0: {}
 
   postal-mime@2.7.6: {}
+
+  postcode-validator@3.10.33: {}
 
   postcss-nested@6.2.0(postcss@8.5.28):
     dependencies:

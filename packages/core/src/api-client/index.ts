@@ -795,6 +795,8 @@ export interface UserProfile {
   techRoles: TechRoleValue[];
   /** Ask them what they play or do (issue #109): nothing said yet, and not skipped lately. Left out by an older API. */
   askProfile?: boolean;
+  /** Signed up asking for an organisation, not approved yet (issue #533): only where it stands is open to them. */
+  awaitingApproval?: boolean;
   /** With a capo: chords as they sound, or the shapes a guitarist plays. */
   capoDisplayMode: CapoDisplayModeValue;
   /** Chord names in letters or solfège. */
@@ -1306,6 +1308,7 @@ export interface SecuritySettingsSummary {
     apiDocsPublic: SecuritySetting<boolean>;
     contentSecurityPolicy: SecuritySetting<"ENFORCE" | "REPORT_ONLY" | "OFF">;
     signupInviteOnly: SecuritySetting<boolean>;
+    signupOrganizationRequests: SecuritySetting<boolean>;
   };
 }
 export interface SecuritySetting<T> {
@@ -1359,6 +1362,10 @@ export interface AuthPublicConfig {
   hasGoogleAuth: boolean;
   /** Only invited people can create an account (issue #198). */
   signupInviteOnly: boolean;
+  /** Anyone else may sign up by asking for an organisation, approved by a global admin (issue #533). */
+  signupOrganizationRequests?: boolean;
+  /** Addresses are suggested as they're typed (issue #533). */
+  addressSuggestions?: boolean;
 }
 
 /** An invitation to create an account (issue #198), as Admin > Users lists it. */
@@ -1442,6 +1449,19 @@ export interface OrganizationRequestView {
   description: string | null;
   kind: OrganizationKind;
   city: string;
+  /** Its address and the person responsible (issue #533); older requests have none. */
+  street: string | null;
+  postalCode: string | null;
+  country: string | null;
+  responsibleFirstName: string | null;
+  responsibleLastName: string | null;
+  /** Sent with the account, at sign-up: its approval lets them in (issue #533). */
+  atSignup: boolean;
+  /** A phone number, E.164 ("+33612345678"). */
+  phone: string | null;
+  /** Whether the address lookup found the address when it was sent, and as what ("8 Quai des Chartrons 33000 Bordeaux · BAN"); null: not looked up. */
+  addressFound: boolean | null;
+  addressFoundAs: string | null;
   contactName: string;
   contactEmail: string;
   website: string | null;
@@ -1461,6 +1481,24 @@ export interface OrganizationLookalike {
   id: string;
   name: string;
   city: string | null;
+  /** "same": nearly the same name at the same address, refused (issue #533); "close": sent only with a note. */
+  match?: "same" | "close";
+}
+
+/** An address the lookup suggests as it's typed (issue #533): France's national base, or OpenStreetMap through Photon. */
+export interface AddressSuggestion {
+  label: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  source: "ban" | "photon";
+}
+
+/** GET /organizations/requests/mine (issue #533): one's own requests, and whether one waits for one to be approved. */
+export interface MyOrganizationRequests {
+  awaitingApproval: boolean;
+  requests: OrganizationRequestView[];
 }
 
 /** Admin > Organisations: the requests waiting, and the last ones reviewed. */
@@ -1470,7 +1508,7 @@ export interface AdminOrganizationRequests {
 }
 
 export interface AdminOrganizationRequest extends OrganizationRequestView {
-  requestedBy: { id: string; displayName: string; email: string };
+  requestedBy: { id: string; displayName: string; email: string; emailVerified?: boolean };
   reviewedBy: { id: string; displayName: string } | null;
 }
 
@@ -1535,6 +1573,12 @@ export interface AdminOrganizations {
     ownStorage: SecuritySetting<boolean>;
     /** With anyone allowed, each is asked for and reviewed first (issue #364). */
     reviewRequests: SecuritySetting<boolean>;
+    /** Addresses suggested as they're typed, and looked up when a request is sent (issue #533). */
+    addressLookup?: SecuritySetting<boolean>;
+    /** The Photon server asked for addresses outside France. */
+    photonUrl?: SecuritySetting<string>;
+    /** French addresses from the Base Adresse Nationale (IGN's Géoplateforme). */
+    addressLookupFrance?: SecuritySetting<boolean>;
   };
   /** Planiverse's address (PLANIVERSE_URL, set where it's deployed), or null: not deployed. */
   planiverseUrl: string | null;
@@ -3197,6 +3241,11 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** Ask for one (issue #364); a 409 ApiError's details.looksLike lists what it looks like. */
     requestOrganization: (data: RequestOrganizationRequest) => request<OrganizationRequestView>("/organizations/requests", { method: "POST", body: JSON.stringify(data) }),
     withdrawOrganizationRequest: (requestId: string) => request<void>(`/organizations/requests/${requestId}`, { method: "DELETE" }),
+    /** One's own requests, and whether the account waits for one to be approved (issue #533). */
+    myOrganizationRequests: () => request<MyOrganizationRequests>("/organizations/requests/mine"),
+    /** Addresses like what's typed (issue #533), signed in or not; none when the lookup is off. */
+    addressSuggestions: (q: string, country?: string, lang?: string) =>
+      request<AddressSuggestion[]>(`/auth/address-suggestions?${new URLSearchParams({ q, ...(country ? { country } : {}), ...(lang ? { lang } : {}) })}`),
     getOrganization: (organizationId: string) => request<OrganizationDetail>(`/organizations/${organizationId}`),
     updateOrganization: (organizationId: string, data: UpdateOrganizationRequest) =>
       request<OrganizationDetail>(`/organizations/${organizationId}`, { method: "PATCH", body: JSON.stringify(data) }),

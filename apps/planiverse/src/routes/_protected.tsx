@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { oneverseUrl } from "@oneverse/app/public-env";
 import { useMemo } from "react";
 import { I18nextProvider } from "react-i18next";
 import { createI18n, loadLocale } from "@oneverse/app/i18n";
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/_protected")({
     const session = await getSession();
     // Signed in again, back here (issue #303).
     if (!session) throw redirect({ to: "/", search: { next: location.href } });
+    // Waiting for their organisation's approval (issue #533): Oneverse shows where it stands.
+    if (session.awaitingApproval) throw redirect({ href: `${oneverseUrl()}/account`, reloadDocument: true });
     await loadLocale(session.locale);
     return { session };
   },

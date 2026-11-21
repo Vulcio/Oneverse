@@ -26,9 +26,16 @@
 // - MusicBrainz: the song, first released on "Album 1" (listed after a 2016
 //   compilation), a karaoke version from 2010, and the title by another band;
 // - Deezer: the song on "Album 1" and on "Live 2020".
+// Addresses (issue #533): the Base Adresse Nationale's geocoder (BAN_URL at
+// /ban) knows 8 Quai des Chartrons in Bordeaux, Photon (an organisation
+// setting, at /photon) Unter den Linden 1 in Berlin; anything else, nothing.
+// `addressLookups` counts what each was asked.
 import { sign, verify } from "node:crypto";
 import { createServer } from "node:http";
 import { deflateSync } from "node:zlib";
+
+/** What the address stand-ins were asked (issue #533). */
+export const addressLookups = { ban: [], photon: [] };
 
 export const FAKE_PROVIDERS_PORT = Number(process.env.FAKE_PROVIDERS_PORT ?? 3999);
 export const FAKE_PROVIDERS_URL = `http://localhost:${FAKE_PROVIDERS_PORT}`;
@@ -336,6 +343,22 @@ export function startFakeProviders() {
       return found ? json(res, found) : json(res, { error: { status: 404, message: "Non existing id" } }, 404);
     }
     if (path.startsWith("/youversion/")) return youversionAnswer(req, url, res);
+    if (path === "/ban/search") {
+      addressLookups.ban.push(url.searchParams.get("q") ?? "");
+      const found = /chartrons/i.test(url.searchParams.get("q") ?? "");
+      return json(res, {
+        type: "FeatureCollection",
+        features: found ? [{ type: "Feature", properties: { label: "8 Quai des Chartrons 33000 Bordeaux", score: 0.97, housenumber: "8", name: "8 Quai des Chartrons", postcode: "33000", city: "Bordeaux", type: "housenumber" } }] : [],
+      });
+    }
+    if (path === "/photon/api") {
+      addressLookups.photon.push(url.searchParams.get("q") ?? "");
+      const found = /linden/i.test(url.searchParams.get("q") ?? "");
+      return json(res, {
+        type: "FeatureCollection",
+        features: found ? [{ type: "Feature", properties: { housenumber: "1", street: "Unter den Linden", postcode: "10117", city: "Berlin", country: "Germany", countrycode: "DE", type: "house" } }] : [],
+      });
+    }
     if (path === "/youtube/search") {
       const key = url.searchParams.get("key");
       if (!youtubeKey.key || key !== youtubeKey.key) return json(res, { error: { code: 400, message: "API key not valid. Please pass a valid API key.", errors: [{ reason: "badRequest" }] } }, 400);

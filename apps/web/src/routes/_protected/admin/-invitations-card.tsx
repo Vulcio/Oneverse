@@ -15,7 +15,7 @@ import { FieldError } from "@oneverse/ui/components/field";
  * create an account - saved with the other security settings, so it has
  * their database / env var / default resolution - and the invitations.
  */
-export function InvitationsCard({ inviteOnly, invitations }: { inviteOnly: SecuritySetting<boolean>; invitations: SignupInvitationSummary[] }) {
+export function InvitationsCard({ inviteOnly, organizationRequests, invitations }: { inviteOnly: SecuritySetting<boolean>; organizationRequests?: SecuritySetting<boolean>; invitations: SignupInvitationSummary[] }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -40,6 +40,13 @@ export function InvitationsCard({ inviteOnly, invitations }: { inviteOnly: Secur
   async function setInviteOnly(value: boolean | null) {
     setSaving(true);
     await run(() => apiClient.adminSaveSecuritySettings({ signupInviteOnly: value }));
+    setSaving(false);
+  }
+
+  // Besides invitations, sign-up by asking for an organisation (issue #533).
+  async function setOrganizationRequests(value: boolean | null) {
+    setSaving(true);
+    await run(() => apiClient.adminSaveSecuritySettings({ signupOrganizationRequests: value }));
     setSaving(false);
   }
 
@@ -103,6 +110,37 @@ export function InvitationsCard({ inviteOnly, invitations }: { inviteOnly: Secur
             </Button>
           ) : null}
         </div>
+
+        {inviteOnly.value && organizationRequests ? (
+          <div className="ml-7 flex flex-col gap-1">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                className="mt-1 size-4"
+                checked={organizationRequests.value}
+                disabled={saving}
+                onChange={(event) => void setOrganizationRequests(event.target.checked)}
+                data-testid="signup-organization-requests-toggle"
+              />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">{t("admin.signupOrganizationRequests")}</span>
+                <span className="text-xs text-muted-foreground">{t("admin.signupOrganizationRequestsHint")}</span>
+                <span className="text-xs text-muted-foreground">
+                  {organizationRequests.source === "database"
+                    ? t("admin.securityFromDatabase")
+                    : organizationRequests.source === "env"
+                      ? t("admin.securityFromEnv", { name: organizationRequests.env })
+                      : t("admin.securityFromDefault", { name: organizationRequests.env })}
+                </span>
+              </span>
+            </label>
+            {organizationRequests.source === "database" ? (
+              <Button type="button" variant="link" size="sm" className="self-start px-7 text-xs" disabled={saving} onClick={() => void setOrganizationRequests(null)}>
+                {t("admin.signupInviteOnlyBackToEnv")}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
         <form className="flex flex-col gap-2" onSubmit={invite} data-testid="invite-form">
           <Label htmlFor="invite-email">{t("admin.inviteEmail")}</Label>

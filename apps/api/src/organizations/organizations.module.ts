@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { OrganizationSignupController } from "./organization-signup.controller.js";
 import { NotificationsModule } from "../notifications/notifications.module.js";
 import { StorageModule } from "../storage/storage.module.js";
 import { TeamEventsModule } from "../team-events/team-events.module.js";
@@ -12,7 +13,7 @@ import { OrganizationsService } from "./organizations.service.js";
 
 @Module({
   imports: [StorageModule, TeamEventsModule, NotificationsModule],
-  controllers: [OrganizationsController, TeamOrganizationController, AdminOrganizationsController, GroupsController, OrganizationEventsController],
+  controllers: [OrganizationsController, OrganizationSignupController, TeamOrganizationController, AdminOrganizationsController, GroupsController, OrganizationEventsController],
   providers: [OrganizationsService, GroupsService, TeamsService, OrganizationEventsService],
 })
 export class OrganizationsModule {}
