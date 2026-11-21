@@ -19,7 +19,7 @@ export function OrganizationEventTypesButton({ organizationId, teams }: { organi
   const [open, setOpen] = useState(false);
   const [types, setTypes] = useState<TeamEventType[]>([]);
   const [customInstruments, setCustomInstruments] = useState<CustomInstrument[]>([]);
-  const partLabel = usePartLabel(customInstruments);
+  const partLabel = usePartLabel(customInstruments, teams);
   const load = async () => setTypes(await api.listOrganizationEventTypes(organizationId));
   useEffect(() => {
     if (!open) return;

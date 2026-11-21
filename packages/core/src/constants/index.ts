@@ -254,7 +254,7 @@ export type InstrumentValue = (typeof INSTRUMENTS)[number];
 
 // MUSIC_LEADER (issue #520): who takes charge of the music; on a date's line-up, they edit its set.
 // Hosting isn't listed by oneself: it's a role's right (Role.canHost, the part HOST in calendar/parts.ts).
-export const TECH_ROLES = ["MUSIC_LEADER", "TECHNICIAN", "MEDIA_OPERATOR", "SOUND_ENGINEER"] as const;
+export const TECH_ROLES = ["MUSIC_LEADER", "TECHNICIAN", "MEDIA_OPERATOR", "SOUND_ENGINEER", "LIGHTS"] as const;
 export type TechRoleValue = (typeof TECH_ROLES)[number];
 
 // UI locales the app has translations for. French is first alongside the

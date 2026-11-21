@@ -369,6 +369,7 @@ export class OrganizationsService {
             avatarUrl: true,
             usesSongverse: true,
             parentId: true,
+            fills: true,
             positions: { select: { id: true, name: true }, orderBy: { createdAt: "asc" } },
             _count: { select: { memberships: true } }, memberships: { where: { userId: viewer.id }, select: { id: true } } },
         },
@@ -398,6 +399,7 @@ export class OrganizationsService {
         mine: team.memberships.length > 0,
         usesSongverse: team.usesSongverse,
         parentId: team.parentId,
+        fills: team.fills,
         positions: team.positions,
       })),
     };

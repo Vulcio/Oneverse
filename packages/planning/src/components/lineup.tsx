@@ -13,13 +13,19 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { FieldError } from "@oneverse/ui/components/field";
 
 /** A part's name (issue #235, phase 7): its instrument or role in the reader's language, or the team's own name for it. */
-export function usePartLabel(customInstruments: readonly CustomInstrument[]): (part: EventPart) => string {
-  const { t } = useTranslation();
+export function usePartLabel(customInstruments: readonly CustomInstrument[], groups?: readonly { id: string; name: string }[]): (part: EventPart) => string {
+  const { t, i18n } = useTranslation();
   const instrumentLabel = useInstrumentLabel(customInstruments);
-  return (part) => {
+  const name = (part: EventPart) => {
     if (!part.part) return part.name ?? "";
-    // Hosting (issue #520) is named with the roles, though a role's right gives it.
-    return isGivenPart(part.part) || (TECH_ROLES as readonly string[]).includes(part.part) ? t(`roles.techRole.${part.part}`) : instrumentLabel(part.part);
+    // Hosting (issue #520) is named with the roles, though a role's right gives it; an event's role by its high-level name (issue #549: Music).
+    if (isGivenPart(part.part) || (TECH_ROLES as readonly string[]).includes(part.part)) return i18n.exists(`roles.eventRole.${part.part}`) ? t(`roles.eventRole.${part.part}`) : t(`roles.techRole.${part.part}`);
+    return instrumentLabel(part.part);
+  };
+  return (part) => {
+    // A role filled by a group (issue #549): "Music · Worship".
+    const by = groups && part.openTo?.length ? part.openTo.map((id) => groups.find((group) => group.id === id)?.name).filter(Boolean) : [];
+    return by.length > 0 ? `${name(part)} · ${by.join(", ")}` : name(part);
   };
 }
 
@@ -252,7 +258,7 @@ export function LineupDialog({
     }
   };
   const answerWord = (member: MemberEventAnswer) =>
-    member.away ? t("teamCalendar.conflictAway") : member.answer === "AVAILABLE" ? t("teamCalendar.answerAvailable") : member.answer === "IF_NEEDED" ? t("teamCalendar.answerIfNeeded") : member.answer === "UNAVAILABLE" ? t("teamCalendar.answerUnavailable") : "–";
+    member.away ? t("teamCalendar.conflictAway") : member.answer === "AVAILABLE" ? t("teamCalendar.answerSignedUp") : member.answer === "IF_NEEDED" ? t("teamCalendar.answerIfNeeded") : member.answer === "UNAVAILABLE" ? t("teamCalendar.answerUnavailable") : "–";
   const conflictWord = { AWAY: t("teamCalendar.conflictAway"), UNAVAILABLE: t("teamCalendar.conflictUnavailable"), ELSEWHERE: t("teamCalendar.conflictElsewhere") } as const;
   const statusWord = { PENDING: t("teamCalendar.lineupPending"), ACCEPTED: t("teamCalendar.lineupAccepted"), DECLINED: t("teamCalendar.lineupDeclined") } as const;
 

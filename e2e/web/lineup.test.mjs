@@ -31,7 +31,7 @@ try {
     await row().getByTestId("calendar-lineup").click();
     const dialog = page.getByTestId("lineup-dialog");
     const drums = dialog.locator('[data-lineup-part="DRUMS"]');
-    await drums.getByTestId("lineup-add").selectOption({ label: "Lineup web drummer · Available" });
+    await drums.getByTestId("lineup-add").selectOption({ label: "Lineup web drummer · Signed up" });
     await drums.locator(`[data-place="${drummer.id}"][data-status="PENDING"]`).getByText("Asked").waitFor();
     await page.getByRole("button", { name: "Close" }).last().click();
     await row().locator('[data-lineup-part="DRUMS"]').getByText("Lineup web drummer").waitFor();

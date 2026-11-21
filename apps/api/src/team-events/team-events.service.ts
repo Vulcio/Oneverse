@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, callAt, daysBetween, eventDates, eventFallsOn, GIVEN_PARTS, INSTRUMENTS, OWN_TEAM, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@oneverse/core";
-import type { Prisma } from "@oneverse/db";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { addDays, asksOpenTo, MUSIC_LEADER, partKey, withAsks, callAt, daysBetween, eventDates, eventFallsOn, GIVEN_PARTS, INSTRUMENTS, OWN_TEAM, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { eventLocation } from "../locations/locations.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
-import type { CreateTeamEventDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
+import type { CreateTeamEventDto, SetTeamEventDateAsksDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
 
 /** The longest range of dates asked for at once. */
 const MAX_RANGE_DAYS = 400;
@@ -29,9 +29,39 @@ export function changesOf(event: EventRow) {
   return event.dates.map((row) => ({ date: dateText(row.date), cancelled: row.cancelled, startTime: row.startTime, title: row.title }));
 }
 
-/** The parts an event needs (issue #235, phase 7), as stored. */
-export function partsOf(event: { parts: Prisma.JsonValue }): EventPart[] {
-  return Array.isArray(event.parts) ? (event.parts as unknown as EventPart[]) : [];
+/**
+ * The parts an event needs (issue #235, phase 7), as stored; on a date
+ * (issue #549), with what that date asks for besides (withAsks: the
+ * instruments its music lead asked for from the set).
+ */
+export function partsOf(event: { parts: Prisma.JsonValue; dates?: { date: Date; asks?: Prisma.JsonValue }[] }, date?: string): EventPart[] {
+  const parts = Array.isArray(event.parts) ? (event.parts as unknown as EventPart[]) : [];
+  if (!date) return parts;
+  return withAsks(parts, asksOn(event, date));
+}
+
+/**
+ * Someone's groups and the groups above them (issue #549): a place open to
+ * "Tech" is open to the members of Media, Sound and Lights under it.
+ */
+export async function withGroupsAbove(prisma: PrismaClientLike, teamIds: Iterable<string>): Promise<Set<string>> {
+  const reach = new Set(teamIds);
+  let next = [...reach];
+  // Groups nest a few levels at most; the guard stops a loop.
+  for (let depth = 0; next.length > 0 && depth < 10; depth++) {
+    const parents = (await prisma.team.findMany({ where: { id: { in: next }, parentId: { not: null } }, select: { parentId: true } })).map((row) => row.parentId!).filter((id) => !reach.has(id));
+    parents.forEach((id) => reach.add(id));
+    next = parents;
+  }
+  return reach;
+}
+
+type PrismaClientLike = { team: { findMany: (args: { where: { id: { in: string[] }; parentId: { not: null } }; select: { parentId: true } }) => Promise<{ parentId: string | null }[]> } };
+
+/** What a date asks for besides its event's parts (issue #549). */
+export function asksOn(event: { dates?: { date: Date; asks?: Prisma.JsonValue }[] }, date: string): EventPart[] {
+  const asks = event.dates?.find((row) => dateText(row.date) === date)?.asks;
+  return Array.isArray(asks) ? (asks as unknown as EventPart[]) : [];
 }
 
 /** The organisation's event a group's event is part of (issue #241). */
@@ -126,6 +156,8 @@ export class TeamEventsService {
       organizationEventId: event.organizationEventId,
       typeId: event.typeId,
       withSet: event.withSet,
+      // Asked to become its organisation's (issue #549), waiting for its admins.
+      transferRequestedAt: event.transferRequestedAt?.toISOString() ?? null,
     };
   }
 
@@ -320,6 +352,35 @@ export class TeamEventsService {
     return this.summary(fresh);
   }
 
+  /**
+   * Asked to become its organisation's event (issue #549), by one of the
+   * team's admins, one-off or series: the organisation's admins are told,
+   * and accept or decline it (OrganizationEventsService.acceptTransfer).
+   * `ask` false takes the request back.
+   */
+  async requestTransfer(teamId: string, eventId: string, userId: string, ask = true) {
+    const event = await this.find(teamId, eventId);
+    if (event.organizationEventId) throw new BadRequestException(["This event is the organisation's already"]);
+    if (event.rehearsalForId) throw new BadRequestException(["A rehearsal goes with its event: move that event"]);
+    const team = await this.prisma.client.team.findUniqueOrThrow({ where: { id: teamId }, select: { name: true, organizationId: true } });
+    if (!team.organizationId) throw new BadRequestException(["The team isn't part of an organisation"]);
+    if (!ask) {
+      await this.prisma.client.teamEvent.update({ where: { id: eventId }, data: { transferRequestedAt: null, transferRequestedByUserId: null } });
+      return this.summary(await this.find(teamId, eventId));
+    }
+    if (event.transferRequestedAt) return this.summary(event);
+    await this.prisma.client.teamEvent.update({ where: { id: eventId }, data: { transferRequestedAt: new Date(), transferRequestedByUserId: userId } });
+    const [admins, by] = await Promise.all([
+      this.prisma.client.organizationMembership.findMany({ where: { organizationId: team.organizationId, role: "ADMIN" }, select: { userId: true } }),
+      this.prisma.client.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
+    ]);
+    await this.notifications.notify(
+      admins.map((admin) => ({ userId: admin.userId, kind: "EVENT_TRANSFER_REQUESTED" as const, data: { event: event.title, team: team.name, by: by?.displayName ?? "" }, url: `/organizations/${team.organizationId}/events`, app: "planiverse" as const })),
+      userId,
+    );
+    return this.summary(await this.find(teamId, eventId));
+  }
+
   /** The event goes; its coming dates' empty sets with it, the rest stay as the team's sets. */
   async remove(teamId: string, eventId: string, by: string | null = null, planned = false): Promise<void> {
     const event = await this.find(teamId, eventId);
@@ -393,8 +454,9 @@ export class TeamEventsService {
       songCount: row?.setlist?._count.items ?? 0,
       // When an admin said its set is ready (issue #235).
       setReadyAt: row?.setReadyAt?.toISOString() ?? null,
-      // The parts it needs (issue #235, phase 7).
-      parts: partsOf(event),
+      // The parts it needs (issue #235, phase 7), with what the date asks for besides (issue #549).
+      parts: partsOf(event, date.date),
+      asks: asksOn(event, date.date),
     };
   }
 
@@ -426,6 +488,37 @@ export class TeamEventsService {
     await this.notifyDates(event, fresh, signedUp, by);
     const [shown] = eventDates(timingOf(fresh), date, date, changesOf(fresh));
     return this.dateSummary(fresh, shown!, fresh.dates.find((one) => dateText(one.date) === date));
+  }
+
+  /**
+   * What a date asks for besides its event's parts (issue #549): the
+   * instruments its music lead wants that date, open to whoever the event's
+   * Music part is (asksOpenTo). The team's admins and the date's music lead
+   * ask; places on a part no longer asked for go with it.
+   */
+  async setAsks(teamId: string, eventId: string, date: string, dto: SetTeamEventDateAsksDto, userId: string, isAdmin: boolean) {
+    const event = await this.find(teamId, eventId);
+    if (event.rehearsalForId) throw new BadRequestException(["A rehearsal uses its event's line-up"]);
+    if (!eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
+    if (date < localDate(new Date(), event.timeZone)) throw new BadRequestException(["That date is over"]);
+    if (!isAdmin) {
+      const lead = await this.prisma.client.teamEventAssignment.findFirst({ where: { eventId, date: day(date), partKey: MUSIC_LEADER, userId, status: { not: "DECLINED" } }, select: { id: true } });
+      if (!lead) throw new ForbiddenException("Only the team's admins and the date's music lead ask for the date's instruments");
+    }
+    const openTo = asksOpenTo(partsOf(event), teamId);
+    // Checked as the team's parts, without the teams they're open to: those are the Music part's.
+    const checked = ((await this.checkParts(dto.parts.map((part) => ({ ...part, openTo: undefined })), teamId)) ?? []) as unknown as EventPart[];
+    const asks = checked.map((part) => ({ ...part, openTo }));
+    const before = asksOn(event, date).map((part) => partKey(part));
+    await this.prisma.client.teamEventDate.upsert({
+      where: { eventId_date: { eventId, date: day(date) } },
+      create: { eventId, date: day(date), asks: asks as unknown as Prisma.InputJsonValue },
+      update: { asks: asks.length > 0 ? (asks as unknown as Prisma.InputJsonValue) : Prisma.DbNull },
+    });
+    const kept = new Set(withAsks(partsOf(event), asks).map((part) => partKey(part)));
+    const gone = before.filter((key) => !kept.has(key));
+    if (gone.length > 0) await this.prisma.client.teamEventAssignment.deleteMany({ where: { eventId, date: day(date), partKey: { in: gone } } });
+    return { parts: asks };
   }
 
   /** A date's set now, however far ahead (someone opening it to plan). */

@@ -1,6 +1,6 @@
-import { addDays, coversPart, GIVEN_PARTS, INSTRUMENTS, isGivenPart, partsForTeam, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, isGivenPart, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Ban, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { Ban, Building2, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LineupDialog, LineupLine, partOf, usePartLabel } from "./lineup";
 import { LocationField, useLocations } from "./locations";
@@ -42,9 +43,12 @@ export function TeamCalendar({
   customInstruments = [],
   setsByDefault = true,
   positions = [],
+  organization = null,
 }: {
   teamId: string;
   isAdmin: boolean;
+  /** The team's organisation (issue #549): an event can be moved to it, once its admins accept. */
+  organization?: { id: string; name: string } | null;
   customInstruments?: readonly CustomInstrument[];
   /** The group's own positions (issue #241), parts its events can ask for. */
   positions?: readonly TeamPosition[];
@@ -53,7 +57,11 @@ export function TeamCalendar({
 }) {
   const { api, sets } = usePlanning();
   const { t, i18n } = useTranslation();
-  const partLabel = usePartLabel(customInstruments);
+  // The team and its organisation's groups (issue #528): who a part may be open to, named on it (issue #549: "Music · Worship").
+  const openToTeams = useOpenToTeams(teamId);
+  // Not the team itself: on its own calendar, "Music" is plainly its.
+  const otherGroups = openToTeams.filter((one) => one.id !== teamId);
+  const partLabel = usePartLabel(customInstruments, otherGroups);
   // A date's set, where the app has sets (every group's, issue #531); made only where they're kept.
   const setHref = sets ? sets.href : null;
   const makesSets = Boolean(setHref && sets?.canMake);
@@ -69,6 +77,10 @@ export function TeamCalendar({
   const [types, setTypes] = useState<TeamEventType[]>([]);
   const [typesOpen, setTypesOpen] = useState(false);
   const [editing, setEditing] = useState<TeamEvent | "new" | null>(null);
+  // Dates, or each event once (issue #549): a series is changed as a whole from there.
+  const [view, setView] = useState<"dates" | "events">("dates");
+  // A date changed on its own (issue #549): its title and start time.
+  const [editingDate, setEditingDate] = useState<TeamEventDateSummary | null>(null);
   const [answersOf, setAnswersOf] = useState<TeamEventDateSummary | null>(null);
   // The date whose line-up is open, by event and date: shown fresh from `dates` after each change.
   const [lineupOf, setLineupOf] = useState<{ eventId: string; date: string } | null>(null);
@@ -174,6 +186,24 @@ export function TeamCalendar({
             ) : null}
           </div>
         ))}
+        {/* The coming dates, or each event once (issue #549). */}
+        <Tabs value={view} onValueChange={(value) => setView(value as "dates" | "events")}>
+          <TabsList aria-label={t("teamCalendar.title")}>
+            <TabsTrigger value="dates" data-testid="calendar-view-dates">
+              <CalendarDays />
+              {t("teamCalendar.viewDates")}
+            </TabsTrigger>
+            <TabsTrigger value="events" data-testid="calendar-view-events">
+              <Repeat />
+              {t("teamCalendar.viewEvents")}
+              {events.length > 0 ? <span className="text-xs text-muted-foreground tabular-nums">{events.length}</span> : null}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {view === "events" ? (
+          <EventSeriesList events={events} types={types} isAdmin={isAdmin} partLabel={partLabel} onEdit={setEditing} organizationName={organization?.name ?? null} />
+        ) : (
+        <>
         {dates === null ? null : dates.length === 0 ? (
           <p className="text-sm text-muted-foreground">{isAdmin ? (makesSets ? t("teamCalendar.noEventsAdmin") : t("teamCalendar.noEventsAdminPlanning")) : t("teamCalendar.noEvents")}</p>
         ) : (
@@ -204,6 +234,7 @@ export function TeamCalendar({
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className={cn("text-sm font-medium", date.cancelled && "line-through")}>{date.title}</span>
                       {date.repeats ? <Repeat className="size-3.5 text-muted-foreground" aria-label={t("teamCalendar.repeats")} /> : null}
+                      {date.changed ? <Badge variant="muted" data-testid="calendar-date-changed">{t("teamCalendar.dateChanged")}</Badge> : null}
                       {rehearsal ? <Badge variant="muted" data-testid="calendar-rehearsal">{t("teamCalendar.rehearsalBadge")}</Badge> : null}
                       {/* Planned by the team's organisation (issue #241), with its host. */}
                       {event?.planned ? (
@@ -304,10 +335,17 @@ export function TeamCalendar({
                             {date.setReadyAt ? t("teamCalendar.setReadyAgain") : t("teamCalendar.setReady")}
                           </DropdownMenuItem>
                         ) : null}
+                        {/* One date on its own (issue #549): a series' date, not a rehearsal's or an organisation's. */}
+                        {event && event.repeat && !rehearsal && !event.planned ? (
+                          <DropdownMenuItem onClick={() => setEditingDate(date)} data-testid="calendar-edit-date">
+                            <CalendarClock />
+                            {t("teamCalendar.editDate")}
+                          </DropdownMenuItem>
+                        ) : null}
                         {event ? (
                           <DropdownMenuItem onClick={() => setEditing(event)} data-testid="calendar-edit-event">
                             <Pencil />
-                            {t("teamCalendar.editEvent")}
+                            {event.repeat ? t("teamCalendar.editSeries") : t("teamCalendar.editEvent")}
                           </DropdownMenuItem>
                         ) : null}
                       </DropdownMenuContent>
@@ -352,6 +390,8 @@ export function TeamCalendar({
             </Button>
           ) : null}
         </div>
+        </>
+        )}
         {isAdmin && makesSets ? <SetsAhead teamId={teamId} onSaved={load} /> : null}
       </CardContent>
       {answersOf ? (
@@ -406,6 +446,24 @@ export function TeamCalendar({
           onClose={() => setTypesOpen(false)}
         />
       ) : null}
+      {editingDate ? (
+        <DateDialog
+          date={editingDate}
+          title={dayFormat.format(new Date(`${editingDate.date}T12:00:00Z`))}
+          series={events.find((one) => one.id === editingDate.eventId) ?? null}
+          onClose={() => setEditingDate(null)}
+          onSave={(body) =>
+            act(async () => {
+              await api.updateTeamEventDate(teamId, editingDate.eventId, editingDate.date, body);
+              setEditingDate(null);
+            })
+          }
+          onEditSeries={(series) => {
+            setEditingDate(null);
+            setEditing(series);
+          }}
+        />
+      ) : null}
       {editing ? (
         <EventDialog
           teamId={teamId}
@@ -418,6 +476,8 @@ export function TeamCalendar({
           positions={positions}
           customInstruments={customInstruments}
           partLabel={partLabel}
+          openToTeams={openToTeams}
+          organization={organization}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null);
@@ -515,6 +575,160 @@ function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: st
   );
 }
 
+/**
+ * Each of the team's events once (issue #549): a series with how it repeats,
+ * a one-off with its date, a rehearsal with its event - to change one as a
+ * whole, not date by date.
+ */
+function EventSeriesList({ events, types, isAdmin, partLabel, onEdit, organizationName }: { events: TeamEvent[]; types: TeamEventType[]; isAdmin: boolean; partLabel: (part: EventPart) => string; onEdit: (event: TeamEvent) => void; organizationName: string | null }) {
+  const { t, i18n } = useTranslation();
+  if (events.length === 0) return <p className="text-sm text-muted-foreground">{t("teamCalendar.noSeries")}</p>;
+  const today = localDate(new Date(), browserZone());
+  // Coming first, by their first date; those over last.
+  const over = (event: TeamEvent) => (event.repeat ? (event.repeat.until ?? "9999") < today : event.date < today);
+  const sorted = [...events].sort((a, b) => Number(over(a)) - Number(over(b)) || a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  return (
+    <ul className="flex flex-col divide-y" aria-label={t("teamCalendar.viewEvents")} data-testid="calendar-series">
+      {sorted.map((event) => {
+        const parent = event.rehearsalFor ? events.find((one) => one.id === event.rehearsalFor!.eventId) : null;
+        const type = types.find((one) => one.id === event.typeId);
+        return (
+          <li key={event.id} className={cn("flex items-start gap-3 py-2.5 first:pt-0 last:pb-0", over(event) && "text-muted-foreground")} data-series={event.id}>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-sm font-medium">{event.title}</span>
+                {type ? <Badge variant="muted">{type.name}</Badge> : null}
+                {event.planned ? <Badge variant="outline">{t("teamCalendar.plannedBy", { organization: event.planned.organizationName })}</Badge> : null}
+                {over(event) ? <Badge variant="outline">{t("teamCalendar.seriesPast")}</Badge> : null}
+                {event.transferRequestedAt && organizationName ? (
+                  <Badge variant="warning" data-testid="series-transfer-waiting">
+                    {t("teamCalendar.transferBadge", { organization: organizationName })}
+                  </Badge>
+                ) : null}
+              </div>
+              <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground" data-testid="series-when">
+                {parent && event.rehearsalFor ? (
+                  t("teamCalendar.seriesRehearsal", { title: parent.title, days: event.rehearsalFor.daysBefore })
+                ) : event.repeat ? (
+                  <>
+                    <Repeat className="size-3" aria-hidden />
+                    {[
+                      t("teamCalendar.everyNWeeks", { count: event.repeat.everyWeeks }),
+                      t("teamCalendar.seriesOn", { weekday: weekdayOf(event.date, i18n.language), time: event.startTime }),
+                      t("teamCalendar.seriesFrom", { date: formatSetDate(event.date, i18n.language) }),
+                      event.repeat.until ? t("teamCalendar.seriesUntil", { date: formatSetDate(event.repeat.until, i18n.language) }) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </>
+                ) : (
+                  t("teamCalendar.seriesOnce", { date: formatSetDate(event.date, i18n.language), time: event.startTime })
+                )}
+              </span>
+              {event.parts.length > 0 ? <span className="text-xs text-muted-foreground">{event.parts.map((part) => `${partLabel(part)}${part.count > 1 ? ` ×${part.count}` : ""}`).join(", ")}</span> : null}
+              {event.place ? (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="size-3" aria-hidden />
+                  {event.place}
+                </span>
+              ) : null}
+            </div>
+            {isAdmin ? (
+              <Button variant="outline" size="sm" onClick={() => onEdit(event)} data-testid="series-edit">
+                <Pencil />
+                {event.repeat ? t("teamCalendar.editSeries") : t("teamCalendar.editEvent")}
+              </Button>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** A weekday's long name, for a YYYY-MM-DD date. */
+function weekdayOf(date: string, language: string): string {
+  return new Intl.DateTimeFormat(language, { weekday: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+}
+
+/** One date of a series changed on its own (issue #549): its title and start time, or back to the series'. */
+function DateDialog({
+  date,
+  title,
+  series,
+  onClose,
+  onSave,
+  onEditSeries,
+}: {
+  date: TeamEventDateSummary;
+  title: string;
+  series: TeamEvent | null;
+  onClose: () => void;
+  onSave: (body: { title: string | null; startTime: string | null }) => Promise<void>;
+  onEditSeries: (series: TeamEvent) => void;
+}) {
+  const { t } = useTranslation();
+  const [ownTitle, setOwnTitle] = useState(date.title);
+  const [start, setStart] = useState(date.startTime);
+  const [busy, setBusy] = useState(false);
+  const save = (body: { title: string | null; startTime: string | null }) => {
+    setBusy(true);
+    void onSave(body).finally(() => setBusy(false));
+  };
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md" data-testid="date-dialog">
+        <DialogHeader>
+          <DialogTitle>{t("teamCalendar.editDate")}</DialogTitle>
+          <p className="text-sm text-muted-foreground">{t("teamCalendar.editDateHint", { date: title })}</p>
+        </DialogHeader>
+        <form
+          id="date-form"
+          className="grid grid-cols-1 gap-3"
+          onSubmit={(submitted) => {
+            submitted.preventDefault();
+            // The series' own values aren't kept as the date's.
+            save({ title: series && ownTitle.trim() === series.title ? null : ownTitle.trim() || null, startTime: series && start === series.startTime ? null : start });
+          }}
+        >
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="date-title">{t("teamCalendar.dateOwnTitle")}</Label>
+            <Input id="date-title" value={ownTitle} maxLength={120} required onChange={(e) => setOwnTitle(e.target.value)} data-testid="date-title" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="date-start">{t("teamCalendar.dateOwnStart")}</Label>
+            <Input id="date-start" type="time" value={start} required onChange={(e) => setStart(e.target.value)} data-testid="date-start" />
+          </div>
+        </form>
+        <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {series ? (
+              <Button type="button" variant="ghost" onClick={() => onEditSeries(series)} data-testid="date-edit-series">
+                <Repeat />
+                {t("teamCalendar.editSeries")}
+              </Button>
+            ) : null}
+            {date.changed ? (
+              <Button type="button" variant="ghost" disabled={busy} onClick={() => save({ title: null, startTime: null })} data-testid="date-reset">
+                <RotateCcw />
+                {t("teamCalendar.dateBackToSeries")}
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              {t("teamCalendar.cancel")}
+            </Button>
+            <Button type="submit" form="date-form" disabled={busy} data-testid="date-save">
+              {busy ? t("teamCalendar.saving") : t("teamCalendar.saveDate")}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /** The team's "Create sets ahead", in weeks (1 to 52). */
 function SetsAhead({ teamId, onSaved }: { teamId: string; onSaved: () => Promise<void> }) {
   const { api } = usePlanning();
@@ -578,6 +792,8 @@ function EventDialog({
   positions,
   customInstruments,
   partLabel,
+  openToTeams,
+  organization,
   onClose,
   onSaved,
 }: {
@@ -595,11 +811,14 @@ function EventDialog({
   positions: readonly TeamPosition[];
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
+  openToTeams: OpenToTeam[];
+  organization: { id: string; name: string } | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
   const { api } = usePlanning();
-  const openToTeams = useOpenToTeams(teamId);
+  // Asked to become the organisation's (issue #549): waiting for its admins.
+  const transferAsked = !!event?.transferRequestedAt;
   const { t } = useTranslation();
   const [parts, setParts] = useState<EventPart[]>(event?.parts ?? []);
   const planned = event?.planned ?? null;
@@ -639,7 +858,8 @@ function EventDialog({
     if (type.startTime) setStartTime(type.startTime);
     if (type.durationMinutes) setDuration(String(type.durationMinutes));
     setCall(type.callMinutes ? String(type.callMinutes) : "");
-    setParts(partsForTeam(type.parts, teamId));
+    // Its roles open to the groups that fill them (issue #549), unless the type says who.
+    setParts(withFillingGroups(partsForTeam(type.parts, teamId), openToTeams));
     setWithSet(type.withSet);
   };
 
@@ -817,6 +1037,40 @@ function EventDialog({
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} ownTeamId={teamId} />}
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
+        {/* Moved to the organisation (issue #549), one-off or series: its admins accept it; dates, answers, line-ups and sets stay. */}
+        {event && !planned && !event.rehearsalFor && organization ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-3 text-sm" data-testid="event-transfer">
+            <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            {transferAsked ? (
+              <>
+                <span className="min-w-0 flex-1">{t("teamCalendar.transferWaiting", { organization: organization.name })}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void api.requestTeamEventTransfer(teamId, event.id, false).then(() => onSaved(), (err: unknown) => setError(err instanceof Error ? err.message : String(err)))}
+                  data-testid="event-transfer-cancel"
+                >
+                  {t("teamCalendar.transferCancel")}
+                </Button>
+              </>
+            ) : (
+              <>
+                <span className="min-w-0 flex-1 text-muted-foreground">{t("teamCalendar.transferHint", { organization: organization.name })}</span>
+                {/* Only asked: it can be taken back until an admin accepts. */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void api.requestTeamEventTransfer(teamId, event.id).then(() => onSaved(), (err: unknown) => setError(err instanceof Error ? err.message : String(err)))}
+                  data-testid="event-transfer-ask"
+                >
+                  {t("teamCalendar.transfer", { organization: organization.name })}
+                </Button>
+              </>
+            )}
+          </div>
+        ) : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
           {event && !planned ? (
             <ConfirmButton
@@ -938,6 +1192,7 @@ export function PartsEditor({
   partLabel,
   openToTeams = [],
   ownTeamId,
+  instruments = false,
 }: {
   parts: EventPart[];
   onChange: (parts: EventPart[]) => void;
@@ -946,19 +1201,28 @@ export function PartsEditor({
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
   /** The teams a part's places may be open to (issue #528): the event's team and its organisation's groups. None: no open places. */
-  openToTeams?: readonly { id: string; name: string }[];
+  openToTeams?: readonly OpenToTeam[];
   /** The event's team: a place opened goes to its members first. */
   ownTeamId?: string;
+  /**
+   * Instruments offered (issue #549): only for what a date asks for from its
+   * set. An event asks for roles - Music, not Drums; its music lead asks for
+   * the instruments date by date.
+   */
+  instruments?: boolean;
 }) {
   const { t } = useTranslation();
   const change = (index: number, changes: Partial<EventPart>) => onChange(parts.map((one, at) => (at === index ? { ...one, ...changes } : one)));
   const [naming, setNaming] = useState<string | null>(null);
   const taken = new Set(parts.map((part) => partKey(part)));
   const add = (part: EventPart) => {
-    if (!taken.has(partKey(part))) onChange([...parts, part]);
+    if (taken.has(partKey(part))) return;
+    // A role open to the groups that fill it (issue #549): "Music · Worship".
+    const [filled] = withFillingGroups([part], openToTeams);
+    onChange([...parts, filled!]);
   };
   const choices = (keys: readonly string[]) => keys.filter((key) => !taken.has(key)).map((key) => ({ key, label: partLabel({ part: key, count: 1 }) }));
-  const instruments = [...choices(INSTRUMENTS), ...choices(customInstruments.map((instrument) => instrument.id))];
+  const instrumentChoices = instruments ? [...choices(INSTRUMENTS), ...choices(customInstruments.map((instrument) => instrument.id))] : [];
   const names = teamNames.filter((name) => !taken.has(partKey({ name, count: 1 })));
 
   return (
@@ -995,7 +1259,7 @@ export function PartsEditor({
                   <input type="checkbox" className="size-3.5" checked={!!part.required} onChange={(e) => change(index, { required: e.target.checked || undefined })} data-testid="event-part-required" />
                   {t("teamCalendar.partRequired")}
                 </label>
-                {openToTeams.length > 0 && !(part.part && isGivenPart(part.part)) ? (
+                {openToTeams.length > 0 && !instruments && !(part.part && isGivenPart(part.part)) ? (
                   <label className="flex items-center gap-1.5">
                     <input
                       type="checkbox"
@@ -1007,7 +1271,7 @@ export function PartsEditor({
                     {t("teamCalendar.partOpen")}
                   </label>
                 ) : null}
-                {part.openTo?.length && openToTeams.length > 1 ? (
+                {part.openTo?.length && openToTeams.length > 1 && !instruments ? (
                   <span className="flex flex-wrap items-center gap-x-3 gap-y-1" aria-label={t("teamCalendar.partOpenTo")}>
                     <span>{t("teamCalendar.partOpenTo")}</span>
                     {openToTeams.map((team) => (
@@ -1046,7 +1310,17 @@ export function PartsEditor({
           data-testid="event-part-add"
         >
           <option value="">{t("teamCalendar.addPart")}</option>
-          {/* The group's own positions first (issue #241): what it's mostly about. */}
+          {/* High-level roles first (issue #549): who hosts, speaks, leads the music, runs the screens, the sound and the lights. */}
+          {!instruments && choices(EVENT_ROLES).length > 0 ? (
+            <optgroup label={t("teamCalendar.partRoles")}>
+              {choices(EVENT_ROLES).map((choice) => (
+                <option key={choice.key} value={choice.key}>
+                  {choice.label}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+          {/* The group's own positions (issue #241). */}
           {positions.some((one) => !taken.has(`position:${one.id}`)) ? (
             <optgroup label={t("teamCalendar.partPositions")}>
               {positions
@@ -1058,20 +1332,15 @@ export function PartsEditor({
                 ))}
             </optgroup>
           ) : null}
-          <optgroup label={t("teamCalendar.partInstruments")}>
-            {instruments.map((choice) => (
-              <option key={choice.key} value={choice.key}>
-                {choice.label}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label={t("teamCalendar.partRoles")}>
-            {choices([...Object.keys(GIVEN_PARTS), ...TECH_ROLES]).map((choice) => (
-              <option key={choice.key} value={choice.key}>
-                {choice.label}
-              </option>
-            ))}
-          </optgroup>
+          {instrumentChoices.length > 0 ? (
+            <optgroup label={t("teamCalendar.partInstruments")}>
+              {instrumentChoices.map((choice) => (
+                <option key={choice.key} value={choice.key}>
+                  {choice.label}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
           {names.length > 0 ? (
             <optgroup label={t("teamCalendar.partTeamNames")}>
               {names.map((name) => (
@@ -1118,20 +1387,36 @@ export function PartsEditor({
   );
 }
 
+/** A team a part may be open to (issue #528), and the roles it fills (issue #549). */
+export type OpenToTeam = { id: string; name: string; fills?: string[] };
+
+/**
+ * Parts open to the groups that fill them (issue #549): a role with no
+ * teams of its own goes to those - "Music" to Worship. Others as they are.
+ */
+export function withFillingGroups(parts: EventPart[], groups: readonly OpenToTeam[]): EventPart[] {
+  return parts.map((part) => {
+    if (part.openTo?.length || !part.part || isGivenPart(part.part)) return part;
+    const filling = fillingGroups(part.part, groups);
+    return filling.length > 0 ? { ...part, openTo: filling } : part;
+  });
+}
+
 /**
  * The teams a part's places may be open to (issue #528): the team itself,
- * then the other groups of its organisation.
+ * then the other groups of its organisation, each with the roles it fills.
  */
-export function useOpenToTeams(teamId: string | null): { id: string; name: string }[] {
+export function useOpenToTeams(teamId: string | null): OpenToTeam[] {
   const { api } = usePlanning();
-  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  const [teams, setTeams] = useState<OpenToTeam[]>([]);
   useEffect(() => {
     if (!teamId) return;
     let live = true;
     void (async () => {
       const team = await api.getTeam(teamId);
       const others = team.organization ? (await api.getOrganization(team.organization.id).catch(() => null))?.teams ?? [] : [];
-      if (live) setTeams([{ id: team.id, name: team.name }, ...others.filter((one) => one.id !== team.id).map((one) => ({ id: one.id, name: one.name }))]);
+      const own = others.find((one) => one.id === team.id);
+      if (live) setTeams([{ id: team.id, name: team.name, fills: own?.fills ?? [] }, ...others.filter((one) => one.id !== team.id).map((one) => ({ id: one.id, name: one.name, fills: one.fills ?? [] }))]);
     })().catch(() => {});
     return () => {
       live = false;

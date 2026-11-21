@@ -76,7 +76,7 @@ try {
     await signIn(page, leader);
     await page.goto(`${WEB}/sets/${setlistId}`);
     const card = page.getByTestId("set-availability");
-    await card.locator('[data-leading="MUSIC_LEADER"]').getByText("Music leader: Ana Leader").waitFor();
+    await card.locator('[data-leading="MUSIC_LEADER"]').getByText("Music: Ana Leader").waitFor();
     await page.getByText("Add songs").first().waitFor();
     if (await page.getByRole("button", { name: "Delete set" }).count()) throw new Error("the music leader can delete the set");
     if (shots) await page.screenshot({ path: `${shots}/leader-set-page.png` });

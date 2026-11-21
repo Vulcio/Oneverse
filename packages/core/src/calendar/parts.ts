@@ -132,6 +132,45 @@ export function isMembersOnlyPart(key: string): boolean {
 export function isGivenPart(key: string): boolean {
   return Object.hasOwn(GIVEN_PARTS, key);
 }
+/**
+ * The roles an event asks for (issue #549), in the order they're offered:
+ * high level - who hosts, speaks, leads the music, runs the screens and the
+ * sound. The instruments are asked for date by date, from its set, by
+ * whoever is on the music (a date's asks, withAsks()).
+ */
+export const EVENT_ROLES: readonly string[] = [HOST, SPEAKER, MUSIC_LEADER, "MEDIA_OPERATOR", "SOUND_ENGINEER", "LIGHTS", "TECHNICIAN"];
+
+/** The roles a group can fill (issue #549): every event role but the given ones (a role gives those to people). */
+export const FILLABLE_ROLES: readonly string[] = EVENT_ROLES.filter((key) => !isGivenPart(key));
+
+/**
+ * Who a role is open to by default (issue #549): the groups that fill it -
+ * "Music" to Worship. None: the admins choose who, as before.
+ */
+export function fillingGroups(key: string, groups: readonly { id: string; fills?: readonly string[] | null }[]): string[] {
+  return groups.filter((group) => group.fills?.includes(key)).map((group) => group.id);
+}
+
+/** The most parts a date asks for besides its event's (issue #549). */
+export const DATE_ASKS_LIMIT = 20;
+
+/**
+ * A date's parts (issue #549): its event's, then what the date asks for
+ * besides - the instruments its music lead asked for - unless the event
+ * lists that part already.
+ */
+export function withAsks(parts: readonly EventPart[], asks: readonly EventPart[] | null | undefined): EventPart[] {
+  if (!asks?.length) return [...parts];
+  const taken = new Set(parts.map((part) => partKey(part)));
+  return [...parts, ...asks.filter((part) => !taken.has(partKey(part)))];
+}
+
+/** Who answers a date's asks (issue #549): the teams its Music part is open to, else its own team. */
+export function asksOpenTo(parts: readonly EventPart[], teamId: string): string[] {
+  const music = parts.find((part) => part.part === MUSIC_LEADER);
+  return music?.openTo?.length ? [...music.openTo] : [teamId];
+}
+
 /** The parts whose people edit the date's set (issue #520), in the order they're shown. */
 export const SET_LEADING_PARTS: readonly string[] = [HOST, MUSIC_LEADER];
 

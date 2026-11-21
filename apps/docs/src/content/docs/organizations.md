@@ -44,6 +44,8 @@ The cross puts it away; **Show the setup checklist**, under **Details**, brings 
 
 ![An organisation's page, for its admin](../../assets/screenshots/en/organization.jpg)
 
+It starts with its **Calendar**: the next dates of its events, each with its host, its place and the groups it needs, **Places to fill** where a group is short; **Open the calendar** opens them all (see [Events](/organizations/#events)).
+
 Everyone in it sees its **Groups** - each under the one it's in, those that don't use Songverse marked **Only plans**, yours marked **Your team** and opening its page - and its **Members**.
 
 Its admins also:
@@ -79,6 +81,8 @@ A group's admins make groups under it too: **New sub-group** on its page, with a
 
 Being in a group doesn't put you in the group above it: each group has its own members.
 
+**Roles it fills**, on a group's page, says which roles it takes at the organisation's events: Worship fills **Music**; Tech fills **Media operator**, **Audio operator** and **Lights**. A role an event asks for is then open to that group's members as soon as it's added, shown as **Music · Worship**, and to the members of the groups under it: Media, Sound and Lights under Tech. With no group filling a role, the admins choose who as before.
+
 ## Positions
 
 ![A group that only plans, with its positions](../../assets/screenshots/en/group.jpg)
@@ -91,15 +95,17 @@ An event of the group asks for them under **Parts needed**: **Add a part** lists
 
 ## Events
 
-An organisation's events need several of its groups: a Sunday service needs the music team's drums and bass, two greeters from the welcome team, someone on the sound desk. On the organisation's page, **Events** lists the coming dates (**Show more** for later ones), each with its host and every group it needs.
+An organisation's events need several of its groups: a Sunday service needs the music team's drums and bass, two greeters from the welcome team, someone on the sound desk. On the organisation's page, **Calendar** opens its coming dates (**Show more** for later ones), each with its host and every group it needs. **Events**, beside **Dates**, lists each event once - how it repeats, its host and its groups - with **Edit the series** to change one as a whole.
 
 ![An organisation's events, with each group's coverage](../../assets/screenshots/en/organization-events.jpg)
 
 Its admins make one with **New event**: its **Title**, first date, start time, length, time zone, **Repeats** and **Place (optional)** as for a team's event, its **Host** - one of the organisation's members, who's told - and under **Groups needed**, **Add a group** for each, with the parts it asks of it (its positions, instruments, roles or names; see [Parts needed](/teams/#parts-needed)) and, if you like, its **Call time (minutes before)**: the musicians an hour early, the welcome team a quarter of an hour. Each group's part has **Make a set for each date**, on by default for a group that uses Songverse and off for one that only plans: turn it off for a meeting, and that group's dates get no set. **Save event** puts the event on each group's calendar: the group's admins fill its line-up as for any of its events, a group's date gets its set when it asks for one, and those signed up get their reminders.
 
 - On a group's calendar, the event is marked **Planned by** the organisation (and its host). Its date, time and place are set on the organisation's Events; the group's admins choose only what it needs from them, under **Parts needed**, and its call time.
-- On the organisation's Events, its admins and the event's host see how each group's parts are covered (**Short: Drums**, or **All set**), change the event with **Edit event**, and **Cancel this date** - or restore it - for every group at once. Others see the groups and how many are on each.
+- On the organisation's Events, its admins and the event's host see how each group's parts are covered (**Short: Drums**, or **All set**), change the event with **Edit the series** (**Edit event** for one that doesn't repeat), and **Cancel this date** - or restore it - for every group at once. Others see the groups and how many are on each.
 - Only the admins choose another host (who's told), and **Delete event**, for every group. A group removed from **Groups needed** loses its part; a group taken out of the organisation keeps it, as its own event.
+
+A group's admins can move one of its events to the organisation (see [Calendar](/teams/#calendar)). It waits at the top of the calendar, for the organisation's admins, under **Asked to join the calendar**: **Accept** makes it the organisation's event, with the same timing, hosted by whoever asked, and the group's part of it as it was - its dates, answers, line-ups and sets; **Decline** leaves it the group's. Whoever asked is told either way.
 
 **Presets** keep what an event usually needs: in an event's dialog, **Save as preset** under a **Preset name**. **New event** then starts from one with **Preset**, which fills its title, time, place and groups. The admins remove presets under **Presets**.
 

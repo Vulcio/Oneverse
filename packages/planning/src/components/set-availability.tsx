@@ -1,13 +1,16 @@
-import { ApiError, partKey, SET_LEADING_PARTS, type AvailabilityAnswer, type CustomInstrument, type MemberEventAnswer, type SetAvailability } from "@oneverse/core";
-import { CalendarDays, Plane } from "lucide-react";
+import { ApiError, partKey, SET_LEADING_PARTS, type AvailabilityAnswer, type CustomInstrument, type EventPart, type MemberEventAnswer, type SetAvailability } from "@oneverse/core";
+import { CalendarDays, Music, Pencil, Plane } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { FieldError } from "@oneverse/ui/components/field";
 import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { cn } from "@oneverse/ui/lib/utils";
 import { HostLink, usePlanning } from "../host";
 import { answerLabel } from "./event-answer";
 import { partOf, usePartLabel } from "./lineup";
+import { partBody, PartsEditor } from "./team-calendar";
 
 type Group = AvailabilityAnswer | "NONE";
 const GROUPS: { group: Group; tone: string; mark: string }[] = [
@@ -30,6 +33,8 @@ export function SetAvailabilityCard({ setlistId, refreshKey }: { setlistId: stri
   const { api, links } = usePlanning();
   const { t, i18n } = useTranslation();
   const [data, setData] = useState<SetAvailability | null>(null);
+  // Fetched again after the date's asks change (issue #549).
+  const [reload, setReload] = useState(0);
   const [customInstruments, setCustomInstruments] = useState<CustomInstrument[]>([]);
   const partLabel = usePartLabel(customInstruments);
   useEffect(() => {
@@ -44,7 +49,7 @@ export function SetAvailabilityCard({ setlistId, refreshKey }: { setlistId: stri
     return () => {
       current = false;
     };
-  }, [setlistId, refreshKey]);
+  }, [setlistId, refreshKey, reload]);
   useEffect(() => {
     void api.listCustomInstruments().then(setCustomInstruments, () => {});
   }, []);
@@ -92,6 +97,8 @@ export function SetAvailabilityCard({ setlistId, refreshKey }: { setlistId: stri
             ))}
           </div>
         ) : null}
+        {/* The instruments the date asks for (issue #549): its music lead asks, the music team signs up. */}
+        <DateAsks data={data} partLabel={partLabel} customInstruments={customInstruments} onChanged={() => setReload((n) => n + 1)} />
         <div className="grid gap-4 sm:grid-cols-2">
           {GROUPS.map(({ group, tone, mark }) => {
             const members = data.members.filter((member) => groupOf(member) === group);
@@ -138,5 +145,88 @@ export function SetAvailabilityCard({ setlistId, refreshKey }: { setlistId: stri
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * What a date asks for besides its event's parts (issue #549), on its set:
+ * the instruments its music lead wants that date, with who's on each. The
+ * team's admins and the date's music lead change them; whoever the event's
+ * Music part is open to signs up for them, as for any open place.
+ */
+function DateAsks({ data, partLabel, customInstruments, onChanged }: { data: SetAvailability; partLabel: (part: EventPart) => string; customInstruments: CustomInstrument[]; onChanged: () => void }) {
+  const { api } = usePlanning();
+  const { t } = useTranslation();
+  const asks = data.asks ?? [];
+  const [editing, setEditing] = useState<EventPart[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (asks.length === 0 && !data.canAsk) return null;
+  const onIt = (part: EventPart) => data.lineup.filter((place) => place.partKey === partKey(part) && place.status !== "DECLINED");
+
+  const save = async () => {
+    if (!editing) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.setTeamEventDateAsks(data.teamId, data.eventId, data.date, { parts: editing.map((part) => ({ ...partBody(part), openTo: undefined })) });
+      setEditing(null);
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="flex flex-col gap-2 rounded-md border p-3" data-testid="date-asks">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-sm font-medium">
+          <Music className="size-4" aria-hidden />
+          {t("teamCalendar.asksTitle")}
+        </h3>
+        {data.canAsk && !editing ? (
+          <Button variant="outline" size="sm" className="h-7" onClick={() => setEditing(asks)} data-testid="date-asks-edit">
+            <Pencil />
+            {asks.length > 0 ? t("teamCalendar.asksChange") : t("teamCalendar.asksAdd")}
+          </Button>
+        ) : null}
+      </div>
+      {editing ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">{t("teamCalendar.asksHint")}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <PartsEditor parts={editing} onChange={setEditing} teamNames={[]} positions={[]} customInstruments={customInstruments} partLabel={partLabel} instruments />
+          </div>
+          {error ? <FieldError>{error}</FieldError> : null}
+          <div className="flex gap-2">
+            <Button size="sm" disabled={busy} onClick={() => void save()} data-testid="date-asks-save">
+              {busy ? t("teamCalendar.saving") : t("teamCalendar.asksSave")}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+              {t("teamCalendar.cancel")}
+            </Button>
+          </div>
+        </div>
+      ) : asks.length === 0 ? (
+        <p className="text-xs text-muted-foreground">{t("teamCalendar.asksNone")}</p>
+      ) : (
+        <ul className="flex flex-col gap-1 text-sm">
+          {asks.map((part) => {
+            const on = onIt(part);
+            return (
+              <li key={partKey(part)} className="flex flex-wrap items-baseline gap-x-2" data-ask={partKey(part)}>
+                <span className="font-medium">{partLabel({ ...part, openTo: undefined })}</span>
+                <span className={cn("text-xs tabular-nums", on.length < part.count ? "text-warning" : "text-success")}>
+                  {on.length}/{part.count}
+                </span>
+                {on.length > 0 ? <span className="text-xs text-muted-foreground">{on.map((place) => place.displayName).join(", ")}</span> : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

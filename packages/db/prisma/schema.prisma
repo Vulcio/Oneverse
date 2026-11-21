@@ -372,6 +372,7 @@ model User {
   connectionsAnswered          Connection[]          @relation("ConnectionAddressee")
   reviewedProposals            ChangeProposal[]      @relation("ProposalReviewer")
   teamEventsCreated            TeamEvent[]           @relation("TeamEventCreatedBy")
+  teamEventTransfersAsked      TeamEvent[]           @relation("TeamEventTransferBy")
   eventAnswers                 TeamEventAnswer[]     @relation("TeamEventAnswerUser")
   eventAnswersGiven            TeamEventAnswer[]     @relation("TeamEventAnswerBy")
   awayRanges                   UserAway[]
@@ -711,6 +712,9 @@ model Team {
   // the group it's under, in the same organisation; the positions of its own
   // its members cover ("Greeter", "Coffee"), besides instruments and roles.
   usesSongverse        Boolean                @default(true)
+  // The roles it fills at an organisation's events (issue #549): "Worship" fills Music. A part an event asks for
+  // that one of its groups fills is open to that group's members (and those of the groups under it).
+  fills                String[]               @default([])
   parentId             String?
   parent               Team?                  @relation("Subgroups", fields: [parentId], references: [id], onDelete: SetNull)
   // News its admins sent its members (issue #536).
@@ -1539,6 +1543,10 @@ model TeamEvent {
   typeId              String?
   // Whether its dates get a set (issue #523): false for a meeting, a prayer evening; a group that only plans has none anyway.
   withSet             Boolean   @default(true)
+  // Asked to become its organisation's event (issue #549), by one of the team's admins: an
+  // organisation admin accepts (it becomes the team's part of a new organisation event) or declines.
+  transferRequestedAt       DateTime?
+  transferRequestedByUserId String?
   createdByUserId     String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -1546,6 +1554,7 @@ model TeamEvent {
   team              Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   type              TeamEventType?        @relation(fields: [typeId], references: [id], onDelete: SetNull)
   createdBy         User?                 @relation("TeamEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  transferRequestedBy User?               @relation("TeamEventTransferBy", fields: [transferRequestedByUserId], references: [id], onDelete: SetNull)
   dates             TeamEventDate[]
   answers           TeamEventAnswer[]
   reminders         TeamEventReminder[]
@@ -1786,6 +1795,9 @@ model TeamEventDate {
   setCreatedAt DateTime?
   // When an admin told the people signed up that its set is ready (issue #235).
   setReadyAt   DateTime?
+  // What this date asks for besides its event's parts (issue #549): the instruments its music lead
+  // asks for from the set, [{ part, position, name, count, openTo }] as TeamEvent.parts.
+  asks         Json?
 
   event   TeamEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   setlist Setlist?  @relation(fields: [setlistId], references: [id], onDelete: SetNull)

@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { ASSIGNMENT_STATUSES, isGivenPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
+import { ASSIGNMENT_STATUSES, DATE_ASKS_LIMIT, isGivenPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
@@ -108,6 +108,22 @@ export const UpdateTeamEventDateSchema = z.strictObject({
   title: clearableText(120),
 });
 export type UpdateTeamEventDateRequest = z.input<typeof UpdateTeamEventDateSchema>;
+
+/**
+ * What a date asks for besides its event's parts (issue #549): the
+ * instruments (or the group's positions, or names) its music lead wants
+ * that date, each with how many. Whoever the event's Music part is open to
+ * answers them; given parts (Host, Speaker) aren't asked this way.
+ */
+export const SetTeamEventDateAsksSchema = z.strictObject({
+  parts: z
+    .array(EventPartSchema)
+    .max(DATE_ASKS_LIMIT)
+    .refine((parts) => new Set(parts.map((part) => partKey(part))).size === parts.length, "parts must not list the same part twice")
+    .refine((parts) => parts.every((part) => !part.part || !isGivenPart(part.part)), "parts can't ask for a Host or a Speaker: the event does")
+    .describe("What the date asks for besides its event's parts: instruments, positions or names, with how many"),
+});
+export type SetTeamEventDateAsksRequest = z.input<typeof SetTeamEventDateAsksSchema>;
 
 export const TeamEventDatesQuerySchema = z.strictObject({
   from: date("from"),

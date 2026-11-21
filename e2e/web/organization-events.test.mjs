@@ -1,5 +1,5 @@
 // An organisation's events in the browser (issue #241): its admin keeps a
-// preset of what a Sunday needs (drums from the music team, a greeter from
+// preset of what a Sunday needs (music from the music team, a greeter from
 // the welcome team), makes the event from it with a host; each group's
 // calendar shows its part, planned by the organisation; the host cancels a
 // date for everyone from the organisation's Events.
@@ -26,7 +26,7 @@ try {
   page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, timezoneId: "UTC" });
   const dialog = () => page.getByTestId("org-event-dialog");
 
-  await step("the admin keeps a preset: drums from music, a greeter from welcome", async () => {
+  await step("the admin keeps a preset: music from the music team, a greeter from welcome", async () => {
     await signIn(page, alice);
     await page.goto(`${WEB}/organizations/${org.id}`);
     await page.getByTestId("organization-events").click();
@@ -34,7 +34,7 @@ try {
     await page.getByTestId("org-new-event").click();
     await dialog().getByLabel("Title").fill("Sunday service");
     await dialog().getByTestId("org-event-add-group").selectOption({ label: `Music ${stamp}` });
-    await dialog().locator(`[data-need="Music ${stamp}"]`).getByTestId("event-part-add").selectOption({ label: "Drums" });
+    await dialog().locator(`[data-need="Music ${stamp}"]`).getByTestId("event-part-add").selectOption({ label: "Music" });
     await dialog().getByTestId("org-event-add-group").selectOption({ label: `Welcome ${stamp}` });
     await dialog().locator(`[data-need="Welcome ${stamp}"]`).getByTestId("event-part-add").selectOption({ label: "Greeter" });
     await dialog().getByTestId("org-save-preset").click();
@@ -53,7 +53,7 @@ try {
     await dialog().waitFor({ state: "hidden" });
     const row = page.locator("[data-org-event-date]").first();
     await row.getByText("Hosted by Orgev web host").waitFor();
-    await row.locator(`[data-org-group="${music.id}"]`).getByTestId("org-group-short").getByText("Drums").waitFor();
+    await row.locator(`[data-org-group="${music.id}"]`).getByTestId("org-group-short").getByText("Music").waitFor();
     await row.locator(`[data-org-group="${welcome.id}"]`).getByTestId("org-group-short").getByText("Greeter").waitFor();
   });
 

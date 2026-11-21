@@ -44,6 +44,8 @@ La croix la range ; **Afficher la liste de démarrage**, sous **Détails**, la f
 
 ![La page d'une organisation, pour son administrateur](../../../assets/screenshots/fr/organization.jpg)
 
+Elle commence par son **Calendrier** : les prochaines dates de ses événements, chacune avec son responsable, son lieu et les groupes nécessaires, **Places à pourvoir** quand il manque quelqu'un à un groupe ; **Ouvrir le calendrier** les montre toutes (voir [Événements](/fr/organizations/#événements)).
+
 Chacun y voit ses **Groupes** - chacun sous celui dont il fait partie, ceux qui n'utilisent pas Songverse marqués **Planification seule**, les vôtres marqués **Votre équipe** et qui ouvrent leur page - et ses **Membres**.
 
 Ses administrateurs peuvent aussi :
@@ -79,6 +81,8 @@ Les administrateurs d'un groupe créent aussi des groupes en dessous : **Nouveau
 
 Faire partie d'un groupe ne vous met pas dans le groupe au-dessus : chaque groupe a ses propres membres.
 
+**Rôles qu'il tient**, sur la page d'un groupe, dit quels rôles il prend aux événements de l'organisation : Louange tient la **Musique** ; Technique tient **Projection**, **Sono** et **Lumières**. Un rôle demandé par un événement est alors ouvert aux membres de ce groupe dès qu'il est ajouté, affiché **Musique · Louange**, et aux membres des groupes en dessous : Projection, Sono et Lumières sous Technique. Si aucun groupe ne tient un rôle, les administrateurs choisissent qui, comme avant.
+
 ## Postes
 
 ![Un groupe qui ne fait que planifier, avec ses postes](../../../assets/screenshots/fr/group.jpg)
@@ -91,15 +95,17 @@ Un événement du groupe les demande sous **Postes nécessaires** : **Ajouter un
 
 ## Événements
 
-Les événements d'une organisation ont besoin de plusieurs de ses groupes : un culte du dimanche demande la batterie et la basse de l'équipe de louange, deux personnes à l'accueil, quelqu'un à la régie son. Sur la page de l'organisation, **Événements** liste les prochaines dates (**Voir plus** pour les suivantes), chacune avec son responsable et chaque groupe nécessaire.
+Les événements d'une organisation ont besoin de plusieurs de ses groupes : un culte du dimanche demande la batterie et la basse de l'équipe de louange, deux personnes à l'accueil, quelqu'un à la régie son. Sur la page de l'organisation, **Calendrier** ouvre ses prochaines dates (**Voir plus** pour les suivantes), chacune avec son responsable et chaque groupe nécessaire. **Événements**, à côté de **Dates**, liste chaque événement une fois - son rythme, son responsable et ses groupes - avec **Modifier la série** pour en changer un en entier.
 
 ![Les événements d'une organisation, avec la couverture de chaque groupe](../../../assets/screenshots/fr/organization-events.jpg)
 
 Ses administrateurs en créent un avec **Nouvel événement** : son **Titre**, sa première date, son heure de début, sa durée, son fuseau horaire, **Répétition** et **Lieu (facultatif)** comme pour l'événement d'une équipe, son **Responsable** - un membre de l'organisation, qui est prévenu - et sous **Groupes nécessaires**, **Ajouter un groupe** pour chacun, avec les postes qu'on lui demande (ses postes, instruments, rôles ou noms ; voir [Postes nécessaires](/fr/teams/#postes-nécessaires)) et, si vous voulez, son **Arrivée (minutes avant)** : les musiciens une heure avant, l'accueil un quart d'heure. La part de chaque groupe a **Créer une liste pour chaque date**, activé par défaut pour un groupe qui utilise Songverse et désactivé pour un groupe qui ne fait que planifier : désactivez-le pour une réunion, et les dates de ce groupe n'ont pas de liste. **Enregistrer l'événement** ajoute l'événement au calendrier de chaque groupe : ses administrateurs font son équipe du jour comme pour n'importe lequel de ses événements, la date d'un groupe a sa liste quand il en demande une, et les inscrits reçoivent leurs rappels.
 
 - Dans le calendrier d'un groupe, l'événement est marqué **Planifié par** l'organisation (et son responsable). Sa date, son heure et son lieu se règlent dans les Événements de l'organisation ; les administrateurs du groupe choisissent seulement ce dont il a besoin, sous **Postes nécessaires**, et son heure d'arrivée.
-- Dans les Événements de l'organisation, ses administrateurs et le responsable de l'événement voient comment les postes de chaque groupe sont couverts (**Manque : Batterie**, ou **Au complet**), modifient l'événement avec **Modifier l'événement**, et **Annuler cette date** - ou la rétablir - pour tous les groupes à la fois. Les autres voient les groupes et combien sont prévus pour chacun.
+- Dans les Événements de l'organisation, ses administrateurs et le responsable de l'événement voient comment les postes de chaque groupe sont couverts (**Manque : Batterie**, ou **Au complet**), modifient l'événement avec **Modifier la série** (**Modifier l'événement** pour un événement qui ne se répète pas), et **Annuler cette date** - ou la rétablir - pour tous les groupes à la fois. Les autres voient les groupes et combien sont prévus pour chacun.
 - Seuls les administrateurs choisissent un autre responsable (qui est prévenu) et **Supprimer l'événement**, pour tous les groupes. Un groupe retiré des **Groupes nécessaires** perd sa part ; un groupe retiré de l'organisation la garde, comme son propre événement.
+
+Les administrateurs d'un groupe peuvent confier l'un de ses événements à l'organisation (voir [Calendrier](/fr/teams/#calendrier)). Il attend en haut du calendrier, pour les administrateurs de l'organisation, sous **Demandes pour rejoindre le calendrier** : **Accepter** en fait un événement de l'organisation, au même horaire, dont la personne qui a demandé est responsable, avec la part du groupe telle quelle - ses dates, réponses, équipes du jour et listes ; **Refuser** le laisse au groupe. La personne qui a demandé est prévenue dans les deux cas.
 
 Les **Modèles** gardent ce dont un événement a habituellement besoin : dans la fenêtre d'un événement, **Enregistrer comme modèle** sous un **Nom du modèle**. **Nouvel événement** part alors de l'un d'eux avec **Modèle**, qui remplit son titre, son heure, son lieu et ses groupes. Les administrateurs retirent les modèles sous **Modèles**.
 
