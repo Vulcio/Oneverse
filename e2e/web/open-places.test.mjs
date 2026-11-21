@@ -35,7 +35,7 @@ try {
     if (shots) await dialog.screenshot({ path: `${shots}/required-open-parts.png` });
     await dialog.getByRole("button", { name: "Save event" }).click();
     await dialog.waitFor({ state: "hidden" });
-    await calendar.locator("[data-event-date]").filter({ hasText: "Sunday" }).first().getByTestId("lineup-missing").getByText("Missing: Host, Music leader").waitFor();
+    await calendar.locator("[data-event-date]").filter({ hasText: "Sunday" }).first().getByTestId("lineup-missing").getByText("Missing: Host, Music").waitFor();
   });
 
   await step("a member takes the music leader's place, then gives it up", async () => {
@@ -46,13 +46,13 @@ try {
     const row = calendar.locator("[data-event-date]").filter({ hasText: "Sunday" }).first();
     await row.getByTestId("lineup-missing").waitFor();
     if (shots) await row.screenshot({ path: `${shots}/open-place.png` });
-    await row.getByTestId("lineup-volunteer").getByText("I'll do it: Music leader").click();
+    await row.getByTestId("lineup-volunteer").getByText("I'll do it: Music").click();
     await row.getByTestId("lineup-missing").getByText("Missing: Host").waitFor();
-    await row.locator('[data-my-place="ACCEPTED"]').getByText("You're on Music leader").waitFor();
+    await row.locator('[data-my-place="ACCEPTED"]').getByText("You're on Music").waitFor();
     if (await row.getByTestId("lineup-volunteer").count()) throw new Error("the place is still offered");
     await row.getByTestId("lineup-give-up").click();
     await row.getByTestId("lineup-volunteer").waitFor();
-    await row.getByTestId("lineup-missing").getByText("Missing: Host, Music leader").waitFor();
+    await row.getByTestId("lineup-missing").getByText("Missing: Host, Music").waitFor();
   });
 } finally {
   await browser.close();

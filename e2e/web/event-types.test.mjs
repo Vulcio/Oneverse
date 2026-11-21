@@ -1,5 +1,5 @@
 // Event types on a team's calendar (issue #523): the admin adds the
-// suggested Service (Host, Speaker, Music leader, Media operator) and Meeting (no set), then
+// suggested Service (Host, Speaker, Music, Media operator) and Meeting (no set), then
 // a new event picked from Meeting is filled from it - its title, time and
 // "Make a set for each date" off - and its date gets no set, nor a "Plan set".
 import { chromium } from "playwright";
@@ -22,7 +22,7 @@ try {
     await calendar.getByTestId("calendar-event-types").click();
     const dialog = page.getByTestId("event-types-dialog");
     await dialog.getByTestId("event-type-suggest-service").click();
-    await dialog.locator('[data-event-type="Service"]').getByText("Host, Speaker, Music leader, Media operator").waitFor();
+    await dialog.locator('[data-event-type="Service"]').getByText("Host, Speaker, Music, Media operator").waitFor();
     await dialog.getByTestId("event-type-suggest-meeting").click();
     await dialog.locator('[data-event-type="Meeting"]').getByTestId("event-type-no-set").waitFor();
     if (shots) await dialog.screenshot({ path: `${shots}/event-types.png` });
@@ -32,9 +32,9 @@ try {
     const dialog = page.getByTestId("event-types-dialog");
     await dialog.locator('[data-event-type="Service"]').getByTestId("event-type-edit").click();
     const editor = page.getByTestId("event-type-dialog");
-    await editor.getByTestId("event-part-add").selectOption("DRUMS");
+    await editor.getByTestId("event-part-add").selectOption("SOUND_ENGINEER");
     await editor.getByTestId("event-type-save").click();
-    await page.getByTestId("event-types-dialog").locator('[data-event-type="Service"]').getByText("Host, Speaker, Music leader, Media operator, Drums").waitFor();
+    await page.getByTestId("event-types-dialog").locator('[data-event-type="Service"]').getByText("Host, Speaker, Music, Media operator, Audio operator").waitFor();
     await page.keyboard.press("Escape");
     await page.getByTestId("event-types-dialog").waitFor({ state: "hidden" });
   });

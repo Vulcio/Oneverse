@@ -26,7 +26,7 @@ try {
     await page.getByTestId("organization-event-types").click();
     const dialog = page.getByTestId("event-types-dialog");
     await dialog.getByTestId("event-type-suggest-service").click();
-    await dialog.locator('[data-event-type="Service"]').getByText("Host, Speaker, Music leader, Media operator").waitFor();
+    await dialog.locator('[data-event-type="Service"]').getByText("Host, Speaker, Music, Media operator").waitFor();
     if (shots) await dialog.screenshot({ path: `${shots}/organization-event-types.png` });
     await page.keyboard.press("Escape");
   });

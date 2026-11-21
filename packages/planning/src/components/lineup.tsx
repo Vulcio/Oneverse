@@ -258,7 +258,7 @@ export function LineupDialog({
     }
   };
   const answerWord = (member: MemberEventAnswer) =>
-    member.away ? t("teamCalendar.conflictAway") : member.answer === "AVAILABLE" ? t("teamCalendar.answerAvailable") : member.answer === "IF_NEEDED" ? t("teamCalendar.answerIfNeeded") : member.answer === "UNAVAILABLE" ? t("teamCalendar.answerUnavailable") : "–";
+    member.away ? t("teamCalendar.conflictAway") : member.answer === "AVAILABLE" ? t("teamCalendar.answerSignedUp") : member.answer === "IF_NEEDED" ? t("teamCalendar.answerIfNeeded") : member.answer === "UNAVAILABLE" ? t("teamCalendar.answerUnavailable") : "–";
   const conflictWord = { AWAY: t("teamCalendar.conflictAway"), UNAVAILABLE: t("teamCalendar.conflictUnavailable"), ELSEWHERE: t("teamCalendar.conflictElsewhere") } as const;
   const statusWord = { PENDING: t("teamCalendar.lineupPending"), ACCEPTED: t("teamCalendar.lineupAccepted"), DECLINED: t("teamCalendar.lineupDeclined") } as const;
 

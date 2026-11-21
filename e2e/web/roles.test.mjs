@@ -60,11 +60,11 @@ await step("pick instruments and a role, save, badges appear in the header", asy
   if (!(await save.isDisabled())) throw new Error("save enabled before any change");
   await page.getByRole("button", { name: "Drums", exact: true }).click();
   await page.getByRole("button", { name: "Lead vocals", exact: true }).click();
-  await page.getByRole("button", { name: "Sound engineer", exact: true }).click();
+  await page.getByRole("button", { name: "Audio operator", exact: true }).click();
   if ((await page.getByRole("button", { name: "Drums", exact: true }).getAttribute("aria-pressed")) !== "true") throw new Error("not pressed");
   await save.click();
   await page.getByText("Saved.", { exact: true }).waitFor();
-  await headerBadges("Lead vocals|Drums|Sound engineer");
+  await headerBadges("Lead vocals|Drums|Audio operator");
   if (sql(`select array_to_string(instruments, ',') || ';' || array_to_string("techRoles", ',') from "User" where id='${member.id}'`) !== "LEAD_VOCALS,DRUMS;SOUND_ENGINEER") throw new Error("db mismatch");
 });
 
@@ -75,7 +75,7 @@ await step("roles survive a reload; unticking and saving removes one", async () 
   await page.getByRole("button", { name: "Drums", exact: true }).click();
   await page.getByRole("button", { name: "Save roles" }).click();
   await page.getByText("Saved.", { exact: true }).waitFor();
-  await headerBadges("Lead vocals|Sound engineer");
+  await headerBadges("Lead vocals|Audio operator");
 });
 await page.screenshot({ path: `${SP}/roles-dashboard.png`, fullPage: true });
 
@@ -91,7 +91,7 @@ await step("team page shows members' roles", async () => {
   // The team's list, not the sidebar's account button (which shows the email too).
   const row = page.getByRole("main").locator("li", { hasText: member.email }).first();
   await row.getByText("Lead vocals").waitFor();
-  await row.getByText("Sound engineer").waitFor();
+  await row.getByText("Audio operator").waitFor();
 });
 await page.screenshot({ path: `${SP}/roles-team.png`, fullPage: true });
 
@@ -101,7 +101,7 @@ await step("French labels", async () => {
   await page.waitForLoadState("networkidle");
   await page.getByRole("heading", { name: "Paramètres" }).waitFor();
   await page.getByRole("button", { name: "Chant principal", exact: true }).waitFor();
-  await page.getByRole("button", { name: "Ingénieur du son", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Sono", exact: true }).waitFor();
   await api(member, "PATCH", "/users/me", { locale: "en" });
 });
 

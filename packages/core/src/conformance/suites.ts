@@ -47,7 +47,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, notificationUrl, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { type AssignmentStatus, type EventPart, coversPart, missingRequired, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
@@ -2987,6 +2987,36 @@ export const CONFORMANCE: ConformanceArea[] = [
             ],
           },
           { name: "everyone scheduled declined: back to those available", args: [[{ userId: "a", answer: "AVAILABLE" }], [{ userId: "b", status: "DECLINED" }]] },
+        ],
+      },
+      withAsks: {
+        about: "A date's parts (issue #549): its event's, then what the date asks for besides (the instruments its music lead asked for), unless the event lists that part already.",
+        params: ["parts", "asks"],
+        run: withAsks,
+        cases: [
+          { name: "no asks: the event's parts", args: [[{ part: "MUSIC_LEADER", count: 1 }], null] },
+          { name: "drums and bass asked: after the event's", args: [[{ part: "MUSIC_LEADER", count: 1 }], [{ part: "DRUMS", count: 1, openTo: ["worship"] }, { part: "BASS", count: 1, openTo: ["worship"] }]] },
+          { name: "a part the event lists already isn't asked twice", args: [[{ part: "DRUMS", count: 2 }], [{ part: "DRUMS", count: 1 }, { name: "Choir", count: 3 }]] },
+        ],
+      },
+      asksOpenTo: {
+        about: "Who answers a date's asks (issue #549): the teams the event's Music part is open to, else the event's own team.",
+        params: ["parts", "teamId"],
+        run: asksOpenTo,
+        cases: [
+          { name: "Music open to Worship", args: [[{ part: "HOST", count: 1 }, { part: "MUSIC_LEADER", count: 1, openTo: ["worship"] }], "service"] },
+          { name: "Music the team's own", args: [[{ part: "MUSIC_LEADER", count: 1 }], "worship"] },
+          { name: "no Music part", args: [[], "team"] },
+        ],
+      },
+      fillingGroups: {
+        about: "Who a role is open to by default (issue #549): the groups that fill it.",
+        params: ["key", "groups"],
+        run: fillingGroups,
+        cases: [
+          { name: "Music: Worship", args: ["MUSIC_LEADER", [{ id: "worship", fills: ["MUSIC_LEADER"] }, { id: "tech", fills: ["MEDIA_OPERATOR", "SOUND_ENGINEER", "LIGHTS"] }]] },
+          { name: "Lights: Tech", args: ["LIGHTS", [{ id: "worship", fills: ["MUSIC_LEADER"] }, { id: "tech", fills: ["MEDIA_OPERATOR", "SOUND_ENGINEER", "LIGHTS"] }]] },
+          { name: "no group fills it", args: ["TECHNICIAN", [{ id: "worship", fills: ["MUSIC_LEADER"] }, { id: "kids", fills: null }]] },
         ],
       },
       missingRequired: {

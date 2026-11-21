@@ -17,6 +17,8 @@ Choisissez **Listes de chants** > **Nouvelle liste** :
 
 Une liste faite pour une date du calendrier de l'équipe montre, à ceux qui peuvent la modifier, **Qui peut jouer** ce jour-là : les membres de l'équipe sous **Je m'inscris**, **Si besoin**, **Pas disponible** (avec **Absent** pour les absences) et **Pas de réponse**, chacun avec ce qu'il aimerait jouer et sa place dans l'équipe du jour. La **Présidence** et le **Responsable musique** de la date sont nommés en haut quand elle en a. Toutes les dates n'ont pas besoin d'une présidence : c'est seulement quand l'événement en demande une (dans **Postes nécessaires**) et que personne n'y est encore placé que c'est signalé, avec ceux qui aimeraient l'être. Les notes ne sont montrées qu'aux administrateurs de l'équipe. **Ouvrir le calendrier** mène au calendrier de l'équipe.
 
+**Instruments pour cette date**, en haut, liste ce dont le groupe de musique a besoin ce jour-là, chacun avec qui s'y est placé (« Batterie 1/1 : Sam »). La personne à la **Musique** de la date - et les administrateurs de l'équipe - **Demander des instruments** (ou les **Modifier**) : les instruments, les postes du groupe ou un nom, chacun avec combien, puis **Enregistrer**. Ils sont ouverts à ceux à qui la **Musique** de l'événement est ouverte - son groupe, Louange par exemple : ses membres trouvent chaque place à côté de la date et sous **Postes ouverts** dans **Mon calendrier**, et s'y inscrivent. Un instrument qui n'est plus demandé emporte ses places.
+
 ## Les chants d'une liste
 
 ![Une liste de chants](../../../assets/screenshots/fr/set.jpg)
