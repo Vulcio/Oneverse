@@ -12,6 +12,9 @@ domain since #303 (sign-in and Oneverse's home at `app.oneverse.top`, the API at
 `docs.oneverse.top`, and Oneverse's website at `oneverse.top`). The rules below are unchanged by the
 rename.
 
+The product's words are in `GLOSSARY.md`: use them in code, UI text, docs and issues, and
+update it when a term is settled. The big decisions already made, and why, are in `docs/adr/`.
+
 ## Issues first
 
 Before starting an enhancement or a fix, make sure a GitHub issue describes

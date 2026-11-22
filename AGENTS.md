@@ -11,5 +11,6 @@ whatever its name. In short:
   the same message repeated.
 - **Tests and docs with the change:** an e2e suite in `e2e/`, the user docs in English and French
   (`apps/docs`), conformance cases for behaviour every client shares (`packages/core/conformance`).
+- **One vocabulary:** use the words in [GLOSSARY.md](GLOSSARY.md); past decisions are in `docs/adr/`.
 - **Reuse, don't fork:** another app or repository that needs Songverse's screens, chords or songs uses
   `@oneverse/core` and the existing components (see "The player screen" in CLAUDE.md).
