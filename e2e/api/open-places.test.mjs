@@ -32,7 +32,8 @@ try {
   const date = plus(3);
   const make = (parts) => call(planner, "POST", `/teams/${music.id}/events`, { title: "Sunday", date, startTime: "10:00", timeZone: "UTC", parts });
   let r = await make([{ part: "HOST", count: 1, openTo: [music.id] }]);
-  check("Host is never open", r.status === 400 && r.body.message.join().includes("openTo"), JSON.stringify(r.body));
+  check("Host can come from a team, like any position (issue #559)", r.status === 201 && r.body.parts[0].openTo.join() === music.id, JSON.stringify(r.body));
+  await call(planner, "DELETE", `/teams/${music.id}/events/${r.body.id}`);
   r = await make([{ part: "MUSIC_LEADER", count: 1, openTo: [elsewhere.id] }]);
   check("open only to the team or groups of its organisation", r.status === 400 && r.body.message.join().includes(elsewhere.id), JSON.stringify(r.body));
   r = await make([

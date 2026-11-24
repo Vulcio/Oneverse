@@ -65,11 +65,11 @@ const loose = `/teams/${team.id}/events/${rehearsal.id}/dates/${plus(5)}`;
 r = await call(drummer, "PUT", `${loose}/answer`, { answer: "AVAILABLE", wishes: ["PIANO"] });
 check("no parts: what one plays", r.status === 200 && r.body.wishes.join() === "PIANO", JSON.stringify(r.body));
 r = await call(drummer, "PUT", `${loose}/answer`, { answer: "AVAILABLE", wishes: ["HOST", "PIANO"] });
-check("…and hosting", r.status === 200 && r.body.wishes.join() === "HOST,PIANO", JSON.stringify(r.body));
+check("…not hosting: only an event asks for it (issue #559)", r.status === 400, JSON.stringify(r.body));
 r = await call(drummer, "PUT", `${loose}/answer`, { answer: "AVAILABLE", wishes: ["BASS_GUITAR"] });
 check("…not what one doesn't", r.status === 400, JSON.stringify(r.body));
 const mineThere = (await call(drummer, "GET", `/users/me/event-dates?from=${plus(5)}&to=${plus(5)}`)).body.find((one) => one.eventId === rehearsal.id);
-check("My calendar: what one may wish for", mineThere.wishOptions.map((part) => part.part).join() === "HOST,SPEAKER,DRUMS,PIANO" && mineThere.myAnswer.wishes.join() === "HOST,PIANO", JSON.stringify(mineThere));
+check("My calendar: what one may wish for", mineThere.wishOptions.map((part) => part.part).join() === "DRUMS,PIANO" && mineThere.myAnswer.wishes.join() === "PIANO", JSON.stringify(mineThere));
 r = await call(admin, "GET", `${base}/answers`);
 check("the admins' answers: everyone's wishes", r.body.find((one) => one.userId === drummer.id).wishes.join() === "DRUMS,MUSIC_LEADER", JSON.stringify(r.body));
 

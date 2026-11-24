@@ -2,7 +2,6 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { AVAILABILITY_ANSWERS, missingRequired, volunteerOptions, callAt, wishOptions, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@oneverse/core";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { givenOn, givenPartsAmong } from "../roles/capabilities.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
 import { placesElsewhere, type LineupConflict } from "./lineup.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
@@ -54,12 +53,9 @@ export class AvailabilityService {
     const viewerUser = await this.prisma.client.user.findUnique({ where: { id: viewerId }, select: { instruments: true, techRoles: true } });
     // …and the group's positions they cover (issue #241).
     const viewerMembership = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: viewerId } }, select: { positionIds: true } });
-    // Who hosts the organisation's events, by a role (issue #520); anyone the team's own.
-    const partsGiven = await givenPartsAmong(this.prisma.client, teamId, [viewerId, ...memberRows.map((m) => m.userId)]);
     const eventRows = await this.prisma.client.teamEvent.findMany({ where: { id: { in: [...new Set(dates.map((d) => d.eventId))] } }, select: { id: true, organizationEventId: true, timeZone: true } });
-    const organizationEventOf = new Map(eventRows.map((e) => [e.id, e.organizationEventId]));
     const timeZoneOf = new Map(eventRows.map((e) => [e.id, e.timeZone]));
-    const viewerAt = (eventId: string) => (viewerUser ? { ...viewerUser, positionIds: viewerMembership?.positionIds ?? [], givenParts: givenOn(organizationEventOf.get(eventId), partsGiven.get(viewerId)) } : null);
+    const viewerAt = viewerUser ? { ...viewerUser, positionIds: viewerMembership?.positionIds ?? [] } : null;
     // The viewer's teams: the open places (issue #528) they may take.
     // Their groups and those above them (issue #549): whose open places they may take.
     const viewerTeams = await withGroupsAbove(this.prisma.client, (await this.prisma.client.teamMembership.findMany({ where: { userId: viewerId }, select: { teamId: true } })).map((m) => m.teamId));
@@ -93,7 +89,7 @@ export class AvailabilityService {
       byDate.set(k, [...(byDate.get(k) ?? []), answer]);
     }
     return dates.map((date) => {
-      const viewer = viewerAt(date.eventId);
+      const viewer = viewerAt;
       const given = byDate.get(key(date.eventId, date.date)) ?? [];
       const mine = given.find((answer) => answer.userId === viewerId);
       const myAnswer = { ...effectiveAnswer(mine?.answer ?? null, away.get(viewerId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId, wishes: mine?.wishes ?? [] };
@@ -108,7 +104,7 @@ export class AvailabilityService {
           const own = given.find((answer) => answer.userId === userId)?.answer ?? null;
           const shown = effectiveAnswer(own, away.get(userId) ?? [], date.date);
           shownOf.set(userId, shown);
-          return { ...user, positionIds, givenParts: givenOn(organizationEventOf.get(date.eventId), partsGiven.get(userId)), answer: shown.answer };
+          return { ...user, positionIds, answer: shown.answer };
         });
         for (const member of answered) counts[member.answer ?? "NONE"]++;
         if (date.parts?.length) coverage = partCoverage(date.parts, answered, placed);
@@ -199,8 +195,7 @@ export class AvailabilityService {
       this.prisma.client.user.findUnique({ where: { id: userId }, select: { instruments: true, techRoles: true } }),
       this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { positionIds: true } }),
     ]);
-    const givenParts = givenOn(event.organizationEventId, event.organizationEventId ? (await givenPartsAmong(this.prisma.client, teamId, [userId])).get(userId) : []);
-    return wishOptions(partsOf(event, date), { instruments: user?.instruments ?? [], techRoles: user?.techRoles ?? [], positionIds: membership?.positionIds ?? [], givenParts });
+    return wishOptions(partsOf(event, date), { instruments: user?.instruments ?? [], techRoles: user?.techRoles ?? [], positionIds: membership?.positionIds ?? [] });
   }
 
   private async checkedWishes(teamId: string, event: Pick<EventRow, "parts" | "dates" | "organizationEventId">, date: string, userId: string, wishes: string[]): Promise<string[]> {
@@ -229,7 +224,6 @@ export class AvailabilityService {
       this.prisma.client.teamEventAnswer.findMany({ where: { eventId, date: day(date), userId: { in: userIds } }, include: { answeredBy: { select: { displayName: true } } } }),
       this.awayOf(userIds, date, date),
     ]);
-    const given = await givenPartsAmong(this.prisma.client, teamId, userIds);
     const order: (AvailabilityAnswer | null)[] = [...AVAILABILITY_ANSWERS, null];
     return members
       .map(({ user, role, positionIds }) => {
@@ -248,7 +242,6 @@ export class AvailabilityService {
           note: own?.note ?? (shown.away ? (ranges[0]?.note ?? null) : null),
           answeredBy: own?.answeredBy?.displayName ?? null,
           wishes: own?.wishes ?? [],
-          givenParts: givenOn(event.organizationEventId, given.get(user.id)),
         };
       })
       .sort((a, b) => order.indexOf(a.answer) - order.indexOf(b.answer) || a.displayName.localeCompare(b.displayName));
@@ -290,9 +283,6 @@ export class AvailabilityService {
     // The positions they cover, team by team (issue #241).
     const positionsIn = new Map(memberships.map((m) => [m.teamId, m.positionIds]));
     const me = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { instruments: true, techRoles: true } });
-    // The given parts (hosting) a role lets them fill, team by team (issue #520).
-    const givenIn = new Map<string, string[]>();
-    for (const membership of memberships) givenIn.set(membership.teamId, (await givenPartsAmong(this.prisma.client, membership.teamId, [userId])).get(userId) ?? []);
     const memberTeams = new Set(memberships.map((m) => m.teamId));
     const reach = await withGroupsAbove(this.prisma.client, memberTeams);
     // A guest's dates too (issue #235, phase 7): the events of other teams they're on a line-up for.
@@ -377,7 +367,7 @@ export class AvailabilityService {
             myAnswer: { ...effectiveAnswer(mine?.answer ?? null, away.get(userId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId, wishes: mine?.wishes ?? [] },
             parts: partsOf(event, date.date),
             // What they may say they'd like to play (issue #520).
-            wishOptions: wishOptions(partsOf(event, date.date), { instruments: me?.instruments ?? [], techRoles: me?.techRoles ?? [], positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenOn(event.organizationEventId, givenIn.get(event.teamId)) }),
+            wishOptions: wishOptions(partsOf(event, date.date), { instruments: me?.instruments ?? [], techRoles: me?.techRoles ?? [], positionIds: positionsIn.get(event.teamId) ?? [] }),
             rehearsalFor: null as RehearsalOf | null,
             // Issue #528: the required parts still to fill, and the open places one may take.
             missing: missingRequired(partsOf(event, date.date), dayLineup),
@@ -405,7 +395,7 @@ export class AvailabilityService {
                     !onIt &&
                     !!part &&
                     !!me &&
-                    coversPart({ ...me, positionIds: positionsIn.get(event.teamId) ?? [], givenParts: givenOn(event.organizationEventId, givenIn.get(event.teamId)) }, part) &&
+                    coversPart({ ...me, positionIds: positionsIn.get(event.teamId) ?? [] }, part) &&
                     (!!row.swapWidenedAt || effectiveAnswer(answerOf.get(key(event.id, date.date))?.answer ?? null, away.get(userId) ?? [], date.date).answer === "IF_NEEDED"),
                 };
               }),

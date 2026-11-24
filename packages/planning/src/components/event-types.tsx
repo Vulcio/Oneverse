@@ -274,7 +274,7 @@ function EventTypeDialog({
             <Input id="event-type-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} />
           </div>
           {makesSets ? <WithSetField id="event-type-with-set" checked={withSet} onChange={setWithSet} /> : null}
-          <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} ownTeamId={"teamId" in owner ? owner.teamId : OWN_TEAM} />
+          <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} />
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">

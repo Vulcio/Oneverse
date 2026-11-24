@@ -17,9 +17,9 @@ export interface EventPart {
   /** It must be filled (issue #528): a date whose line-up lacks it says so ("Missing: Host"). */
   required?: boolean | null;
   /**
-   * Teams whose members may put themselves on it while places are left
-   * (issue #528, "open places"): the event's own team or groups of its
-   * organisation, by ID. Never a given part (GIVEN_PARTS).
+   * The team its people come from (issues #528, #559): its members put
+   * themselves on it while places are left. The event's own team or groups
+   * of its organisation, by ID (older events may list several).
    */
   openTo?: string[] | null;
   /**
@@ -56,7 +56,7 @@ export function placesLeft(part: EventPart, lineup: readonly { partKey: string; 
  */
 export function volunteerOptions(parts: readonly EventPart[], lineup: readonly { userId: string | null; partKey: string; status: AssignmentStatus }[], userId: string, teamIds: ReadonlySet<string>): string[] {
   return parts
-    .filter((part) => part.openTo?.some((id) => teamIds.has(id)) && !(part.part && isGivenPart(part.part)))
+    .filter((part) => part.openTo?.some((id) => teamIds.has(id)))
     .filter((part) => placesLeft(part, lineup) > 0 && !lineup.some((one) => one.partKey === partKey(part) && one.userId === userId && one.status !== "DECLINED"))
     .map((part) => partKey(part));
 }
@@ -76,15 +76,16 @@ export interface PartMember {
   techRoles: string[];
   /** The group's own positions they cover (issue #241). */
   positionIds?: string[];
-  /** The given parts (GIVEN_PARTS) a role lets them fill there (issue #520): the only ones who cover them. */
-  givenParts?: string[];
 }
 
-/** Whether a member covers a part: they listed its instrument or role, or ticked the group's position. A named part, anyone. */
+/**
+ * Whether a member covers a part: they listed its instrument or role, or
+ * ticked the group's position. A named part, Host or Speaker (nobody lists
+ * those, issue #559), anyone.
+ */
 export function coversPart(member: PartMember, part: EventPart): boolean {
   if (part.position) return (member.positionIds ?? []).includes(part.position);
-  if (!part.part) return true;
-  if (isGivenPart(part.part)) return (member.givenParts ?? []).includes(part.part);
+  if (!part.part || isEventOnlyPart(part.part)) return true;
   return member.instruments.includes(part.part) || member.techRoles.includes(part.part);
 }
 
@@ -97,13 +98,11 @@ export function partKey(part: EventPart): string {
 /**
  * The parts someone may say they'd like to play on a date (issue #520): the
  * date's own parts, when its event lists any; else what they play - their
- * instruments and roles. A given part (hosting) only for those a role gives
- * it. Wishes are kept by partKey().
+ * instruments and roles. Wishes are kept by partKey().
  */
 export function wishOptions(parts: readonly EventPart[], member: PartMember): EventPart[] {
-  const given = member.givenParts ?? [];
-  if (parts.length > 0) return parts.filter((part) => !part.part || !isGivenPart(part.part) || given.includes(part.part));
-  return [...given, ...member.instruments, ...member.techRoles].map((part) => ({ part, count: 1 }));
+  if (parts.length > 0) return [...parts];
+  return [...member.instruments, ...member.techRoles].map((part) => ({ part, count: 1 }));
 }
 
 /** The longest list of wishes kept with an answer. */
@@ -113,40 +112,34 @@ export const WISHES_LIMIT = 30;
 export const MUSIC_LEADER = "MUSIC_LEADER";
 /**
  * Who hosts it ("Présidence", issue #520): picks its songs, passages and
- * announcements. A given part: covered only by those a role lets host
- * (Role.canHost) - not something one lists oneself.
+ * announcements. Nobody lists it oneself; since issue #559 it comes from
+ * a team the event names, like any position, and no role gives it.
  */
 export const HOST = "HOST";
 /**
- * Who speaks or preaches (issue #523). A given part too, from those a role
- * lets speak (Role.canSpeak) - and, unlike hosting, a guest: one of the
- * admin's People or someone without an account (GUEST_PARTS).
+ * Who speaks or preaches (issue #523). Like hosting, from a team the event
+ * names (issue #559) - and, unlike hosting, a guest: one of the admin's
+ * People or someone without an account (GUEST_PARTS).
  */
 export const SPEAKER = "SPEAKER";
 
-/**
- * Parts filled only by those a role gives them (issue #520), never listed by
- * oneself: the part's key, and the Role field that gives it. An
- * organisation's role given to one of its groups gives it to the group's
- * members; given to one person, to them alone.
- */
-export const GIVEN_PARTS = { [HOST]: "canHost", [SPEAKER]: "canSpeak" } as const satisfies Record<string, string>;
+/** Parts only an event asks for (issues #520, #523): never listed by oneself, never a date's ask. */
+export const EVENT_ONLY_PARTS: readonly string[] = [HOST, SPEAKER];
 
-/** Given parts a guest can fill too (issue #523): someone from outside, by name or one of the admin's People. */
+/** Whether only an event asks for a part (EVENT_ONLY_PARTS): Host, Speaker. */
+export function isEventOnlyPart(key: string): boolean {
+  return EVENT_ONLY_PARTS.includes(key);
+}
+
+/** Event-only parts a guest can fill too (issue #523): someone from outside, by name or one of the admin's People. */
 export const GUEST_PARTS: readonly string[] = [SPEAKER];
 
 /**
- * Whether a part is for members only (brice, issue #520): a given part guests
- * can't fill - hosting. Never someone without an account or from outside the
- * team and its organisation.
+ * Whether a part is for members only (brice, issue #520): hosting. Never
+ * someone without an account or from outside the team and its organisation.
  */
 export function isMembersOnlyPart(key: string): boolean {
-  return isGivenPart(key) && !GUEST_PARTS.includes(key);
-}
-
-/** Whether a part is one a role gives (GIVEN_PARTS). */
-export function isGivenPart(key: string): boolean {
-  return Object.hasOwn(GIVEN_PARTS, key);
+  return isEventOnlyPart(key) && !GUEST_PARTS.includes(key);
 }
 /**
  * The roles an event asks for (issue #549), in the order they're offered:
@@ -156,8 +149,8 @@ export function isGivenPart(key: string): boolean {
  */
 export const EVENT_ROLES: readonly string[] = [HOST, SPEAKER, MUSIC_LEADER, "MEDIA_OPERATOR", "SOUND_ENGINEER", "LIGHTS", "TECHNICIAN"];
 
-/** The roles a group can fill (issue #549): every event role but the given ones (a role gives those to people). */
-export const FILLABLE_ROLES: readonly string[] = EVENT_ROLES.filter((key) => !isGivenPart(key));
+/** The roles a group can fill (issues #549, #559): every event role, Host and Speaker included. */
+export const FILLABLE_ROLES: readonly string[] = EVENT_ROLES;
 
 /**
  * Who a role is open to by default (issue #549): the groups that fill it -

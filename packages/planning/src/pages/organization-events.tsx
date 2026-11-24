@@ -601,7 +601,6 @@ function OrganizationEventDialog({
                     customInstruments={customInstruments}
                     partLabel={partLabel}
                     openToTeams={[...(team ? [team] : []), ...organization.teams.filter((one) => one.id !== need.teamId)].map((one) => ({ id: one.id, name: one.name, fills: one.fills ?? [] }))}
-                    ownTeamId={need.teamId}
                   />
                   <div className="flex items-center gap-2">
                     <Label htmlFor={`need-call-${need.teamId}`} className="text-xs font-normal text-muted-foreground">

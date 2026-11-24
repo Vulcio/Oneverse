@@ -10,8 +10,6 @@ const role = (overrides: Partial<Parameters<typeof combineRoles>[0][number]> = {
   canOperateScreens: false,
   canCue: false,
   canRoute: false,
-  canHost: false,
-  canSpeak: false,
   canManageScreens: false,
   canUseOwnStorage: false,
   canStoreFiles: false,

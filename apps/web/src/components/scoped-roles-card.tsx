@@ -72,8 +72,6 @@ export function ScopedRolesCard({ owner, members }: { owner: Owner; members: { u
       role.canOperateScreens ? t("admin.roleAllowsOperateScreens") : null,
       role.canCue ? t("admin.roleAllowsCue") : null,
       role.canRoute ? t("admin.roleAllowsRoute") : null,
-      role.canHost ? t("admin.roleAllowsHost") : null,
-      role.canSpeak ? t("admin.roleAllowsSpeak") : null,
       role.canManageScreens ? t("admin.roleAllowsManageScreens") : null,
       role.canStoreFiles ? (role.storageLimitMb != null ? t("ownRoles.storageTier", { mb: role.storageLimitMb }) : t("ownRoles.storesFiles")) : null,
     ].filter((one): one is string => one !== null);

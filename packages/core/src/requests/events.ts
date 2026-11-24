@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { ASSIGNMENT_STATUSES, DATE_ASKS_LIMIT, isGivenPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
+import { ASSIGNMENT_STATUSES, DATE_ASKS_LIMIT, isEventOnlyPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
@@ -28,8 +28,7 @@ const EventPartSchema = z
     openTo: optional(z.array(z.string().trim().min(1).max(64)).max(OPEN_TO_LIMIT)).describe("Teams whose members may put themselves on it (issue #528): the event's team or groups of its organisation"),
     leadsSet: optional(z.boolean()).describe("Whoever fills it leads the date's set (issue #559); left out, Host and Music leader do"),
   })
-  .refine((part) => !(part.part && (part.position || part.name)) && !!(part.part || part.position || part.name), "Each part needs either part, position or name")
-  .refine((part) => !part.openTo?.length || !part.part || !isGivenPart(part.part), "openTo isn't for Host or Speaker: a role or the admins decide them");
+  .refine((part) => !(part.part && (part.position || part.name)) && !!(part.part || part.position || part.name), "Each part needs either part, position or name");
 
 const eventParts = z
   .array(EventPartSchema)
@@ -121,7 +120,7 @@ export const SetTeamEventDateAsksSchema = z.strictObject({
     .array(EventPartSchema)
     .max(DATE_ASKS_LIMIT)
     .refine((parts) => new Set(parts.map((part) => partKey(part))).size === parts.length, "parts must not list the same part twice")
-    .refine((parts) => parts.every((part) => !part.part || !isGivenPart(part.part)), "parts can't ask for a Host or a Speaker: the event does")
+    .refine((parts) => parts.every((part) => !part.part || !isEventOnlyPart(part.part)), "parts can't ask for a Host or a Speaker: the event does")
     .describe("What the date asks for besides its event's parts: instruments, positions or names, with how many"),
 });
 export type SetTeamEventDateAsksRequest = z.input<typeof SetTeamEventDateAsksSchema>;

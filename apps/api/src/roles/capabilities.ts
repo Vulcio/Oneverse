@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@oneverse/db";
-import { GIVEN_PARTS } from "@oneverse/core";
 import { requestMemo } from "../common/request-memo.js";
 
 /**
@@ -21,10 +20,6 @@ export interface Capabilities {
   canCue: boolean;
   /** Changes what the screens of the sets they can open draw - their layers and overlays (issue #322), without presenting. */
   canRoute: boolean;
-  /** Hosts a team's dates (issue #520): may be on a date's line-up as its Host, who edits the date's set. */
-  canHost: boolean;
-  /** Speaks at a team's dates (issue #523): may be on a date's line-up as its Speaker. */
-  canSpeak: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations (issue #322), without being their admin. */
   canManageScreens: boolean;
   /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
@@ -50,8 +45,6 @@ type RoleRow = {
   canOperateScreens: boolean;
   canCue: boolean;
   canRoute: boolean;
-  canHost: boolean;
-  canSpeak: boolean;
   canManageScreens: boolean;
   canUseOwnStorage: boolean;
   canStoreFiles: boolean;
@@ -69,8 +62,6 @@ const ROLE_FIELDS = {
   canOperateScreens: true,
   canCue: true,
   canRoute: true,
-  canHost: true,
-  canSpeak: true,
   canManageScreens: true,
   canUseOwnStorage: true,
   canStoreFiles: true,
@@ -95,8 +86,6 @@ export function combineRoles(roles: RoleRow[]): Capabilities {
     canOperateScreens: roles.some((role) => role.canOperateScreens),
     canCue: roles.some((role) => role.canCue),
     canRoute: roles.some((role) => role.canRoute),
-    canHost: roles.some((role) => role.canHost),
-    canSpeak: roles.some((role) => role.canSpeak),
     canManageScreens: roles.some((role) => role.canManageScreens),
     canUseOwnStorage: roles.some((role) => role.canUseOwnStorage),
     canStoreFiles: roles.some((role) => role.canStoreFiles),
@@ -157,46 +146,14 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
         },
       },
     },
-    select: { id: true, canOperateScreens: true, canCue: true, canRoute: true, canHost: true, canSpeak: true },
+    select: { id: true, canOperateScreens: true, canCue: true, canRoute: true },
   });
   return {
     ...everywhere,
     canOperateScreens: everywhere.canOperateScreens || scoped.some((role) => role.canOperateScreens),
     canCue: everywhere.canCue || scoped.some((role) => role.canCue),
     canRoute: everywhere.canRoute || scoped.some((role) => role.canRoute),
-    canHost: everywhere.canHost || scoped.some((role) => role.canHost),
-    canSpeak: everywhere.canSpeak || scoped.some((role) => role.canSpeak),
   };
-}
-
-/**
- * The given parts (GIVEN_PARTS: hosting) each of `userIds` may fill on a
- * team's organisation events (issue #520; givenOn() for a date): from their roles everywhere, or given on that
- * team or its organisation - to them, or to a group of the organisation
- * they're in.
- */
-export async function givenPartsAmong(prisma: PrismaClient, teamId: string, userIds: readonly string[]): Promise<Map<string, string[]>> {
-  const out = new Map<string, string[]>();
-  for (const userId of new Set(userIds)) {
-    const capabilities = await capabilitiesIn(prisma, userId, teamId);
-    out.set(userId, Object.entries(GIVEN_PARTS).filter(([, field]) => capabilities[field]).map(([part]) => part));
-  }
-  return out;
-}
-
-/**
- * The given parts someone may fill on an event's dates (issue #520): on an
- * organisation's event, those their roles give them (`byRole`, from
- * givenPartsAmong); on a team's own event, every one - its admins name
- * whoever they like.
- */
-export function givenOn(organizationEventId: string | null | undefined, byRole: readonly string[] | undefined): string[] {
-  return organizationEventId ? [...(byRole ?? [])] : Object.keys(GIVEN_PARTS);
-}
-
-/** Whether someone may fill a given part on a team's dates. */
-export async function mayFill(prisma: PrismaClient, teamId: string, userId: string, part: string): Promise<boolean> {
-  return ((await givenPartsAmong(prisma, teamId, [userId])).get(userId) ?? []).includes(part);
 }
 
 /**

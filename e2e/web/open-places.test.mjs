@@ -27,7 +27,8 @@ try {
     await dialog.getByTestId("event-part-add").selectOption("HOST");
     await dialog.getByTestId("event-part-add").selectOption("MUSIC_LEADER");
     const host = dialog.locator('[data-part="HOST"]');
-    if (await host.getByTestId("event-part-from").count()) throw new Error("Host can come from a team");
+    // Issue #559: Host can come from a team too; left on nobody, the admins choose.
+    if ((await host.getByTestId("event-part-from").inputValue()) !== "") throw new Error("Host comes from a team at first");
     await host.getByTestId("event-part-required").check();
     const leader = dialog.locator('[data-part="MUSIC_LEADER"]');
     await leader.getByTestId("event-part-required").check();

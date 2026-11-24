@@ -1,4 +1,4 @@
-import { coversPart, isGivenPart, isMembersOnlyPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
+import { coversPart, isEventOnlyPart, isMembersOnlyPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
 import { AlertTriangle, ArrowLeftRight, Check, Clock, HandHelping, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,8 +18,8 @@ export function usePartLabel(customInstruments: readonly CustomInstrument[], gro
   const instrumentLabel = useInstrumentLabel(customInstruments);
   const name = (part: EventPart) => {
     if (!part.part) return part.name ?? "";
-    // Hosting (issue #520) is named with the roles, though a role's right gives it; an event's role by its high-level name (issue #549: Music).
-    if (isGivenPart(part.part) || (TECH_ROLES as readonly string[]).includes(part.part)) return i18n.exists(`roles.eventRole.${part.part}`) ? t(`roles.eventRole.${part.part}`) : t(`roles.techRole.${part.part}`);
+    // Host and Speaker (issues #520, #523) are named with the roles; an event's role by its high-level name (issue #549: Music).
+    if (isEventOnlyPart(part.part) || (TECH_ROLES as readonly string[]).includes(part.part)) return i18n.exists(`roles.eventRole.${part.part}`) ? t(`roles.eventRole.${part.part}`) : t(`roles.techRole.${part.part}`);
     return instrumentLabel(part.part);
   };
   return (part) => {

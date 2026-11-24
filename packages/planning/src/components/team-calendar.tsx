@@ -1,4 +1,4 @@
-import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, isGivenPart, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, Building2, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -1034,7 +1034,7 @@ function EventDialog({
             <p className="text-xs text-muted-foreground">{t("teamCalendar.callMinutesHint")}</p>
           </div>
           {makesSets && !parentEvent ? <WithSetField id="event-with-set" checked={withSet} onChange={setWithSet} /> : null}
-          {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} ownTeamId={teamId} />}
+          {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} />}
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
         {/* Moved to the organisation (issue #549), one-off or series: its admins accept it; dates, answers, line-ups and sets stay. */}
@@ -1192,7 +1192,6 @@ export function PartsEditor({
   customInstruments,
   partLabel,
   openToTeams = [],
-  ownTeamId,
   instruments = false,
 }: {
   parts: EventPart[];
@@ -1203,8 +1202,6 @@ export function PartsEditor({
   partLabel: (part: EventPart) => string;
   /** The teams a part's places may be open to (issue #528): the event's team and its organisation's groups. None: no open places. */
   openToTeams?: readonly OpenToTeam[];
-  /** The event's team: a place opened goes to its members first. */
-  ownTeamId?: string;
   /**
    * Instruments offered (issue #549): only for what a date asks for from its
    * set. An event asks for roles - Music, not Drums; its music lead asks for
@@ -1267,7 +1264,7 @@ export function PartsEditor({
                   </label>
                 ) : null}
                 {/* Issue #559: a position comes from a team - its members offer, and are on at once. None: the admins choose who. */}
-                {openToTeams.length > 0 && !instruments && !(part.part && isGivenPart(part.part)) ? (
+                {openToTeams.length > 0 && !instruments ? (
                   <label className="flex items-center gap-1.5">
                     {t("teamCalendar.partFrom")}
                     <NativeSelect
@@ -1394,7 +1391,7 @@ export type OpenToTeam = { id: string; name: string; fills?: string[] };
  */
 export function withFillingGroups(parts: EventPart[], groups: readonly OpenToTeam[]): EventPart[] {
   return parts.map((part) => {
-    if (part.openTo?.length || !part.part || isGivenPart(part.part)) return part;
+    if (part.openTo?.length || !part.part) return part;
     const filling = fillingGroups(part.part, groups);
     return filling.length > 0 ? { ...part, openTo: filling } : part;
   });

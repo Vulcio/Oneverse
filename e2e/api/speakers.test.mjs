@@ -1,9 +1,8 @@
-// Who may speak (issue #523). On a team's own event, its admins put whoever
-// they like on Speaker. On an organisation's event, like hosting (issue #520),
-// a role's right - "Speak at the dates" - decides which members may: given by
-// the organisation to one of its groups or to one person as a one-off. Unlike
-// hosting, guests can always speak there too, even from outside the
-// organisation: someone without an account, by name.
+// Who may speak (issues #523, #559). The admins put whoever they like on
+// Speaker: a member, one of their People, or a guest without an account, by
+// name. No role gives it: an event takes its Speaker from a team (one of the
+// organisation's groups, "Preaching"), whose members may be put on it
+// without being in the team that has the date.
 import { call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
 
 const admin = await user("Speakers admin");
@@ -30,15 +29,13 @@ try {
   // A team's own event: its admins pick anyone.
   const own = (await call(planner, "POST", `/teams/${music.id}/events`, { title: "Practice", date: plus(4), startTime: "19:00", timeZone: "UTC", parts: [{ part: "SPEAKER", count: 1 }] })).body;
   let r = await call(planner, "POST", `/teams/${music.id}/events/${own.id}/dates/${plus(4)}/lineup`, { userId: musician.id, part: "SPEAKER" });
-  check("a team's own event: a member without the role speaks", r.status === 201, JSON.stringify(r.body));
+  check("a team's own event: a member speaks", r.status === 201, JSON.stringify(r.body));
 
-  const made = (await call(planner, "POST", `/organizations/${org.id}/events`, { title: "Sunday", date: plus(3), startTime: "10:00", timeZone: "UTC", hostUserId: planner.id, needs: [{ teamId: music.id, parts: [{ part: "SPEAKER", count: 3 }, { part: "DRUMS", count: 1 }] }] })).body;
+  const made = (await call(planner, "POST", `/organizations/${org.id}/events`, { title: "Sunday", date: plus(3), startTime: "10:00", timeZone: "UTC", hostUserId: planner.id, needs: [{ teamId: music.id, parts: [{ part: "SPEAKER", count: 3, openTo: [preaching.id] }, { part: "DRUMS", count: 1 }] }] })).body;
   const event = (await call(planner, "GET", `/teams/${music.id}/events`)).body.find((one) => one.organizationEventId === made.id);
   const base = `/teams/${music.id}/events/${event.id}/dates/${plus(3)}`;
-  r = await call(planner, "POST", `${base}/lineup`, { userId: preacher.id, part: "SPEAKER" });
-  check("an organisation's event, without the role: no member speaks", r.status === 400, JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { userId: musician.id, part: "SPEAKER" });
-  check("…not even a member of the team", r.status === 400, JSON.stringify(r.body));
+  check("an organisation's event: the admins put a member of the team on Speaker", r.status === 201, JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { guestName: "Pastor Jean", part: "SPEAKER" });
   check("a speaker without an account: not without an email", r.status === 400 && r.body.message.join().includes("guestEmail"), JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { guestName: "Pastor Jean", guestEmail: "Jean@Example.org", part: "SPEAKER" });
@@ -49,25 +46,14 @@ try {
   check("the team's admins see the speaker's email", (await seen(planner))?.guestEmail === "jean@example.org");
   check("…its members don't", (await seen(musician))?.guestEmail === null, JSON.stringify(await seen(musician)));
 
-  const speakers = (await call(planner, "POST", `/organizations/${org.id}/roles`, { name: "Speakers", canSpeak: true })).body;
-  check("the organisation's own role that speaks", speakers.canSpeak === true, JSON.stringify(speakers));
-  r = await call(planner, "PUT", `/organizations/${org.id}/teams/${preaching.id}/roles`, { roleIds: [speakers.id] });
-  check("given to the Preaching group", r.status === 204 || r.status === 200, `${r.status} ${JSON.stringify(r.body)}`);
+  r = await call(planner, "POST", `${base}/lineup`, { userId: visitor.id, part: "SPEAKER" });
+  check("someone outside the team and Preaching, not one of the planner's People: no", r.status === 400, JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { userId: preacher.id, part: "SPEAKER" });
-  check("a member of that group speaks at another team's date", r.status === 201, JSON.stringify(r.body));
-  r = await call(planner, "POST", `${base}/lineup`, { userId: visitor.id, part: "SPEAKER" });
-  check("someone outside the group, not one of the planner's People: not yet", r.status === 400, JSON.stringify(r.body));
-  r = await call(planner, "PUT", `/organizations/${org.id}/members/${visitor.id}/roles`, { roleIds: [speakers.id] });
-  check("given to them alone, as a one-off", r.status === 204, String(r.status));
-  r = await call(planner, "POST", `${base}/lineup`, { userId: visitor.id, part: "SPEAKER" });
-  check("…they speak too", r.status === 201, JSON.stringify(r.body));
+  check("a member of Preaching, where the Speaker comes from, speaks at the music group's date", r.status === 201, JSON.stringify(r.body));
   r = await call(planner, "POST", `${base}/lineup`, { guestName: "Someone else", part: "DRUMS" });
   check("other parts: a guest by name alone, no", r.status === 400 && r.body.message.join().includes("guestEmail"), JSON.stringify(r.body));
-  r = await call(planner, "POST", `${base}/lineup`, { userId: musician.id, part: "SPEAKER" });
-  check("a member without the role: still not", r.status === 400, JSON.stringify(r.body));
   r = await call(musician, "PUT", `${base}/answer`, { answer: "AVAILABLE", wishes: ["SPEAKER"] });
-  check("…nor wishing for it", r.status === 400, JSON.stringify(r.body));
-
+  check("a member may wish to speak: no role is needed", r.status === 200, JSON.stringify(r.body));
   // An organisation's event (issue #523): a music group's part can go without a set - a meeting.
   const meeting = (await call(planner, "POST", `/organizations/${org.id}/events`, { title: "Members' meeting", date: plus(5), startTime: "19:00", timeZone: "UTC", hostUserId: planner.id, needs: [{ teamId: music.id, withSet: false }] })).body;
   check("an organisation's event: the music group's part without a set", meeting.needs?.[0]?.withSet === false, JSON.stringify(meeting));
