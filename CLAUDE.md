@@ -14,6 +14,10 @@ rename.
 
 The product's words are in `GLOSSARY.md`: use them in code, UI text, docs and issues, and
 update it when a term is settled. The big decisions already made, and why, are in `docs/adr/`.
+Older code keeps its names (ADR 0002), and some read like another glossary word: a song is
+`SongVersion` (several under one `Work`), a version is `Arrangement`, a set is `Setlist`, a team
+inside an organisation is a `Team` ("group" in old text), a template is `ScreenTheme`, a preset is
+`ScreenPart`, a pairing is a `Screen` row, a live session is `LiveSession` (`SyncSession` on the wire).
 
 ## Issues first
 
