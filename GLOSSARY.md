@@ -149,6 +149,14 @@ _Avoid_: event preset, template (for this)
 Who is on for an event date, in which position.
 _Avoid_: rota, roster, assignment (in what people read)
 
+**Set leader**:
+Someone filling a position that leads its event date's set (Music, Host, as its event type says); with the team's admins, the only ones who edit that set.
+_Avoid_: music leader (as a fixed job), set owner
+
+**Suggestion**:
+A change someone proposes to a song or a set they can't edit (another key, another order), for whoever can edit it to take or decline.
+_Avoid_: proposal, change request, pull request
+
 **Open place**:
 A position of an event date that members of other teams may take.
 
