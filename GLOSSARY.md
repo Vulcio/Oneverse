@@ -158,6 +158,10 @@ A part of an event date that members of other teams may take.
 A display paired to show sets: a TV, a projector, a stage monitor, a stream output.
 _Avoid_: display, output (as a term), receiver
 
+**Screen target**:
+What a screen is used for, and so the look it starts with: Audience, Stage, Stream or Band.
+_Avoid_: screen role, screen kind
+
 **Pairing**:
 One link between a screen and a person, team or organisation, made with the code the screen shows; a screen can hold several and switch between them.
 _Avoid_: profile (for this)
