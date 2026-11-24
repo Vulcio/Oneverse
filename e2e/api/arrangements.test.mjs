@@ -77,7 +77,13 @@ check("a team member can't change the team's", r.status === 403);
 // --- the team's usual one
 r = await call(member, "PATCH", `/arrangements/${mine.id}`, { isTeamDefault: true });
 check("only a team arrangement can be the team's usual one", r.status === 400);
+// Its arrangement, in the glossary's words (issue #557): free text, cleared by "", kept by a copy.
+r = await call(admin, "PATCH", `/arrangements/${teamArrangement.id}`, { instrumentation: "  String quartet " });
+check("a version takes an arrangement (instrumentation)", r.status === 200 && r.body.instrumentation === "String quartet", JSON.stringify(r.body.instrumentation));
 const second = (await call(admin, "POST", `/song-versions/${songId}/arrangements`, { name: "Team acoustic", teamId: team.id, copyFromId: teamArrangement.id })).body;
+check("a copy keeps its arrangement", second.instrumentation === "String quartet", JSON.stringify(second.instrumentation));
+r = await call(admin, "PATCH", `/arrangements/${second.id}`, { instrumentation: "" });
+check("an empty arrangement clears it", r.status === 200 && r.body.instrumentation === null, JSON.stringify(r.body.instrumentation));
 await call(admin, "PATCH", `/arrangements/${teamArrangement.id}`, { isTeamDefault: true });
 r = await call(admin, "PATCH", `/arrangements/${second.id}`, { isTeamDefault: true });
 const defaults = (await call(admin, "GET", `/song-versions/${songId}/arrangements`)).body.filter((a) => a.isTeamDefault).map((a) => a.id);

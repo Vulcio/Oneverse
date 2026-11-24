@@ -3,7 +3,7 @@ title: Versions
 description: How you or your band play and sing a song - its order, key, capo and changes - and each player's own view of a chart.
 ---
 
-A **version** is how you or your band play and sing a song: its order, key, capo and tempo, and chords, words or lines changed on some passes. **The song itself never changes**, so you can make your version of songs you can't edit, like global catalogue songs. (A translation is something else: a song of its own, linked to its original - see [Translations and adaptations](/library/#translations-and-adaptations).)
+A **version** is how you or your band play and sing a song: its order, key, capo and tempo, and chords, words or lines changed on some passes. **The song itself never changes**, so you can make your version of songs you can't edit, like global catalogue songs. (A translation is something else: a song of its own, linked to its original - see [Related songs](/library/#related-songs).)
 
 ## Making one
 
@@ -17,7 +17,8 @@ A team's versions are seen by the team's members and changed by its admins.
 
 ![The version editor](../../assets/screenshots/en/version-editor.jpg)
 
-- **Settings** - its **Key** (from the song's), **Capo**, **Guitar tuning**, **Tempo**, what it plays along to, and a description:
+- **Settings** - its **Key** (from the song's), **Capo**, **Guitar tuning**, **Tempo**, what it plays along to, its **Arrangement** and a description:
+  - **Arrangement** - a few words on how it's played: "String quartet", "Acoustic". It shows beside the version's name in the song's list of versions.
   - **Guitar tuning** - **Each player's own** (each guitarist's, from their account), or a tuning everyone plays this version in: Drop D, Open G, DADGAD… or **Your own tuning…**. Chord diagrams follow it for everyone playing this version, and the chords' strip says **Tuning: Open G**, with **Tune** to open the [tuner](/tuner/) set to it.
   - **Reference recording** - one of the song's [reference recordings](/library/#reference-recordings) ("Live 2019", "Acoustic"), or **The song's own**. In a set played in this version, a YouTube video plays in the player from its start, and any other link shows under the song's title (**Reference: Live 2019**).
   - **Stems** - one of the song's [multitracks](/library/#multitracks), or **The song's own**. In a set, a multitrack recorded for that set still comes first, then this one, then the song's own.

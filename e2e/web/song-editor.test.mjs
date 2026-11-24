@@ -1,6 +1,6 @@
 // Browser test for song fields and required artists.
 import { chromium } from "playwright";
-import { WEB, SP, stamp, tag, sql, stepper, user, api, signIn, finish } from "../lib/harness.mjs";
+import { WEB, SP, stamp, tag, sql, stepper, user, api, call, signIn, finish } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -284,7 +284,7 @@ await step("link a new song to one from the match panel: an adaptation, in the s
   if (await page.getByLabel("Version name").count()) throw new Error("the version name field is still there");
 });
 
-await step("the original lists it under Translations and adaptations; Add a translation starts a song linked to it", async () => {
+await step("the original lists it under Related songs; Add a translation starts a song linked to it", async () => {
   await page.goto(`${WEB}/library/${songId}`);
   const linked = page.getByTestId("linked-songs");
   await linked.getByRole("link", { name: TITLE }).waitFor();
@@ -292,6 +292,37 @@ await step("the original lists it under Translations and adaptations; Add a tran
   await linked.getByRole("link", { name: "Add a translation" }).click();
   await page.waitForURL(/\/library\/new\?linkTo=/);
   await page.getByText(`Saving as a translation or adaptation of “${TITLE}”, linked to it.`).waitFor();
+});
+
+await step("link a song already in the library as a translation, then unlink it (#557)", async () => {
+  const french = await api(me, "POST", "/song-versions", { title: `Grâce infinie ${tag}`, language: "fr", artists: ["Chris Tomlin"] });
+  const orig = await api(me, "GET", `/song-versions/${songId}`);
+  await page.goto(`${WEB}/library/${songId}`);
+  const linked = page.getByTestId("linked-songs");
+  await linked.getByPlaceholder("Search a song").fill(`Grâce infinie ${tag}`);
+  await page.getByTestId("related-song-option").filter({ hasText: "Grâce infinie" }).first().click();
+  await linked.getByLabel("What it is to this song").selectOption("translation");
+  await linked.getByRole("button", { name: "Link", exact: true }).click();
+  await linked.getByRole("link", { name: `Grâce infinie ${tag}` }).waitFor();
+  await linked.getByText("Translation · French").waitFor();
+  const d = await api(me, "GET", `/song-versions/${french.id}`);
+  if (d.workId !== orig.workId || d.parentVersion?.id !== songId || d.relationshipType !== "DIRECT_TRANSLATION") {
+    throw new Error(JSON.stringify({ work: [d.workId, orig.workId], parent: d.parentVersion, relation: d.relationshipType }));
+  }
+  // Seen from the translation, the original is its Original.
+  await page.goto(`${WEB}/library/${french.id}`);
+  await page.getByTestId("linked-songs").getByText("Original · English").waitFor();
+  await page.goto(`${WEB}/library/${songId}`);
+  await page.getByTestId("linked-songs").getByRole("button", { name: `Unlink Grâce infinie ${tag}` }).click();
+  await page.getByTestId("linked-songs").getByRole("link", { name: `Grâce infinie ${tag}` }).waitFor({ state: "detached" });
+  const after = await api(me, "GET", `/song-versions/${french.id}`);
+  if (after.workId === orig.workId || after.parentVersion || after.relationshipType) throw new Error(JSON.stringify(after));
+  // Someone who can't see the songs can't link them; a song can't come from its own translation.
+  const stranger = await call(other, "POST", `/song-versions/${songId}/related`, { songVersionId: french.id, relation: "translation" });
+  if (stranger.status !== 404) throw new Error(`a stranger linked them: ${stranger.status}`);
+  await api(me, "POST", `/song-versions/${songId}/related`, { songVersionId: french.id, relation: "translation" });
+  const loop = await call(me, "POST", `/song-versions/${french.id}/related`, { songVersionId: songId, relation: "translation" });
+  if (loop.status !== 400) throw new Error(`a song came from its own translation: ${loop.status}`);
 });
 
 await step("use as base copies the details", async () => {

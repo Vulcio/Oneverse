@@ -25,6 +25,7 @@ const SELECT = {
   songVersionId: true,
   name: true,
   description: true,
+  instrumentation: true,
   ownerScope: true,
   ownerUserId: true,
   ownerTeamId: true,
@@ -46,6 +47,8 @@ export interface ArrangementSummary {
   songVersionId: string;
   name: string;
   description: string | null;
+  /** What the glossary calls its arrangement (issue #557): "String quartet". */
+  instrumentation: string | null;
   ownerScope: string;
   teamId: string | null;
   teamName: string | null;
@@ -111,9 +114,11 @@ export class ArrangementsService {
     let document = newArrangementDocument(song.document, songVersionId, itemId);
     // A copy plays along to the same recording and multitrack (issue #346).
     let media: { linkId: string | null; multitrackId: string | null } = { linkId: null, multitrackId: null };
+    let copiedInstrumentation: string | null = null;
     if (dto.copyFromId) {
       const source = await this.visibleArrangement(user, dto.copyFromId);
       media = { linkId: source.linkId, multitrackId: source.multitrackId };
+      copiedInstrumentation = source.instrumentation;
       if (source.songVersionId !== songVersionId) throw new BadRequestException("Can only copy a version of the same song");
       const copied = readArrangementDocument(source.documentJson, song.document, songVersionId, itemId).document;
       document = { ...copied, items: copied.items.map((item) => ({ ...item, id: itemId() })) };
@@ -123,6 +128,7 @@ export class ArrangementsService {
         songVersionId,
         name: dto.name,
         description: dto.description || null,
+        instrumentation: dto.instrumentation || copiedInstrumentation,
         ...(dto.teamId ? { ownerScope: "TEAM", ownerTeamId: dto.teamId } : { ownerScope: "USER", ownerUserId: user.id }),
         documentJson: document as object,
         ...media,
@@ -213,6 +219,7 @@ export class ArrangementsService {
         data: {
           ...(dto.name !== undefined && { name: dto.name }),
           ...(dto.description !== undefined && { description: dto.description || null }),
+          ...(dto.instrumentation !== undefined && { instrumentation: dto.instrumentation || null }),
           ...(document && { documentJson: document as object }),
           ...(dto.isTeamDefault !== undefined && { isTeamDefault: dto.isTeamDefault }),
           ...(dto.linkId !== undefined && { linkId: dto.linkId }),
@@ -396,6 +403,7 @@ export class ArrangementsService {
       songVersionId: row.songVersionId,
       name: row.name,
       description: row.description,
+      instrumentation: row.instrumentation,
       ownerScope: row.ownerScope,
       teamId: row.ownerTeamId,
       teamName: row.ownerTeam?.name ?? null,

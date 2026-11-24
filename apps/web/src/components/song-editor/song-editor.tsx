@@ -696,7 +696,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           </fieldset>
         ) : null}
         {edit ? <SongbooksCard memberships={edit.songbookMemberships} title={edit.version.title} /> : null}
-        {edit ? <LinkedSongsCard version={edit.version} /> : null}
+        {edit ? <LinkedSongsCard version={edit.version} canEdit={canEdit} /> : null}
         {edit ? <ProgressionsCard songVersionId={edit.version.id} /> : null}
         {edit && canManage && edit.version.ownerScope !== "GLOBAL" ? <PublishCard songVersionId={edit.version.id} /> : null}
         {edit && edit.version.ownerScope === "GLOBAL" ? <MySuggestionsCard songVersionId={edit.version.id} refreshKey={suggestionsKey} /> : null}

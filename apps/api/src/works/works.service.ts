@@ -1,6 +1,6 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import type { Prisma } from "@oneverse/db";
-import { MusicBrainzWorkMatchSchema, type MusicBrainzWorkMatch } from "@oneverse/core";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BINNED_TOO, type Prisma, type VersionRelationshipType } from "@oneverse/db";
+import { MusicBrainzWorkMatchSchema, type MusicBrainzWorkMatch, type SongRelation } from "@oneverse/core";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { MusicBrainzService } from "../musicbrainz/musicbrainz.service.js";
@@ -25,6 +25,18 @@ const DETAIL_INCLUDE = {
   },
   identifiers: true,
 } satisfies Prisma.WorkInclude;
+
+const RELATED_SELECT = {
+  id: true,
+  workId: true,
+  language: true,
+  parentVersionId: true,
+  ownerScope: true,
+  ownerUserId: true,
+  ownerTeamId: true,
+  publicationState: true,
+  deletedAt: true,
+} satisfies Prisma.SongVersionSelect;
 
 @Injectable()
 export class WorksService {
@@ -104,5 +116,84 @@ export class WorksService {
     const match = await this.musicBrainz.getWork(identifier.value);
     await this.prisma.client.workIdentifier.update({ where: { id: identifier.id }, data: { details: match } });
     return match;
+  }
+
+  /**
+   * Links another song to this one as a related song (issue #557): its
+   * original, a translation of it or an adaptation of it. Related songs are
+   * the songs of one Work, so the other song's Work joins this one's; the
+   * song that comes from the other gets its parent and how it relates.
+   * Allowed to whoever can see both and change either.
+   */
+  async linkRelated(user: AuthenticatedUser, songId: string, otherId: string, relation: SongRelation) {
+    if (songId === otherId) throw new BadRequestException(["songVersionId must be another song"]);
+    const [song, other] = await Promise.all([this.relatedSong(user, songId), this.relatedSong(user, otherId)]);
+    await this.assertCanChangeEither(user, song, other);
+    const [child, parent] = relation === "original" ? [song, other] : [other, song];
+    const type: VersionRelationshipType =
+      relation === "translation" || (relation === "original" && child.language !== parent.language) ? "DIRECT_TRANSLATION" : "LYRICAL_ADAPTATION";
+    if (await this.comesFrom(parent.id, child.id)) throw new BadRequestException(["songVersionId already comes from this song"]);
+
+    await this.prisma.client.$transaction(async (tx) => {
+      if (other.workId !== song.workId) {
+        const [kept, gone] = await Promise.all([
+          tx.work.findUniqueOrThrow({ where: { id: song.workId }, select: { preferredOriginalVersionId: true, identifiers: { select: { type: true } } } }),
+          tx.work.findUniqueOrThrow({ where: { id: other.workId }, select: { preferredOriginalVersionId: true, identifiers: { select: { id: true, type: true } } } }),
+        ]);
+        await tx.work.update({ where: { id: other.workId }, data: { preferredOriginalVersionId: null } });
+        await tx.songVersion.updateMany({ where: { workId: other.workId, ...BINNED_TOO }, data: { workId: song.workId } });
+        // A composition's ids (ISWC, MusicBrainz) the kept Work hasn't got yet come along; the others go with the old Work.
+        const keptTypes = new Set(kept.identifiers.map((identifier) => identifier.type));
+        const moving = gone.identifiers.filter((identifier) => !keptTypes.has(identifier.type)).map((identifier) => identifier.id);
+        if (moving.length) await tx.workIdentifier.updateMany({ where: { id: { in: moving } }, data: { workId: song.workId } });
+        if (!kept.preferredOriginalVersionId && gone.preferredOriginalVersionId) {
+          await tx.work.update({ where: { id: song.workId }, data: { preferredOriginalVersionId: gone.preferredOriginalVersionId } });
+        }
+        await tx.work.delete({ where: { id: other.workId } });
+      }
+      await tx.songVersion.update({ where: { id: child.id }, data: { parentVersionId: parent.id, relationshipType: type } });
+    });
+    return this.findOne(user, song.workId);
+  }
+
+  /**
+   * Unlinks a related song (issue #557): it leaves this song's Work for one
+   * of its own, and no song is said to come from it any more, nor it from
+   * one. Allowed to whoever can see both and change either.
+   */
+  async unlinkRelated(user: AuthenticatedUser, songId: string, otherId: string) {
+    const [song, other] = await Promise.all([this.relatedSong(user, songId), this.relatedSong(user, otherId)]);
+    if (song.id === other.id || song.workId !== other.workId) throw new NotFoundException("Related song not found");
+    await this.assertCanChangeEither(user, song, other);
+    await this.prisma.client.$transaction(async (tx) => {
+      await tx.work.updateMany({ where: { id: song.workId, preferredOriginalVersionId: other.id }, data: { preferredOriginalVersionId: null } });
+      await tx.songVersion.updateMany({ where: { workId: song.workId, parentVersionId: other.id, ...BINNED_TOO }, data: { parentVersionId: null, relationshipType: null } });
+      const work = await tx.work.create({ data: { preferredOriginalVersionId: other.id } });
+      await tx.songVersion.update({ where: { id: other.id }, data: { workId: work.id, parentVersionId: null, relationshipType: null } });
+    });
+    return this.findOne(user, song.workId);
+  }
+
+  private async relatedSong(user: AuthenticatedUser, id: string) {
+    const song = await this.prisma.client.songVersion.findUnique({ where: { id }, select: RELATED_SELECT });
+    if (!song || !(await this.access.canSeeSong(user, song))) throw new NotFoundException("Song version not found");
+    return song;
+  }
+
+  private async assertCanChangeEither(user: AuthenticatedUser, ...songs: Prisma.SongVersionGetPayload<{ select: typeof RELATED_SELECT }>[]) {
+    for (const song of songs) if (await this.access.canEditContent(user, song)) return;
+    throw new ForbiddenException("Not authorized to change either song");
+  }
+
+  /** Whether `songId` comes from `ancestorId`, through its parents. */
+  private async comesFrom(songId: string, ancestorId: string): Promise<boolean> {
+    const seen = new Set<string>();
+    for (let id: string | null = songId; id && !seen.has(id); ) {
+      if (id === ancestorId) return true;
+      seen.add(id);
+      const row: { parentVersionId: string | null } | null = await this.prisma.client.songVersion.findUnique({ where: { id }, select: { parentVersionId: true } });
+      id = row?.parentVersionId ?? null;
+    }
+    return false;
   }
 }

@@ -72,6 +72,8 @@ export function ArrangementEditor({
   const [doc, setDoc] = useState<ArrangementDocumentV2>(initial.document);
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description ?? "");
+  // Its arrangement, in the glossary's words (issue #557): "String quartet".
+  const [instrumentation, setInstrumentation] = useState(initial.instrumentation ?? "");
   // What it plays along to (issue #346): one of the song's reference recordings, one of its multitracks.
   const [linkId, setLinkId] = useState(initial.linkId ?? null);
   const [multitrackId, setMultitrackId] = useState(initial.multitrackId ?? null);
@@ -88,6 +90,7 @@ export function ArrangementEditor({
     JSON.stringify(doc) !== JSON.stringify(detail.document) ||
     name.trim() !== detail.name ||
     description.trim() !== (detail.description ?? "") ||
+    instrumentation.trim() !== (detail.instrumentation ?? "") ||
     linkId !== (detail.linkId ?? null) ||
     multitrackId !== (detail.multitrackId ?? null);
 
@@ -107,6 +110,7 @@ export function ArrangementEditor({
       setDoc(updated.document);
       setName(updated.name);
       setDescription(updated.description ?? "");
+      setInstrumentation(updated.instrumentation ?? "");
       setLinkId(updated.linkId ?? null);
       setMultitrackId(updated.multitrackId ?? null);
       setMessage({ kind: "ok", text: done });
@@ -118,7 +122,7 @@ export function ArrangementEditor({
   }
   const save = () =>
     run(
-      () => apiClient.updateArrangement(detail.id, { name: name.trim(), description: description.trim() || null, document: doc, linkId, multitrackId, updatedAt: detail.updatedAt }),
+      () => apiClient.updateArrangement(detail.id, { name: name.trim(), description: description.trim() || null, instrumentation: instrumentation.trim() || null, document: doc, linkId, multitrackId, updatedAt: detail.updatedAt }),
       t("arrangements.saved"),
     );
 
@@ -202,6 +206,7 @@ export function ArrangementEditor({
                 setDoc(detail.document);
                 setName(detail.name);
                 setDescription(detail.description ?? "");
+                setInstrumentation(detail.instrumentation ?? "");
                 setMessage(null);
               }}
             >
@@ -330,6 +335,17 @@ export function ArrangementEditor({
                   </NativeSelect>
                 </div>
               ) : null}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="arrangement-instrumentation">{t("arrangements.instrumentation")}</Label>
+                <Input
+                  id="arrangement-instrumentation"
+                  maxLength={100}
+                  placeholder={t("arrangements.instrumentationPlaceholder")}
+                  value={instrumentation}
+                  readOnly={readOnly}
+                  onChange={(event) => setInstrumentation(event.target.value)}
+                />
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="arrangement-description">{t("arrangements.descriptionLabel")}</Label>
                 <Textarea id="arrangement-description" rows={3} maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} />

@@ -1318,6 +1318,9 @@ model Arrangement {
 
   name        String
   description String?
+  // What the glossary calls its arrangement (issue #557): free text on its
+  // instrumentation, "String quartet", "Acoustic". Optional.
+  instrumentation String?
 
   // ArrangementDocument v2 (docs/arrangement-document-v2.md): how it's
   // played - order, key, capo, tempo, per-pass overrides - pointing at the

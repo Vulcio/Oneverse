@@ -3,7 +3,7 @@ title: Versions
 description: La façon dont vous ou votre groupe jouez et chantez un chant - ordre, tonalité, capo, changements - et l'affichage propre à chaque musicien.
 ---
 
-Une **version** est la façon dont vous ou votre groupe jouez et chantez un chant : son ordre, sa tonalité, son capo et son tempo, et des accords, paroles ou lignes changés sur certains passages. **Le chant lui-même ne change jamais** : vous pouvez donc faire votre version de chants que vous ne pouvez pas modifier, comme ceux du catalogue global. (Une traduction, c'est autre chose : un chant à part entière, lié à son original - voir [Traductions et adaptations](/fr/library/#traductions-et-adaptations).)
+Une **version** est la façon dont vous ou votre groupe jouez et chantez un chant : son ordre, sa tonalité, son capo et son tempo, et des accords, paroles ou lignes changés sur certains passages. **Le chant lui-même ne change jamais** : vous pouvez donc faire votre version de chants que vous ne pouvez pas modifier, comme ceux du catalogue global. (Une traduction, c'est autre chose : un chant à part entière, lié à son original - voir [Chants liés](/fr/library/#chants-liés).)
 
 ## En créer une
 
@@ -17,7 +17,8 @@ Les versions d'une équipe sont vues par ses membres et modifiées par ses admin
 
 ![L'éditeur de version](../../../assets/screenshots/fr/version-editor.jpg)
 
-- **Réglages** - sa **Tonalité** (à partir de celle du chant), son **Capo**, son **Accordage de la guitare**, son **Tempo**, ce sur quoi elle se joue, et une description :
+- **Réglages** - sa **Tonalité** (à partir de celle du chant), son **Capo**, son **Accordage de la guitare**, son **Tempo**, ce sur quoi elle se joue, son **Arrangement** et une description :
+  - **Arrangement** - quelques mots sur la façon dont elle se joue : « Quatuor à cordes », « Acoustique ». Il s'affiche à côté du nom de la version dans la liste des versions du chant.
   - **Accordage de la guitare** - **Celui de chaque musicien** (celui de chaque guitariste, dans son compte), ou un accordage dans lequel tous jouent cette version : Drop D, Open G, DADGAD… ou **Votre propre accordage…**. Les diagrammes d'accords le suivent pour tous ceux qui jouent cette version, et le bandeau des accords indique **Accordage : Open G**, avec **Accorder** pour ouvrir l'[accordeur](/fr/tuner/) réglé dessus.
   - **Enregistrement de référence** - l'un des [enregistrements de référence](/fr/library/#enregistrements-de-référence) du chant (« Live 2019 », « Acoustique »), ou **Celui du chant**. Dans un set joué dans cette version, une vidéo YouTube se joue dans le lecteur à partir de son début, et tout autre lien s'affiche sous le titre du chant (**Référence : Live 2019**).
   - **Pistes** - l'un des [multipistes](/fr/library/#multipistes) du chant, ou **Celles du chant**. Dans un set, un multipiste enregistré pour ce set passe toujours en premier, puis celui-ci, puis celles du chant.

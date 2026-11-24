@@ -105,7 +105,7 @@ export const CreateSongVersionSchema = z.strictObject({
     "Existing Work to add this version to. Omit to create a new Work (this becomes its preferred original version).",
   ),
   basedOnVersionId: optional(z.string()).describe(
-    "A song you can see that this is another version of (an acoustic arrangement, say): it joins that song's Work.",
+    "A song you can see that this is a translation or adaptation of (issue #78): they become related songs, in one Work.",
   ),
   teamId: optional(z.string()).describe("Team to own this version under (must be a member). Omit to own it personally."),
   title: requiredText(300),
@@ -113,6 +113,17 @@ export const CreateSongVersionSchema = z.strictObject({
   language: z.enum(ISO_639_1_CODES).describe("ISO 639-1 language code"),
 });
 export type CreateSongVersionRequest = z.input<typeof CreateSongVersionSchema>;
+
+/** What a related song is to the song it's linked from (issue #557, GLOSSARY.md's "Related song"). */
+export const SONG_RELATIONS = ["original", "translation", "adaptation"] as const;
+export type SongRelation = (typeof SONG_RELATIONS)[number];
+
+/** POST /song-versions/:id/related: links another song you can see to this one. */
+export const LinkRelatedSongSchema = z.strictObject({
+  songVersionId: z.string().min(1).describe("The other song"),
+  relation: z.enum(SONG_RELATIONS).describe("What the other song is to this one: its original, a translation of it, an adaptation of it"),
+});
+export type LinkRelatedSongRequest = z.input<typeof LinkRelatedSongSchema>;
 
 /**
  * PATCH /song-versions/:id - a field left out is left alone; null (or "")

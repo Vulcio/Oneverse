@@ -331,6 +331,7 @@ export async function importArchiveContent(deps: ImportDeps, content: ArchiveCon
           songVersionId: songId,
           name: arrangement.name,
           description: arrangement.description ?? null,
+          instrumentation: arrangement.instrumentation?.slice(0, 100) || null,
           documentJson: { ...parsed.data, songVersionId: songId } as object,
           isTeamDefault: !!owner.ownerTeamId && arrangement.isTeamDefault && (await tx.arrangement.count({ where: { songVersionId: songId, ownerTeamId: owner.ownerTeamId, isTeamDefault: true } })) === 0,
           setlistItemId,

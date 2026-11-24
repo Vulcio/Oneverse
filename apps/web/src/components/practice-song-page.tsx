@@ -296,7 +296,7 @@ export function PracticeSongPage({
               </span>
             ) : null}
           </span>
-          <VersionPill songVersionId={version.id} workId={version.workId} versionName={version.versionName} />
+          <RelatedSongsPill songVersionId={version.id} workId={version.workId} versionName={version.versionName} />
           {/* The capo, hard to miss (issue #219). */}
           {chart.capo ? <CapoBadge capo={chart.capo} shapes={chart.capoShapes} /> : null}
           <PresenceChip people={editors} doing="editing" />
@@ -434,27 +434,34 @@ function PracticeMetronome({ songId, chart, source }: { songId: string; chart: P
 type RenderedChartLike = ReturnType<typeof renderChart>;
 
 /**
- * Which version of the song this is (issue #390): its name, and the others
- * one can see to switch to; nothing when it's the only one and has no name.
+ * Which of its related songs this is (issues #390, #557): its language or
+ * title detail, and its original, translations and adaptations one can see
+ * to switch to; nothing when it has none and no title detail.
  */
-function VersionPill({ songVersionId, workId, versionName }: { songVersionId: string; workId: string; versionName: string | null }) {
+function RelatedSongsPill({ songVersionId, workId, versionName }: { songVersionId: string; workId: string; versionName: string | null }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [versions, setVersions] = useState<{ id: string; label: string }[] | null>(null);
+  const [versions, setVersions] = useState<{ id: string; label: string; option: string }[] | null>(null);
   useEffect(() => {
     let current = true;
     apiClient
       .getWork(workId)
       .then((work) => {
         if (!current) return;
-        // Told apart by their names, else their languages.
-        setVersions(work.versions.map((one) => ({ id: one.id, label: one.versionName || getLanguageDisplayName(one.language, i18n.language) })));
+        // Told apart by their title details, else their languages; a translation's own title too.
+        const here = work.versions.find((one) => one.id === songVersionId);
+        setVersions(
+          work.versions.map((one) => {
+            const label = one.versionName || getLanguageDisplayName(one.language, i18n.language);
+            return { id: one.id, label, option: here && one.title !== here.title ? `${one.title} · ${label}` : label };
+          }),
+        );
       })
       .catch(() => current && setVersions(null));
     return () => {
       current = false;
     };
-  }, [workId, i18n.language]);
+  }, [workId, songVersionId, i18n.language]);
   const others = versions && versions.length > 1 ? versions : null;
   if (!others) return versionName ? <span className={PILL} data-testid="practice-version">{versionName}</span> : null;
   return (
@@ -470,7 +477,7 @@ function VersionPill({ songVersionId, workId, versionName }: { songVersionId: st
       >
         {others.map((one) => (
           <option key={one.id} value={one.id}>
-            {one.label}
+            {one.option}
           </option>
         ))}
       </select>

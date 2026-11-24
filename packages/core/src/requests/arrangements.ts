@@ -3,12 +3,15 @@ import { z } from "zod";
 import { optional, requiredText } from "./fields.js";
 
 const description = z.string().trim().max(1000).nullable().optional();
+/** What the glossary calls its arrangement (issue #557): "String quartet". Null or "" clears it. */
+const instrumentation = z.string().trim().max(100).nullable().optional().describe('Its instrumentation, free text: "String quartet", "Acoustic"');
 /** A JSON object (not an array, not null). */
 const object = z.record(z.string(), z.unknown());
 
 export const CreateArrangementSchema = z.strictObject({
   name: requiredText(100),
   description,
+  instrumentation,
   teamId: optional(z.string()).describe("Owned by this team (its admins can change it); otherwise by you"),
   copyFromId: optional(z.string()).describe("Start as a copy of this arrangement of the same song"),
 });
@@ -17,6 +20,7 @@ export type CreateArrangementRequest = z.input<typeof CreateArrangementSchema>;
 export const UpdateArrangementSchema = z.strictObject({
   name: optional(requiredText(100)),
   description,
+  instrumentation,
   document: optional(object).describe("ArrangementDocument v2 (docs/arrangement-document-v2.md)"),
   isTeamDefault: optional(z.boolean()).describe("The team's usual arrangement of the song (team arrangements only)"),
   linkId: z.string().nullable().optional().describe("The song's reference recording it's played along to (issue #346); null: the song's own"),

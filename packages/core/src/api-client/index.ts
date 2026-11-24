@@ -91,7 +91,7 @@ import type {
   UpdateUserByAdminSchema,
 } from "../requests/index.js";
 import type { CreateSongbookRequest, UpdateSongbookRequest } from "../requests/songbooks.js";
-import type { CreateSongVersionRequest, LinkRepeatsRequest, RepeatsBackfillRequest, SongSort, UpdateSongVersionRequest } from "../requests/songs.js";
+import type { CreateSongVersionRequest, LinkRelatedSongRequest, LinkRepeatsRequest, RepeatsBackfillRequest, SongSort, UpdateSongVersionRequest } from "../requests/songs.js";
 import type { SongChange, SongSnapshot } from "../song-history/index.js";
 import type { SongProviderSourceInput, SongProviderSourceUpdate } from "../requests/plugins.js";
 import type { SongProviderHook } from "../song-provider/index.js";
@@ -562,6 +562,8 @@ export interface ArrangementSummary {
   songVersionId: string;
   name: string;
   description: string | null;
+  /** What the glossary calls its arrangement (issue #557): "String quartet". */
+  instrumentation: string | null;
   ownerScope: "USER" | "TEAM" | "GLOBAL";
   teamId: string | null;
   teamName: string | null;
@@ -3496,6 +3498,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     },
 
     getWork: (workId: string) => request<WorkDetail>(`/works/${workId}`),
+    /** Links another song to this one as a related song (issue #557); answers this song's Work. */
+    linkRelatedSong: (songVersionId: string, body: LinkRelatedSongRequest) =>
+      request<WorkDetail>(`/song-versions/${songVersionId}/related`, { method: "POST", body: JSON.stringify(body) }),
+    /** Unlinks a related song: it becomes a song on its own again; answers this song's Work. */
+    unlinkRelatedSong: (songVersionId: string, otherId: string) =>
+      request<WorkDetail>(`/song-versions/${songVersionId}/related/${otherId}`, { method: "DELETE" }),
     listSongVersions: (query: ListSongVersionsQuery = {}) => {
       const params = new URLSearchParams(
         Object.entries(query)
@@ -3709,13 +3717,13 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       }),
     listArrangements: (songVersionId: string) => request<ArrangementSummary[]>(`/song-versions/${songVersionId}/arrangements`),
     /** A new arrangement: the song's order to start with, or a copy of `copyFromId`; a team's when `teamId` is given. */
-    createArrangement: (songVersionId: string, data: { name: string; description?: string | null; teamId?: string; copyFromId?: string }) =>
+    createArrangement: (songVersionId: string, data: { name: string; description?: string | null; instrumentation?: string | null; teamId?: string; copyFromId?: string }) =>
       request<ArrangementDetail>(`/song-versions/${songVersionId}/arrangements`, { method: "POST", body: JSON.stringify(data) }),
     getArrangement: (arrangementId: string) => request<ArrangementDetail>(`/arrangements/${arrangementId}`),
     /** Omitted fields are left alone; `updatedAt` (as loaded) refuses a save over a newer one (409). */
     updateArrangement: (
       arrangementId: string,
-      data: { name?: string; description?: string | null; document?: ArrangementDocumentV2; isTeamDefault?: boolean; linkId?: string | null; multitrackId?: string | null; updatedAt?: string },
+      data: { name?: string; description?: string | null; instrumentation?: string | null; document?: ArrangementDocumentV2; isTeamDefault?: boolean; linkId?: string | null; multitrackId?: string | null; updatedAt?: string },
     ) => request<ArrangementDetail>(`/arrangements/${arrangementId}`, { method: "PATCH", body: JSON.stringify(data) }),
     markArrangementReviewed: (arrangementId: string) => request<ArrangementDetail>(`/arrangements/${arrangementId}/reviewed`, { method: "POST" }),
     deleteArrangement: (arrangementId: string) => request<void>(`/arrangements/${arrangementId}`, { method: "DELETE" }),

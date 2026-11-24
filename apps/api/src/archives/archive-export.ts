@@ -185,6 +185,7 @@ export async function exportArchive(prisma: PrismaService, storage: StorageServi
       songTitle: arrangement.songVersion.title,
       name: arrangement.name,
       description: arrangement.description,
+      instrumentation: arrangement.instrumentation,
       documentJson: arrangement.documentJson,
       isTeamDefault: arrangement.isTeamDefault,
       setItemId: arrangement.setlistItemId,

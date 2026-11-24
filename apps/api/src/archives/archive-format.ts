@@ -154,6 +154,8 @@ export const ArchiveArrangementSchema = SongRefSchema.extend({
   teamId: id.nullish(),
   name: text(300),
   description: optionalText(5000),
+  /** Its instrumentation (issue #557): "String quartet". */
+  instrumentation: optionalText(300),
   documentJson: json,
   isTeamDefault: z.boolean().default(false),
   /** A set's own arrangement (one of the set's items'); kept with the set. */

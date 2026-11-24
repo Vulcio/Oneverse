@@ -82,6 +82,7 @@ export function ArrangementsTab({ songVersionId }: { songVersionId: string }) {
                   <span className="text-xs text-muted-foreground">
                     {[
                       arrangement.teamName ?? t("arrangements.mine"),
+                      arrangement.instrumentation,
                       arrangement.key ? t("arrangements.inKey", { key: arrangement.key }) : null,
                       arrangement.capo ? t("arrangements.capo", { capo: arrangement.capo }) : null,
                     ]
