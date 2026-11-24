@@ -169,7 +169,7 @@ A space inside a venue that events book: Main hall, Kids room 1, Kitchen. A venu
 _Avoid_: space, area
 
 **Resource**:
-A thing an organisation or a team owns that events book: the van, the portable PA, the projector.
+A thing an organisation or a team owns that events book: the van, the portable PA, a screen on wheels.
 _Avoid_: equipment, asset, item
 
 **Booking**:
