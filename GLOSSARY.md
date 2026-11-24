@@ -213,6 +213,14 @@ _Avoid_: sync, follow mode
 How closely one person follows a live session: to the line, to the section, to the song, or not at all; at any level but none, the metronome stays in time.
 _Avoid_: sync mode
 
+**Controller**:
+Anyone who may move a live session along (song, section, line, slide): the set leaders, the operator and whoever they let; several at once, the last move counts.
+_Avoid_: presenter, lines lead
+
+**Leader**:
+The set leader a live session takes its music from (tempo, metronome, what plays), one at a time; they can overrule any controller.
+_Avoid_: master, music lead, host (for this)
+
 **Presenting**:
 What a live session's screens show right now: an item and its slide, or black.
 _Avoid_: projecting, casting
