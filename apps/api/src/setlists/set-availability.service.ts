@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { MUSIC_LEADER, setLeaders, withAsks, type EventPart, type SetAvailability } from "@oneverse/core";
+import { MUSIC_LEADER, setLeaders, setLeadingKeys, withAsks, type EventPart, type SetAvailability } from "@oneverse/core";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -56,7 +56,8 @@ export class SetAvailabilityService {
       // Their notes are for the team's admins.
       members: isAdmin ? members : members.map((member) => ({ ...member, note: null })),
       lineup: places,
-      leaders: setLeaders(places),
+      leaders: setLeaders(places, setLeadingKeys(partsOf(row.event))),
+      leadingParts: setLeadingKeys(partsOf(row.event)),
     };
   }
 }

@@ -22,6 +22,22 @@ export interface EventPart {
    * organisation, by ID. Never a given part (GIVEN_PARTS).
    */
   openTo?: string[] | null;
+  /**
+   * Whoever fills it leads the date's set (issue #559, GLOSSARY.md's "Set
+   * leader"): with the team's admins, they edit it. Left out: the Host and
+   * Music leader parts do, as before (SET_LEADING_PARTS).
+   */
+  leadsSet?: boolean | null;
+}
+
+/** Whether whoever fills a part leads the date's set (issue #559): as the event marks it, else Host and Music leader. */
+export function leadsSet(part: EventPart): boolean {
+  return part.leadsSet ?? (!!part.part && SET_LEADING_PARTS.includes(part.part));
+}
+
+/** The keys of a date's parts whose people lead its set (issue #559), in the order the event lists them. */
+export function setLeadingKeys(parts: readonly EventPart[]): string[] {
+  return parts.filter(leadsSet).map((part) => partKey(part));
 }
 
 /** The most teams a part is open to. */
@@ -171,13 +187,17 @@ export function asksOpenTo(parts: readonly EventPart[], teamId: string): string[
   return music?.openTo?.length ? [...music.openTo] : [teamId];
 }
 
-/** The parts whose people edit the date's set (issue #520), in the order they're shown. */
+/** The parts whose people lead a date's set when its event doesn't say (issue #520): Host, then Music leader. */
 export const SET_LEADING_PARTS: readonly string[] = [HOST, MUSIC_LEADER];
 
-/** Whoever's on a date's line-up as its host or music leader, not declining (issue #520): they edit the date's set. */
-export function setLeaders(lineup: readonly { userId: string | null; partKey: string; status: AssignmentStatus }[]): { userId: string; partKey: string }[] {
-  const leading = lineup.filter((one) => SET_LEADING_PARTS.includes(one.partKey) && one.status !== "DECLINED" && one.userId);
-  return leading.map((one) => ({ userId: one.userId!, partKey: one.partKey })).sort((a, b) => SET_LEADING_PARTS.indexOf(a.partKey) - SET_LEADING_PARTS.indexOf(b.partKey));
+/**
+ * Whoever's on a date's line-up on a part that leads its set (issues #520,
+ * #559), not declining: they edit the date's set. In the order of `keys`
+ * (setLeadingKeys() of the date's parts; left out, Host then Music leader).
+ */
+export function setLeaders(lineup: readonly { userId: string | null; partKey: string; status: AssignmentStatus }[], keys: readonly string[] = SET_LEADING_PARTS): { userId: string; partKey: string }[] {
+  const leading = lineup.filter((one) => keys.includes(one.partKey) && one.status !== "DECLINED" && one.userId);
+  return leading.map((one) => ({ userId: one.userId!, partKey: one.partKey })).sort((a, b) => keys.indexOf(a.partKey) - keys.indexOf(b.partKey));
 }
 
 /** Someone scheduled on a part for a date (issue #235, phase 7): asked, then accepted or declined. */

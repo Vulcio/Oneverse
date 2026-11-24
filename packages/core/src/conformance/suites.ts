@@ -47,7 +47,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, notificationUrl, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, setLeadingKeys, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
@@ -2921,10 +2921,21 @@ export const CONFORMANCE: ConformanceArea[] = [
         ],
       },
       setLeaders: {
-        about: "Who's on a date's line-up as its host or music leader, not declining (issue #520): they edit the date's set. Hosts first.",
-        params: ["lineup"],
+        about: "Who's on a date's line-up on a part that leads its set, not declining (issues #520, #559): they edit the date's set. In the order of the leading keys; without them, Host then Music leader.",
+        params: ["lineup", "keys"],
         run: setLeaders,
         cases: [
+          {
+            name: "the parts the event marks",
+            args: [
+              [
+                { userId: "sam", partKey: "MUSIC_LEADER", status: "ACCEPTED" },
+                { userId: "ana", partKey: "HOST", status: "ACCEPTED" },
+                { userId: "lou", partKey: "position:p_music", status: "PENDING" },
+              ],
+              ["position:p_music", "MUSIC_LEADER"],
+            ],
+          },
           {
             name: "host and music leader",
             args: [
@@ -2937,6 +2948,15 @@ export const CONFORMANCE: ConformanceArea[] = [
               ],
             ],
           },
+        ],
+      },
+      setLeadingKeys: {
+        about: "The parts whose people lead a date's set (issue #559): those the event marks, in its order; a part it doesn't mark leads when it's Host or Music leader.",
+        params: ["parts"],
+        run: setLeadingKeys,
+        cases: [
+          { name: "nothing marked: Host and Music leader", args: [[{ part: "DRUMS", count: 1 }, { part: "MUSIC_LEADER", count: 1 }, { part: "HOST", count: 1 }]] },
+          { name: "marked: a position leads, Host doesn't", args: [[{ part: "HOST", count: 1, leadsSet: false }, { position: "p_music", count: 2, leadsSet: true }, { name: "Greeter", count: 1 }]] },
         ],
       },
       swapCandidates: {

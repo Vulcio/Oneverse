@@ -1,4 +1,4 @@
-import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, isGivenPart, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, isGivenPart, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, Building2, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -1115,7 +1115,8 @@ export function firstDateAt(time: string): string {
 /** A part as the API takes it: a position (issue #241) by its ID, an instrument or role by its key, else its name. */
 export function partBody(part: EventPart): EventPart {
   // Required, and open to teams (issue #528): only when set.
-  const extra = { ...(part.required && { required: true }), ...(part.openTo?.length && { openTo: part.openTo }) };
+  // Who leads the set (issue #559): only when the event says, as Host and Music leader lead it otherwise.
+  const extra = { ...(part.required && { required: true }), ...(part.openTo?.length && { openTo: part.openTo }), ...(typeof part.leadsSet === "boolean" && { leadsSet: part.leadsSet }) };
   return { ...(part.position ? { position: part.position, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name!, count: part.count }), ...extra };
 }
 
@@ -1259,6 +1260,12 @@ export function PartsEditor({
                   <input type="checkbox" className="size-3.5" checked={!!part.required} onChange={(e) => change(index, { required: e.target.checked || undefined })} data-testid="event-part-required" />
                   {t("teamCalendar.partRequired")}
                 </label>
+                {!instruments ? (
+                  <label className="flex items-center gap-1.5">
+                    <input type="checkbox" className="size-3.5" checked={leadsSet(part)} onChange={(e) => change(index, { leadsSet: e.target.checked })} data-testid="event-part-leads-set" />
+                    {t("teamCalendar.partLeadsSet")}
+                  </label>
+                ) : null}
                 {openToTeams.length > 0 && !instruments && !(part.part && isGivenPart(part.part)) ? (
                   <label className="flex items-center gap-1.5">
                     <input

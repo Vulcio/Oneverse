@@ -1,4 +1,4 @@
-import { ApiError, partKey, SET_LEADING_PARTS, type AvailabilityAnswer, type CustomInstrument, type EventPart, type MemberEventAnswer, type SetAvailability } from "@oneverse/core";
+import { ApiError, partKey, type AvailabilityAnswer, type CustomInstrument, type EventPart, type MemberEventAnswer, type SetAvailability } from "@oneverse/core";
 import { CalendarDays, Music, Pencil, Plane } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -57,9 +57,8 @@ export function SetAvailabilityCard({ setlistId, refreshKey }: { setlistId: stri
 
   const labelOf = (key: string) => partLabel(partOf(data.parts, key));
   const names = (ids: readonly string[]) => ids.map((id) => data.members.find((member) => member.userId === id)?.displayName ?? data.lineup.find((place) => place.userId === id)?.displayName ?? "").filter(Boolean);
-  // Its host and music leader (issue #520): on the line-up, else who'd like to be. Not every date has a host:
-  // "nobody yet" only when the date asks for one.
-  const leading = SET_LEADING_PARTS.map((key) => {
+  // Its set leaders (issues #520, #559): on the line-up, else who'd like to be; "nobody yet" only when the date asks for that part.
+  const leading = data.leadingParts.map((key) => {
     const on = names(data.leaders.filter((leader) => leader.partKey === key).map((leader) => leader.userId));
     const volunteers = data.members.filter((member) => groupOf(member) !== "UNAVAILABLE" && member.wishes?.includes(key)).map((member) => member.displayName);
     const asked = data.parts.some((part) => partKey(part) === key);

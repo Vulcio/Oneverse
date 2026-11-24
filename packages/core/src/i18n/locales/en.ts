@@ -2392,6 +2392,7 @@ const en = {
     plannedHint: "{{organization}} plans this event: its date, time and place are set there. You choose what this team needs.",
     partOther: "Another name…",
     partRequired: "Required",
+    partLeadsSet: "Leads the set",
     partOpen: "Members can take it",
     partOpenTo: "Open to:",
     partOpenOwnGroup: "The team it's in",

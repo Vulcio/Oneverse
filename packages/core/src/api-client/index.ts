@@ -1867,8 +1867,10 @@ export interface SetAvailability {
   canAsk?: boolean;
   members: MemberEventAnswer[];
   lineup: { userId: string | null; displayName: string; partKey: string; status: AssignmentStatus }[];
-  /** Whoever's on the line-up as host or music leader (setLeaders()): they edit the set too. */
+  /** Whoever's on the line-up on a part that leads the set (setLeaders()): they edit the set too. */
   leaders: { userId: string; partKey: string }[];
+  /** The parts that lead the set (issue #559, setLeadingKeys()), in order. */
+  leadingParts: string[];
 }
 
 /** A date of one of someone's teams, on their own calendar. */

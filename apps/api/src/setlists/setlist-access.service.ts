@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Prisma } from "@oneverse/db";
-import { SET_LEADING_PARTS } from "@oneverse/core";
+import { setLeadingKeys, type EventPart } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -78,13 +78,13 @@ export class SetlistAccessService {
     return guest ? { canView: true, canEdit: false, canManage: false, isGuest: true } : NO_ACCESS;
   }
 
-  /** Whether someone is on the line-up of the date a set was made for as its host or music leader, not declining (issue #520). */
+  /** Whether someone is on the line-up of the date a set was made for on a part that leads its set, not declining (issues #520, #559). */
   async leadsMusic(userId: string, setlistId: string): Promise<boolean> {
     return requestMemo(`leadsMusic:${setlistId}:${userId}`, async () => {
-      const date = await this.prisma.client.teamEventDate.findUnique({ where: { setlistId }, select: { eventId: true, date: true } });
+      const date = await this.prisma.client.teamEventDate.findUnique({ where: { setlistId }, select: { eventId: true, date: true, event: { select: { parts: true } } } });
       if (!date) return false;
       const place = await this.prisma.client.teamEventAssignment.findFirst({
-        where: { eventId: date.eventId, date: date.date, userId, partKey: { in: [...SET_LEADING_PARTS] }, status: { not: "DECLINED" } },
+        where: { eventId: date.eventId, date: date.date, userId, partKey: { in: setLeadingKeys(storedParts(date.event.parts)) }, status: { not: "DECLINED" } },
         select: { id: true },
       });
       return !!place;
@@ -228,4 +228,9 @@ export class SetlistAccessService {
     const [teams, shared] = await Promise.all([this.teamIdsOf(user.id), this.policy.sharedWith(user.id)]);
     return (song) => this.policy.songVisibleGivenTeams(user, teams, song, shared);
   }
+}
+
+/** An event's parts as stored (TeamEvent.parts). */
+export function storedParts(parts: Prisma.JsonValue): EventPart[] {
+  return Array.isArray(parts) ? (parts as unknown as EventPart[]) : [];
 }

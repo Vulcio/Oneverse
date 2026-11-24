@@ -26,6 +26,7 @@ const EventPartSchema = z
     count: z.number().int().min(1).max(EVENT_PART_COUNT_MAX),
     required: optional(z.boolean()).describe("It must be filled (issue #528): a date without it says it's missing"),
     openTo: optional(z.array(z.string().trim().min(1).max(64)).max(OPEN_TO_LIMIT)).describe("Teams whose members may put themselves on it (issue #528): the event's team or groups of its organisation"),
+    leadsSet: optional(z.boolean()).describe("Whoever fills it leads the date's set (issue #559); left out, Host and Music leader do"),
   })
   .refine((part) => !(part.part && (part.position || part.name)) && !!(part.part || part.position || part.name), "Each part needs either part, position or name")
   .refine((part) => !part.openTo?.length || !part.part || !isGivenPart(part.part), "openTo isn't for Host or Speaker: a role or the admins decide them");

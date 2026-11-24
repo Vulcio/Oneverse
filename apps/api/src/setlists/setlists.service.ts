@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
-import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes, type RecentPlays, SET_LEADING_PARTS } from "@oneverse/core";
+import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes, type RecentPlays, setLeadingKeys } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -15,7 +15,7 @@ import type {
 } from "./dto/setlist.dto.js";
 import { NotesService } from "../notes/notes.service.js";
 import { songImageUrl } from "../artwork/song-image-url.js";
-import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./setlist-access.service.js";
+import { SetlistAccessService, SONG_SELECT, storedParts, type SetRow, type SongRow } from "./setlist-access.service.js";
 import { SongOwnershipService } from "./song-ownership.service.js";
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
@@ -114,14 +114,18 @@ export class SetlistsService {
     const people = await signedUpFor(this.prisma.client, eventDates.map((date) => ({ eventId: date.eventId, date: date.date.toISOString().slice(0, 10) })));
     const now = new Date();
     const adminTeams = new Set(memberships.filter((m) => m.role === "ADMIN").map((m) => m.teamId));
-    // The dates they host or lead the music on (issue #520): they edit those sets.
+    // The dates they're on a part that leads the set on (issues #520, #559): they edit those sets.
+    const events = eventDates.length
+      ? await this.prisma.client.teamEvent.findMany({ where: { id: { in: [...new Set(eventDates.map((date) => date.eventId))] } }, select: { id: true, parts: true } })
+      : [];
+    const leadingKeys = new Map(events.map((event) => [event.id, new Set(setLeadingKeys(storedParts(event.parts)))]));
     const leading = eventDates.length
       ? await this.prisma.client.teamEventAssignment.findMany({
-          where: { userId: user.id, partKey: { in: [...SET_LEADING_PARTS] }, status: { not: "DECLINED" }, OR: eventDates.map((date) => ({ eventId: date.eventId, date: date.date })) },
-          select: { eventId: true, date: true },
+          where: { userId: user.id, status: { not: "DECLINED" }, OR: eventDates.map((date) => ({ eventId: date.eventId, date: date.date })) },
+          select: { eventId: true, date: true, partKey: true },
         })
       : [];
-    const leads = new Set(leading.map((row) => signupKey(row.eventId, row.date.toISOString().slice(0, 10))));
+    const leads = new Set(leading.filter((row) => leadingKeys.get(row.eventId)?.has(row.partKey)).map((row) => signupKey(row.eventId, row.date.toISOString().slice(0, 10))));
 
     return sortForDisplay(rows).map((set) => {
       const isGuest = set.ownerUserId !== user.id && !(set.ownerTeamId && memberTeams.has(set.ownerTeamId));

@@ -110,4 +110,22 @@ await call(leader, "PUT", `${base}/lineup/${place.id}/response`, { status: "DECL
 set = (await call(leader, "GET", `/setlists/${setlistId}`)).body;
 check("declining: no longer edits it", set.canEdit === false, JSON.stringify({ canEdit: set.canEdit }));
 
+// --- the event marks who leads the set (issue #559): here the drums, not the host
+r = await call(admin, "PATCH", `/teams/${team.id}/events/${event.id}`, {
+  parts: [
+    { part: "MUSIC_LEADER", count: 1 },
+    { part: "HOST", count: 1, leadsSet: false },
+    { part: "DRUMS", count: 1, leadsSet: true },
+  ],
+});
+check("an event marks the parts that lead its set", r.status === 200, JSON.stringify(r.body));
+await call(admin, "POST", `${base}/lineup`, { userId: quiet.id, part: "DRUMS" });
+set = (await call(drummer, "GET", `/setlists/${setlistId}`)).body;
+check("…the host no longer edits it", set.canEdit === false, JSON.stringify({ canEdit: set.canEdit }));
+set = (await call(quiet, "GET", `/setlists/${setlistId}`)).body;
+check("…the drummer does", set.canEdit === true && set.canManage === false, JSON.stringify({ canEdit: set.canEdit }));
+check("…the set list says so too", (await call(quiet, "GET", "/setlists")).body.find((one) => one.id === setlistId)?.canEdit === true);
+r = await call(admin, "GET", `/setlists/${setlistId}/availability`);
+check("…and its leading parts are those", r.body.leadingParts.join() === "DRUMS" && r.body.leaders.map((one) => one.userId).join() === quiet.id, JSON.stringify({ parts: r.body.leadingParts, leaders: r.body.leaders }));
+
 await finish();

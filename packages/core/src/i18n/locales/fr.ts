@@ -2395,6 +2395,7 @@ const fr: typeof en = {
     plannedHint: "{{organization}} planifie cet événement : sa date, son heure et son lieu se règlent là-bas. Vous choisissez ce dont cette équipe a besoin.",
     partOther: "Un autre nom…",
     partRequired: "Obligatoire",
+    partLeadsSet: "Mène la liste",
     partOpen: "Les membres peuvent le prendre",
     partOpenTo: "Ouvert à :",
     partOpenOwnGroup: "L'équipe concernée",
