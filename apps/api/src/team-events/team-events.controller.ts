@@ -218,6 +218,12 @@ export class TeamEventsController {
     return this.lineup.unassign(teamId, eventId, dateParam(date), assignmentId, user.id);
   }
 
+  /** An offer that waits for an admin (issue #559) is confirmed: by the team's admins or its organisation's (the service checks). */
+  @Post("events/:eventId/dates/:date/lineup/:assignmentId/confirm")
+  confirmOffer(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
+    return this.lineup.confirmOffer(teamId, eventId, dateParam(date), assignmentId, user);
+  }
+
   /** The person scheduled accepts or declines their place. */
   @Put("events/:eventId/dates/:date/lineup/:assignmentId/response")
   // Not only members: a guest answers for their own place (the service checks it is theirs).

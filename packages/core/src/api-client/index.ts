@@ -1541,6 +1541,8 @@ export interface OrganizationTeam {
   parentId: string | null;
   /** The roles it fills at the organisation's events (issue #549): "Worship" fills Music. */
   fills?: string[];
+  /** Its members' offers wait for an admin to confirm them (issue #559). */
+  confirmOffers?: boolean;
   /** Its own positions, parts an event can ask it for. */
   positions: TeamPosition[];
 }
@@ -3381,6 +3383,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<LineupPlace>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup`, { method: "POST", body: JSON.stringify(data) }),
     unassignTeamEventPart: (teamId: string, eventId: string, date: string, assignmentId: string) =>
       request<void>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}`, { method: "DELETE" }),
+    /** An offer that waits for an admin (issue #559), confirmed by the team's or its organisation's admins. */
+    confirmTeamEventOffer: (teamId: string, eventId: string, date: string, assignmentId: string) =>
+      request<{ id: string; status: AssignmentStatus; note: string | null }>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}/confirm`, { method: "POST" }),
     respondTeamEventPart: (teamId: string, eventId: string, date: string, assignmentId: string, data: RespondAssignmentRequest) =>
       request<{ id: string; status: AssignmentStatus; note: string | null }>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}/response`, { method: "PUT", body: JSON.stringify(data) }),
     requestTeamEventSwap: (teamId: string, eventId: string, date: string, assignmentId: string, data: RequestSwapRequest = {}) =>

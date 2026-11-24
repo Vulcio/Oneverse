@@ -97,6 +97,24 @@ try {
   r = await call(singer, "DELETE", `/users/me/open-places/${placed.id}`);
   check("a place the admins gave: not given up this way", r.status === 404, String(r.status));
 
+  // --- a team that has its members' offers confirmed (issue #559)
+  r = await call(planner, "PATCH", `/teams/${youthGroup.id}/group`, { confirmOffers: true });
+  check("a team has its members' offers confirmed", r.status === 200, JSON.stringify(r.body));
+  check("…its organisation shows it", (await call(planner, "GET", `/organizations/${org.id}`)).body.teams.find((one) => one.id === youthGroup.id)?.confirmOffers === true);
+  r = await take(youth, "MEDIA_OPERATOR");
+  check("an offer through it waits for an admin", r.status === 201 && r.body.status === "PENDING", JSON.stringify(r.body));
+  const offer = r.body.id;
+  check("…the admins are asked to confirm it", (await notes(planner, "OFFER_TO_CONFIRM")).length === 1);
+  r = await call(youth, "PUT", `/teams/${music.id}/events/${event.id}/dates/${date}/lineup/${offer}/response`, { status: "ACCEPTED" });
+  check("…not by the one who offered", r.status === 403, String(r.status));
+  r = await call(singer, "POST", `/teams/${music.id}/events/${event.id}/dates/${date}/lineup/${offer}/confirm`);
+  check("…nor by a member", r.status === 403, String(r.status));
+  r = await call(planner, "POST", `/teams/${music.id}/events/${event.id}/dates/${date}/lineup/${offer}/confirm`);
+  check("an admin confirms it", r.status === 201 && r.body.status === "ACCEPTED", JSON.stringify(r.body));
+  check("…and they're told", (await notes(youth, "OFFER_CONFIRMED")).length === 1);
+  r = await call(planner, "POST", `/teams/${music.id}/events/${event.id}/dates/${date}/lineup/${offer}/confirm`);
+  check("…once", r.status === 404, String(r.status));
+
   await call(admin, "DELETE", `/admin/organizations/${org.id}`);
 } finally {
   await call(admin, "DELETE", "/admin/organizations/settings");

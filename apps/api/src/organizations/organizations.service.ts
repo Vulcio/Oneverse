@@ -370,6 +370,7 @@ export class OrganizationsService {
             usesSongverse: true,
             parentId: true,
             fills: true,
+            confirmOffers: true,
             positions: { select: { id: true, name: true }, orderBy: { createdAt: "asc" } },
             _count: { select: { memberships: true } }, memberships: { where: { userId: viewer.id }, select: { id: true } } },
         },
@@ -400,6 +401,7 @@ export class OrganizationsService {
         usesSongverse: team.usesSongverse,
         parentId: team.parentId,
         fills: team.fills,
+        confirmOffers: team.confirmOffers,
         positions: team.positions,
       })),
     };

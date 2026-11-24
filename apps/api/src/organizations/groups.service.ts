@@ -95,7 +95,7 @@ export class GroupsService {
     }
     await this.prisma.client.team.update({
       where: { id: teamId },
-      data: { ...(dto.usesSongverse !== undefined && { usesSongverse: dto.usesSongverse }), ...(dto.fills !== undefined && { fills: [...new Set(dto.fills)] }), ...(dto.parentId !== undefined && { parentId: dto.parentId }) },
+      data: { ...(dto.usesSongverse !== undefined && { usesSongverse: dto.usesSongverse }), ...(dto.fills !== undefined && { fills: [...new Set(dto.fills)] }), ...(dto.parentId !== undefined && { parentId: dto.parentId }), ...(dto.confirmOffers !== undefined && { confirmOffers: dto.confirmOffers }) },
     });
     return this.teams.findOne(viewer.id, teamId);
   }

@@ -72,7 +72,7 @@ On a team's page, its admins choose the organisation under **Organisation** - on
 
 An organisation's teams are whatever people do together there: the music team, but also a welcome team or a cleaning rota. Its admins make one with **New team**: a **Name**, the team it goes **Under** (or none, at the top), and whether it **Uses Songverse**, then **Create team** - you're its admin, and its page opens.
 
-- A team that **Uses Songverse** has its songs, songbooks, arrangements and sets.
+- A team that **Uses Songverse** has its songs, songbooks, versions and sets.
 - One that doesn't (the default for a new team) only plans: it has its calendar, its members and its positions, and no songs or songbooks of its own. Its dates can still have a set - for the Bible passages, slides and the catalogue's songs they show - when its event asks for one (**Make a set for each date**, off by default for such a team). Its sets open in Songverse. It isn't listed among your teams in Songverse; you find it on the organisation's page.
 
 On a team's page, its admins change both under **Team**, then **Save**. A team with songs, songbooks or arrangements keeps using Songverse until they're moved or deleted; its sets stay either way. A team taken out of the organisation becomes a team of its own again, using Songverse.
@@ -82,6 +82,8 @@ A team's admins make teams under it too: **New sub-team** on its page, with a **
 Being in a team doesn't put you in the team above it: each team has its own members.
 
 **Roles it fills**, on a team's page, says which roles it takes at the organisation's events: Worship fills **Music**; Tech fills **Media operator**, **Audio operator** and **Lights**. A role an event asks for is then open to that team's members as soon as it's added, shown as **Music · Worship**, and to the members of the teams under it: Media, Sound and Lights under Tech. With no team filling a role, the admins choose who as before.
+
+**Offers wait for an admin**, on a team's page, has its members' offers checked: when one of them takes an open place through it, they're on the line-up as **Waiting for an admin** until an admin of the event's team or of the organisation chooses **Confirm** in the line-up (or takes them off it). The admins are told, and so is the one who offered once it's confirmed.
 
 ## Positions
 

@@ -72,7 +72,7 @@ Sur la page d'une équipe, ses administrateurs choisissent l'organisation sous *
 
 Les équipes d'une organisation sont tout ce qu'on y fait ensemble : l'équipe de louange, mais aussi une équipe d'accueil ou un planning de ménage. Ses administrateurs en créent une avec **Nouvelle équipe** : un **Nom**, l'équipe sous laquelle elle se place (**Sous**, ou aucune, au premier niveau), et si elle **Utilise Songverse**, puis **Créer l'équipe** - vous en êtes l'administrateur, et sa page s'ouvre.
 
-- Une équipe qui **Utilise Songverse** a ses chants, ses recueils, ses arrangements et ses listes.
+- Une équipe qui **Utilise Songverse** a ses chants, ses recueils, ses versions et ses listes.
 - Une équipe qui ne l'utilise pas (par défaut pour une nouvelle équipe) ne fait que planifier : elle a son calendrier, ses membres et ses postes, et ni chants ni recueils à elle. Ses dates peuvent tout de même avoir une liste - pour les passages bibliques, diapositives et chants du catalogue qu'elles projettent - quand son événement en demande une (**Créer une liste pour chaque date**, désactivé par défaut pour une telle équipe). Ses listes s'ouvrent dans Songverse. Elle n'apparaît pas parmi vos équipes dans Songverse ; vous la trouvez sur la page de l'organisation.
 
 Sur la page d'une équipe, ses administrateurs changent les deux sous **Équipe**, puis **Enregistrer**. Une équipe qui a des chants, des recueils ou des arrangements continue d'utiliser Songverse tant qu'ils ne sont pas déplacés ou supprimés ; ses listes restent dans tous les cas. Une équipe retirée de l'organisation redevient une équipe à part entière, qui utilise Songverse.
@@ -82,6 +82,8 @@ Les administrateurs d'une équipe créent aussi des équipes en dessous : **Nouv
 Faire partie d'une équipe ne vous met pas dans l'équipe au-dessus : chaque équipe a ses propres membres.
 
 **Rôles qu'elle tient**, sur la page d'une équipe, dit quels rôles elle prend aux événements de l'organisation : Louange tient la **Musique** ; Technique tient **Projection**, **Sono** et **Lumières**. Un rôle demandé par un événement est alors ouvert aux membres de cette équipe dès qu'il est ajouté, affiché **Musique · Louange**, et aux membres des équipes en dessous : Projection, Sono et Lumières sous Technique. Si aucune équipe ne tient un rôle, les administrateurs choisissent qui, comme avant.
+
+**Les propositions attendent un administrateur**, sur la page d'une équipe, fait vérifier les propositions de ses membres : quand l'un d'eux prend un poste ouvert grâce à elle, il est dans l'équipe du jour **En attente d'un administrateur** jusqu'à ce qu'un administrateur de l'équipe de l'événement ou de l'organisation choisisse **Confirmer** dans l'équipe du jour (ou l'en retire). Les administrateurs sont prévenus, et la personne aussi une fois confirmée.
 
 ## Postes
 

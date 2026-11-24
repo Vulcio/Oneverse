@@ -198,6 +198,7 @@ export const UpdateGroupSchema = z.strictObject({
     .optional()
     .describe("The roles it fills at its organisation's events (issue #549): Music, Media operator, Audio operator, Lights, Technician"),
   parentId: z.string().min(1).nullable().optional(),
+  confirmOffers: z.boolean().optional().describe("Its members' offers to fill a place wait for an admin to confirm them (issue #559)"),
 });
 export type UpdateGroupRequest = z.input<typeof UpdateGroupSchema>;
 

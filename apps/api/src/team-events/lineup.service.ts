@@ -1,6 +1,8 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { addDays, coversPart, daysBetween, GUEST_PARTS, isGivenPart, isMembersOnlyPart, placesLeft, type VolunteerRequest, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
+import { AccessPolicyService } from "../access/access-policy.service.js";
+import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { givenOn, givenPartsAmong, mayFill } from "../roles/capabilities.js";
@@ -54,6 +56,7 @@ export class LineupService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly events: TeamEventsService,
+    private readonly access: AccessPolicyService,
   ) {}
 
   /** Whether two people are connected in People (#79): an admin can schedule their People as guests. */
@@ -186,6 +189,8 @@ export class LineupService {
   async respond(teamId: string, eventId: string, date: string, assignmentId: string, userId: string, dto: RespondAssignmentRequest) {
     const row = await this.prisma.client.teamEventAssignment.findFirst({ where: { id: assignmentId, eventId, date: day(date), userId, event: { teamId } } });
     if (!row) throw new NotFoundException("Not on the line-up");
+    // One's own offer that waits for an admin (issue #559): an admin confirms it, not oneself.
+    if (row.assignedByUserId === userId && row.status === "PENDING" && dto.status === "ACCEPTED") throw new ForbiddenException("An admin confirms your offer");
     const event = await this.comingDate(teamId, eventId, date);
     const updated = await this.prisma.client.teamEventAssignment.update({
       where: { id: row.id },
@@ -415,12 +420,18 @@ export class LineupService {
     const { mine, reach } = await this.teamsNear(userId);
     if (!part || !part.openTo?.some((id) => reach.has(id)) || (part.part && isGivenPart(part.part))) throw new BadRequestException(["That place isn't open to you"]);
     const member = mine.has(teamId);
+    // A team that has its members' offers confirmed (issue #559): open to them through it, the place waits for an admin.
+    const through = part.openTo.filter((id) => reach.has(id));
+    const confirm = (await this.prisma.client.team.count({ where: { id: { in: through }, confirmOffers: true } })) > 0;
     let row;
     try {
       row = await this.prisma.client.$transaction(async (tx) => {
         const on = await tx.teamEventAssignment.findMany({ where: { eventId, date: day(date), partKey: dto.part }, select: { partKey: true, status: true } });
         if (placesLeft(part, on) === 0) throw new ConflictException("Its places are all taken");
-        return tx.teamEventAssignment.create({ data: { eventId, date: day(date), partKey: dto.part, userId, status: "ACCEPTED", respondedAt: new Date(), assignedByUserId: userId }, include: { user: { select: { displayName: true } } } });
+        return tx.teamEventAssignment.create({
+          data: { eventId, date: day(date), partKey: dto.part, userId, status: confirm ? "PENDING" : "ACCEPTED", respondedAt: confirm ? null : new Date(), assignedByUserId: userId },
+          include: { user: { select: { displayName: true } } },
+        });
       }, { isolationLevel: "Serializable" });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new ConflictException("You're already on that part");
@@ -434,7 +445,7 @@ export class LineupService {
         update: { answer: "AVAILABLE", answeredByUserId: null },
       });
     } else if (event.withSet) await this.letSeeSet(teamId, eventId, date, userId);
-    await this.tellAdmins(teamId, event, date, dto.part, "VOLUNTEERED", row.user?.displayName ?? "", userId);
+    await this.tellAdmins(teamId, event, date, dto.part, confirm ? "OFFER_TO_CONFIRM" : "VOLUNTEERED", row.user?.displayName ?? "", userId);
     return { id: row.id, userId, displayName: row.user?.displayName ?? "", partKey: row.partKey, status: row.status, guest: member ? null : ("account" as const) };
   }
 
@@ -448,7 +459,31 @@ export class LineupService {
     if (row.status !== "DECLINED") await this.tellAdmins(row.event.teamId, event, date, row.partKey, "VOLUNTEER_WITHDREW", row.user?.displayName ?? "", userId);
   }
 
-  private async tellAdmins(teamId: string, event: EventRow & { team: { name: string } }, date: string, key: string, kind: "VOLUNTEERED" | "VOLUNTEER_WITHDREW", by: string, except: string) {
+  /**
+   * An admin of the event's team, or of its organisation, confirms an offer
+   * that waits for one (issue #559): the place is the volunteer's, and
+   * they're told. Declining it is taking them off the line-up.
+   */
+  async confirmOffer(teamId: string, eventId: string, date: string, assignmentId: string, by: AuthenticatedUser) {
+    if (!(await this.confirms(by, teamId))) throw new ForbiddenException("Only the team's or its organisation's admins confirm an offer");
+    const event = await this.comingDate(teamId, eventId, date);
+    const row = await this.prisma.client.teamEventAssignment.findFirst({ where: { id: assignmentId, eventId, date: day(date), event: { teamId } } });
+    if (!row?.userId || row.assignedByUserId !== row.userId || row.status !== "PENDING") throw new NotFoundException("No offer waiting to be confirmed");
+    const updated = await this.prisma.client.teamEventAssignment.update({ where: { id: row.id }, data: { status: "ACCEPTED", respondedAt: new Date() } });
+    const data = { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, row.partKey)) };
+    await this.notifications.notify([{ userId: row.userId, kind: "OFFER_CONFIRMED", data, url: `/teams/${teamId}`, teamId }], by.id);
+    return { id: updated.id, status: updated.status, note: updated.note };
+  }
+
+  /** Whether someone confirms offers on a team's events (issue #559): its admins, its organisation's, a server admin. */
+  private async confirms(user: AuthenticatedUser, teamId: string): Promise<boolean> {
+    if (user.isGlobalAdmin || (await this.access.teamRole(user.id, teamId)) === "ADMIN") return true;
+    const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { organizationId: true } });
+    if (!team?.organizationId) return false;
+    return !!(await this.prisma.client.organizationMembership.findFirst({ where: { organizationId: team.organizationId, userId: user.id, role: "ADMIN" }, select: { id: true } }));
+  }
+
+  private async tellAdmins(teamId: string, event: EventRow & { team: { name: string } }, date: string, key: string, kind: "VOLUNTEERED" | "OFFER_TO_CONFIRM" | "VOLUNTEER_WITHDREW", by: string, except: string) {
     const admins = await this.prisma.client.teamMembership.findMany({ where: { teamId, role: "ADMIN" }, select: { userId: true } });
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by, ...(await this.partData(event, key)) };
     await this.notifications.notify(admins.map(({ userId: admin }) => ({ userId: admin, kind, data, url: `/teams/${teamId}`, teamId })), except);

@@ -715,6 +715,9 @@ model Team {
   // The roles it fills at an organisation's events (issue #549): "Worship" fills Music. A part an event asks for
   // that one of its groups fills is open to that group's members (and those of the groups under it).
   fills                String[]               @default([])
+  // Its members' offers to fill a place wait for an admin of the event's team
+  // or organisation to confirm them (issue #559); otherwise they're on at once.
+  confirmOffers        Boolean                @default(false)
   parentId             String?
   parent               Team?                  @relation("Subgroups", fields: [parentId], references: [id], onDelete: SetNull)
   // News its admins sent its members (issue #536).

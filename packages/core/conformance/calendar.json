@@ -802,6 +802,14 @@
               "email": true,
               "push": true
             },
+            "OFFER_TO_CONFIRM": {
+              "email": true,
+              "push": true
+            },
+            "OFFER_CONFIRMED": {
+              "email": true,
+              "push": true
+            },
             "VOLUNTEER_WITHDREW": {
               "email": true,
               "push": true
@@ -976,6 +984,14 @@
               "push": true
             },
             "VOLUNTEERED": {
+              "email": true,
+              "push": true
+            },
+            "OFFER_TO_CONFIRM": {
+              "email": true,
+              "push": true
+            },
+            "OFFER_CONFIRMED": {
               "email": true,
               "push": true
             },
@@ -1161,6 +1177,14 @@
                 "push": true
               },
               "VOLUNTEERED": {
+                "email": true,
+                "push": true
+              },
+              "OFFER_TO_CONFIRM": {
+                "email": true,
+                "push": true
+              },
+              "OFFER_CONFIRMED": {
                 "email": true,
                 "push": true
               },

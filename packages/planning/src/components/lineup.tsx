@@ -103,7 +103,15 @@ export function LineupLine({
       {mine.map((place) => (
         <div key={place.id} className="flex flex-wrap items-center gap-2 text-sm" data-my-place={place.status}>
           <span className="font-medium">{t("teamCalendar.youreOn", { part: partLabel(partOf(parts, place.partKey)) })}</span>
-          {place.status === "PENDING" ? (
+          {place.volunteered && place.status === "PENDING" ? (
+            // An offer that waits for an admin (issue #559): taken back, it's open again.
+            <>
+              <Badge variant="outline" data-testid="lineup-offer-waiting">{t("teamCalendar.offerWaiting")}</Badge>
+              <button type="button" className="text-xs text-muted-foreground underline-offset-2 hover:underline" disabled={busy} onClick={() => run(() => api.giveUpOpenPlace(place.id))} data-testid="lineup-give-up">
+                {t("teamCalendar.giveUp")}
+              </button>
+            </>
+          ) : place.status === "PENDING" ? (
             <>
               <Button size="sm" className="h-7" disabled={busy} onClick={() => answer(place, "ACCEPTED")} data-testid="lineup-accept">
                 <Check />
@@ -319,6 +327,13 @@ export function LineupDialog({
                         </Badge>
                       ) : null}
                       {place.note ? <span className="text-xs text-muted-foreground italic">"{place.note}"</span> : null}
+                      {place.volunteered && place.status === "PENDING" ? (
+                        // An offer that waits for an admin (issue #559): confirmed here, declined with the cross.
+                        <Button size="sm" variant="outline" className="h-7" onClick={() => void run(() => api.confirmTeamEventOffer(teamId, eventId, date, place.id))} data-testid="lineup-confirm-offer">
+                          <Check />
+                          {t("teamCalendar.confirmOffer")}
+                        </Button>
+                      ) : null}
                       <button
                         type="button"
                         className="ml-auto rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"

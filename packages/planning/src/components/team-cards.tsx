@@ -208,16 +208,19 @@ export function GroupCard({ team, organization, onChanged, onError }: { team: Te
   // The roles it fills at the organisation's events (issue #549): "Worship" fills Music.
   const filled = organization.teams.find((one) => one.id === team.id)?.fills ?? [];
   const [fills, setFills] = useState<string[]>(filled);
+  // Its members' offers wait for an admin to confirm them (issue #559).
+  const confirming = organization.teams.find((one) => one.id === team.id)?.confirmOffers ?? false;
+  const [confirmOffers, setConfirmOffers] = useState(confirming);
   const partLabel = usePartLabel([]);
   const [saving, setSaving] = useState(false);
   // Not under itself or a group under it.
   const excluded = withSubgroups(organization.teams, team.id);
-  const changed = usesSongverse !== (team.usesSongverse !== false) || parentId !== (team.parentId ?? "") || [...fills].sort().join() !== [...filled].sort().join();
+  const changed = usesSongverse !== (team.usesSongverse !== false) || parentId !== (team.parentId ?? "") || [...fills].sort().join() !== [...filled].sort().join() || confirmOffers !== confirming;
 
   async function save() {
     setSaving(true);
     try {
-      await api.updateTeamGroup(team.id, { usesSongverse, parentId: parentId || null, fills });
+      await api.updateTeamGroup(team.id, { usesSongverse, parentId: parentId || null, fills, confirmOffers });
       await onChanged();
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
@@ -251,6 +254,13 @@ export function GroupCard({ team, organization, onChanged, onError }: { team: Te
           <span className="flex flex-col gap-0.5">
             <span className="text-sm font-medium">{t("organizations.usesSongverse")}</span>
             <span className="text-xs text-muted-foreground">{t("organizations.usesSongverseHint")}</span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3">
+          <input type="checkbox" className="mt-1 size-4" checked={confirmOffers} onChange={(e) => setConfirmOffers(e.target.checked)} data-testid="team-confirm-offers" />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">{t("organizations.confirmOffers")}</span>
+            <span className="text-xs text-muted-foreground">{t("organizations.confirmOffersHint")}</span>
           </span>
         </label>
         <fieldset className="flex flex-col gap-1.5" data-testid="team-fills">

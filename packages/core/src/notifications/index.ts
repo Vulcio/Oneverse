@@ -31,6 +31,9 @@ export const NOTIFICATION_KINDS = [
   "UNSCHEDULED",
   // Someone put themselves on an open place, or withdrew (issue #528, to the team's admins).
   "VOLUNTEERED",
+  // Someone offered to fill a place through a team that has offers confirmed (issue #559, to the team's admins), and it's confirmed (to them).
+  "OFFER_TO_CONFIRM",
+  "OFFER_CONFIRMED",
   "VOLUNTEER_WITHDREW",
   // Someone asks for a replacement on a part one plays: take it.
   "SWAP_OFFERED",
