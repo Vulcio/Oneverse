@@ -1,4 +1,4 @@
-import { addDays, localDate, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type OrganizationEventPreset, type OrganizationEventTransfer, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
+import { addDays, localDate, needsFromParts, partsFromNeeds, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type TeamEventType, type OrganizationEventTransfer, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Ban, CalendarDays, CircleCheck, MapPin, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -35,14 +35,14 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * An organisation's events (issue #241): each coming date with its host and
  * every group it needs - how its parts are covered, for the organisation's
  * admins and the event's host, who change it, cancel a date for all, and
- * start one from a preset.
+ * start one from one of its event types.
  */
 
 export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<ReturnType<typeof loadOrganizationEventsPage>>> }) {
   const { api, links, sets } = usePlanning();
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { organization, events, presets, members, customInstruments } = data;
+  const { organization, events, types, members, customInstruments } = data;
   const isAdmin = organization.currentUserRole === "ADMIN";
   // Its groups name the roles they fill (issue #549): "Music · Worship".
   const partLabel = usePartLabel(customInstruments, organization.teams);
@@ -219,41 +219,11 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
         </CardContent>
       </Card>
 
-      {isAdmin ? (
-        <Card data-testid="org-presets">
-          <CardHeader>
-            <CardTitle className="text-sm">{t("organizations.presets")}</CardTitle>
-            <CardDescription>{t("organizations.presetsHint")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {presets.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("organizations.noPresets")}</p>
-            ) : (
-              <ul className="flex flex-col divide-y">
-                {presets.map((preset) => (
-                  <li key={preset.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0" data-preset={preset.name}>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">{preset.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {preset.title} · {preset.startTime} · {preset.needs.map((need) => organization.teams.find((team) => team.id === need.teamId)?.name ?? "?").join(", ")}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => void act(() => api.deleteOrganizationEventPreset(organization.id, preset.id))}>
-                      {t("organizations.removePreset")}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      ) : null}
-
       {editing ? (
         <OrganizationEventDialog
           organization={organization}
           event={editing === "new" ? null : editing}
-          presets={presets}
+          types={types}
           members={members}
           isAdmin={isAdmin}
           customInstruments={customInstruments}
@@ -392,7 +362,7 @@ function OrganizationSeriesList({ events, onEdit }: { events: OrganizationEvent[
 function OrganizationEventDialog({
   organization,
   event,
-  presets,
+  types,
   members,
   isAdmin,
   customInstruments,
@@ -402,7 +372,7 @@ function OrganizationEventDialog({
 }: {
   organization: OrganizationDetail;
   event: OrganizationEvent | null;
-  presets: OrganizationEventPreset[];
+  types: TeamEventType[];
   members: OrganizationMember[];
   isAdmin: boolean;
   customInstruments: readonly CustomInstrument[];
@@ -427,22 +397,23 @@ function OrganizationEventDialog({
   const [hostUserId, setHostUserId] = useState(event?.host?.id ?? "");
   // Each group's parts, and when it's to be there (issue #240: minutes before; blank, none).
   const [needs, setNeeds] = useState<{ teamId: string; parts: EventPart[]; call: string; withSet: boolean }[]>(event?.needs.map((need) => ({ teamId: need.teamId, parts: need.parts, call: need.callMinutes ? String(need.callMinutes) : "", withSet: need.withSet ?? true })) ?? []);
-  const [presetName, setPresetName] = useState<string | null>(null);
+  const [typeName, setTypeName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const zones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [timeZone];
   const teamOf = (teamId: string): OrganizationTeam | undefined => organization.teams.find((team) => team.id === teamId);
   const choices = organization.teams.filter((team) => !needs.some((need) => need.teamId === team.id));
 
-  const fromPreset = (preset: OrganizationEventPreset) => {
-    setTitle(preset.title);
-    setStartTime(preset.startTime);
-    setDuration(String(preset.durationMinutes));
-    setPlace(preset.place ?? "");
-    setLocationId(preset.locationId ?? "");
-    const presetLocation = locations.find((one) => one.id === preset.locationId);
-    if (presetLocation) setTimeZone(presetLocation.timeZone);
-    setNeeds(preset.needs.filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts ?? [], call: need.callMinutes ? String(need.callMinutes) : "", withSet: need.withSet ?? teamOf(need.teamId)?.usesSongverse !== false })));
+  // Issue #559: a type's positions, each from a team, are what the event needs of those teams.
+  const fromType = (type: TeamEventType) => {
+    setTitle(type.name);
+    if (type.startTime) setStartTime(type.startTime);
+    if (type.durationMinutes) setDuration(String(type.durationMinutes));
+    const typeLocation = locations.find((one) => one.id === type.locationId);
+    setLocationId(typeLocation?.id ?? "");
+    setPlace(typeLocation?.name ?? "");
+    if (typeLocation) setTimeZone(typeLocation.timeZone);
+    setNeeds(needsFromParts(type.parts).filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts, call: type.callMinutes ? String(type.callMinutes) : "", withSet: type.withSet && teamOf(need.teamId)?.usesSongverse !== false })));
   };
   const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}), withSet: need.withSet }));
 
@@ -480,22 +451,22 @@ function OrganizationEventDialog({
             void save();
           }}
         >
-          {!event && presets.length > 0 ? (
+          {!event && types.length > 0 ? (
             <div className="col-span-2 flex flex-col gap-1.5">
-              <Label htmlFor="org-event-preset">{t("organizations.preset")}</Label>
+              <Label htmlFor="org-event-type">{t("organizations.eventType")}</Label>
               <NativeSelect
-                id="org-event-preset"
+                id="org-event-type"
                 defaultValue=""
                 onChange={(e) => {
-                  const preset = presets.find((one) => one.id === e.target.value);
-                  if (preset) fromPreset(preset);
+                  const type = types.find((one) => one.id === e.target.value);
+                  if (type) fromType(type);
                 }}
-                data-testid="org-event-preset"
+                data-testid="org-event-type"
               >
-                <option value="">{t("organizations.presetNone")}</option>
-                {presets.map((preset) => (
-                  <option key={preset.id} value={preset.id}>
-                    {preset.name}
+                <option value="">{t("organizations.eventTypeNone")}</option>
+                {types.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
                   </option>
                 ))}
               </NativeSelect>
@@ -645,19 +616,29 @@ function OrganizationEventDialog({
           </div>
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
-        {presetName !== null ? (
+        {typeName !== null ? (
           <div className="flex items-end gap-2">
             <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="org-preset-name">{t("organizations.presetName")}</Label>
-              <Input id="org-preset-name" value={presetName} maxLength={60} autoFocus onChange={(e) => setPresetName(e.target.value)} />
+              <Label htmlFor="org-type-name">{t("organizations.eventTypeName")}</Label>
+              <Input id="org-type-name" value={typeName} maxLength={120} autoFocus onChange={(e) => setTypeName(e.target.value)} />
             </div>
             <Button
               variant="outline"
-              disabled={busy || !presetName.trim() || needs.length === 0 || !title.trim()}
+              disabled={busy || !typeName.trim() || !needs.some((need) => need.parts.length > 0)}
               onClick={() =>
-                void run(() => api.createOrganizationEventPreset(organization.id, { name: presetName.trim(), title, startTime, durationMinutes: Number(duration), place: place || undefined, locationId: locationId || undefined, needs: needsBody() }))
+                void run(() =>
+                  api.createOrganizationEventType(organization.id, {
+                    name: typeName.trim(),
+                    startTime,
+                    durationMinutes: Number(duration),
+                    ...(needs[0]?.call ? { callMinutes: Number(needs[0].call) } : {}),
+                    withSet: needs.some((need) => need.withSet),
+                    ...(locationId ? { locationId } : {}),
+                    parts: partsFromNeeds(needsBody()),
+                  }),
+                )
               }
-              data-testid="org-preset-save"
+              data-testid="org-type-save"
             >
               {t("organizations.save")}
             </Button>
@@ -675,9 +656,9 @@ function OrganizationEventDialog({
                 onConfirm={() => run(() => api.deleteOrganizationEvent(organization.id, event.id))}
               />
             ) : null}
-            {isAdmin && presetName === null ? (
-              <Button type="button" variant="ghost" onClick={() => setPresetName(title)} data-testid="org-save-preset">
-                {t("organizations.saveAsPreset")}
+            {isAdmin && typeName === null ? (
+              <Button type="button" variant="ghost" onClick={() => setTypeName(title)} data-testid="org-save-type">
+                {t("organizations.saveAsEventType")}
               </Button>
             ) : null}
           </div>

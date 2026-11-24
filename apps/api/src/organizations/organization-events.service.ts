@@ -1,5 +1,5 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { eventFallsOn, type EventPart } from "@oneverse/core";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { eventFallsOn } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { eventLocation } from "../locations/locations.service.js";
@@ -9,7 +9,7 @@ import { AvailabilityService } from "../team-events/availability.service.js";
 import { EventTypesService } from "../team-events/event-types.service.js";
 import { dateText, day, partsOf, TeamEventsService } from "../team-events/team-events.service.js";
 import type { CreateTeamEventTypeDto, UpdateTeamEventTypeDto } from "../team-events/dto/team-events.dto.js";
-import type { CreateOrganizationEventDto, OrganizationEventPresetDto, UpdateOrganizationEventDto } from "./dto/organization-events.dto.js";
+import type { CreateOrganizationEventDto, UpdateOrganizationEventDto } from "./dto/organization-events.dto.js";
 import { OrganizationsService } from "./organizations.service.js";
 
 type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin">;
@@ -355,36 +355,6 @@ export class OrganizationEventsService {
       }
     }
     return [...out.values()].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  }
-
-  // --- presets
-
-  async presets(viewer: Viewer, organizationId: string) {
-    await this.role(viewer, organizationId);
-    const rows = await this.prisma.client.organizationEventPreset.findMany({ where: { organizationId }, orderBy: { name: "asc" } });
-    return rows.map((row) => ({ id: row.id, name: row.name, title: row.title, startTime: row.startTime, durationMinutes: row.durationMinutes, place: row.place, locationId: row.locationId, needs: row.needs as unknown as { teamId: string; parts?: EventPart[]; callMinutes?: number; withSet?: boolean }[] }));
-  }
-
-  /** By its admins: what an event usually needs, under a name of its own. */
-  async createPreset(viewer: Viewer, organizationId: string, dto: OrganizationEventPresetDto) {
-    if ((await this.role(viewer, organizationId)) !== "ADMIN") throw new ForbiddenException("Only the organisation's admins make presets");
-    await this.checkNeeds(organizationId, dto.needs);
-    const location = dto.locationId ? await eventLocation(this.prisma, { organizationId }, dto.locationId) : null;
-    try {
-      const row = await this.prisma.client.organizationEventPreset.create({
-        data: { organizationId, name: dto.name, title: dto.title, startTime: dto.startTime, durationMinutes: dto.durationMinutes ?? 90, place: dto.place || location?.name || null, locationId: location?.id ?? null, needs: dto.needs as unknown as Prisma.InputJsonValue },
-      });
-      return (await this.presets(viewer, organizationId)).find((one) => one.id === row.id)!;
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new ConflictException("A preset already has that name");
-      throw error;
-    }
-  }
-
-  async deletePreset(viewer: Viewer, organizationId: string, presetId: string) {
-    if ((await this.role(viewer, organizationId)) !== "ADMIN") throw new ForbiddenException("Only the organisation's admins remove presets");
-    const { count } = await this.prisma.client.organizationEventPreset.deleteMany({ where: { id: presetId, organizationId } });
-    if (count === 0) throw new NotFoundException("Preset not found");
   }
 
   /** The organisation's event types (issue #528): its members see them, its groups pick from them. */

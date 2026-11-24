@@ -799,7 +799,6 @@ model Organization {
   announcements   Announcement[]
   teams           Team[]
   events          OrganizationEvent[]
-  eventPresets    OrganizationEventPreset[]
   eventTypes      TeamEventType[]
   // Its screens (issue #222): the church's projector, its stage monitor.
   screens         Screen[]
@@ -1624,35 +1623,17 @@ model TeamEventType {
   // [{ part, position, name, count }], as TeamEvent.parts.
   parts           Json
   withSet         Boolean  @default(true)
+  // Where its events usually are (issue #559, from the organisations' presets it replaced).
+  locationId      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   team         Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
   events       TeamEvent[]
 
   @@unique([teamId, name])
-  @@unique([organizationId, name])
-}
-
-// A saved list of what an organisation's event needs (issue #241):
-// "Sunday service: Music (drums, bass), Welcome (Greeter x2)", with its usual timing.
-model OrganizationEventPreset {
-  id              String   @id @default(cuid())
-  organizationId  String
-  name            String
-  title           String
-  startTime       String
-  durationMinutes Int      @default(90)
-  place           String?
-  locationId      String?
-  // [{ teamId, parts }]
-  needs           Json
-  createdAt       DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  location     Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
-
   @@unique([organizationId, name])
 }
 
@@ -3764,7 +3745,7 @@ model Location {
   organization       Organization?             @relation(fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
   teamEvents         TeamEvent[]
   organizationEvents OrganizationEvent[]
-  eventPresets       OrganizationEventPreset[]
+  eventTypes         TeamEventType[]
   // Screens and Pulses that follow its events (issue #320).
   screens            Screen[]
 

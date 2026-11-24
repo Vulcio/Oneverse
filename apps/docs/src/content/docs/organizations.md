@@ -109,11 +109,11 @@ Its admins make one with **New event**: its **Title**, first date, start time, l
 
 A team's admins can move one of its events to the organisation (see [Calendar](/teams/#calendar)). It waits at the top of the calendar, for the organisation's admins, under **Asked to join the calendar**: **Accept** makes it the organisation's event, with the same timing, hosted by whoever asked, and the team's part of it as it was - its dates, answers, line-ups and sets; **Decline** leaves it the team's. Whoever asked is told either way.
 
-**Presets** keep what an event usually needs: in an event's dialog, **Save as preset** under a **Preset name**. **New event** then starts from one with **Preset**, which fills its title, time, place and teams. The admins remove presets under **Presets**.
+An event can start from one of the organisation's [event types](/organizations/#event-types): **New event** fills its title, time, location and teams from the one picked in **Event type** - each of the type's parts goes to the team it comes **From**, as what the event asks of that team (a part from no team is left for you to add). **Save as event type**, under an **Event type's name**, keeps an event's teams and parts as a new type, each part from the team it was asked of.
 
 ### Event types
 
-**Event types**, at the top of the organisation's page, keeps the kinds of events all its teams hold - a service, a prayer night, a meeting - for its admins: each with its usual timing, its parts (which are required, and which places are open to the team the event is in or to other teams; see [Parts needed](/teams/#parts-needed)) and **Make a set for each date**. They're offered to every team: on a team's calendar, **Event types** lists them, marked with the organisation's name, and **New event** picks from them like the team's own. An event made from one can still ask for more parts. Only the organisation's admins change or delete them; the team's admins can still keep types of their own.
+**Event types**, at the top of the organisation's page, keeps the kinds of events all its teams hold - a service, a prayer night, a meeting - for its admins: each with its usual timing and **Location**, its parts (which are required, and which places are open to the team the event is in or to other teams; see [Parts needed](/teams/#parts-needed)) and **Make a set for each date**. They're offered to every team: on a team's calendar, **Event types** lists them, marked with the organisation's name, and **New event** picks from them like the team's own. An event made from one can still ask for more parts. Only the organisation's admins change or delete them; the team's admins can still keep types of their own.
 
 ## Locations
 

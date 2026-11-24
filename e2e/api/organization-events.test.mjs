@@ -3,8 +3,8 @@
 // gets its part as one of its own events, whose timing follows the
 // organisation's (its admins choose only its parts); the host is told, and
 // with the admins sees how every group's parts are covered, changes the
-// timing and cancels a date for all of them; presets keep what an event
-// usually needs.
+// timing and cancels a date for all of them. (What an event usually needs
+// is one of its event types since issue #559: see organization-event-types.)
 import { stamp, sql, check, user, call, finish } from "../lib/harness.mjs";
 
 const plus = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
@@ -115,20 +115,6 @@ check("a group needed again gets its part, at the event's time", r.status === 20
 r = await call(alice, "PATCH", `${base}/events/${made.id}`, { needs: [{ teamId: music.id }, { teamId: welcome.id, withSet: true }] });
 const welcomeSet = (await call(alice, "GET", `/teams/${welcome.id}/event-dates?from=${first}&to=${first}`)).body.find((one) => one.eventId === back.id);
 check("…and a set when asked, though it only plans (issue #531)", r.status === 200 && r.body.needs.find((n) => n.teamId === welcome.id)?.withSet === true && !!welcomeSet?.setlistId, JSON.stringify(welcomeSet));
-
-// --- presets
-const preset = { name: `Sunday ${stamp}`, title: "Sunday service", startTime: "10:00", durationMinutes: 120, needs: event.needs };
-r = await call(greeter, "POST", `${base}/event-presets`, preset);
-check("only the admins make presets", r.status === 403, String(r.status));
-r = await call(alice, "POST", `${base}/event-presets`, preset);
-const saved = r.body;
-check("a preset kept", r.status === 201 && saved.needs.length === 2 && saved.startTime === "10:00", JSON.stringify(r.body));
-r = await call(alice, "POST", `${base}/event-presets`, preset);
-check("…its name once", r.status === 409, String(r.status));
-r = await call(greeter, "GET", `${base}/event-presets`);
-check("members see them", r.status === 200 && r.body.some((one) => one.id === saved.id), String(r.status));
-r = await call(alice, "DELETE", `${base}/event-presets/${saved.id}`);
-check("removed", r.status === 204 && (await call(alice, "GET", `${base}/event-presets`)).body.length === 0, String(r.status));
 
 // --- a group leaving, then the event gone
 r = await call(alice, "DELETE", `${base}/teams/${welcome.id}`);

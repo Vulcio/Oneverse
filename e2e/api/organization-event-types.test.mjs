@@ -27,7 +27,13 @@ try {
   r = await call(planner, "POST", base, { ...service, parts: [{ part: "MUSIC_LEADER", count: 1, openTo: [other.id] }] });
   check("open only to its own groups", r.status === 400, JSON.stringify(r.body));
   r = await call(planner, "POST", base, { ...service, parts: [{ position: "x", count: 1 }] });
-  check("no group's positions", r.status === 400, JSON.stringify(r.body));
+  check("no position that isn't one of its groups'", r.status === 400, JSON.stringify(r.body));
+  const greeter = (await call(planner, "POST", `/teams/${youth.id}/positions`, { name: "Greeter" })).body;
+  r = await call(planner, "POST", base, { ...service, name: "Welcome", parts: [{ position: greeter.id, count: 2 }] });
+  check("a group's position, but from no team: no", r.status === 400, JSON.stringify(r.body));
+  r = await call(planner, "POST", base, { ...service, name: "Welcome", parts: [{ position: greeter.id, count: 2, openTo: [youth.id] }] });
+  check("a group's position from that group (issue #559)", r.status === 201 && r.body.parts[0].name === "Greeter" && r.body.parts[0].openTo.join() === youth.id, JSON.stringify(r.body));
+  await call(planner, "DELETE", `${base}/${r.body.id}`);
   r = await call(planner, "POST", base, service);
   check("its admins make one: required parts, a place open to the group the event is in and to Youth", r.status === 201 && r.body.organizationId === org.id && r.body.teamId === null && r.body.parts[1].openTo.join() === `own,${youth.id}`, JSON.stringify(r.body));
   const type = r.body;

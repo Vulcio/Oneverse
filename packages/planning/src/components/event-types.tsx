@@ -10,6 +10,7 @@ import { FieldError } from "@oneverse/ui/components/field";
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { usePlanning } from "../host";
+import { LocationField, useLocations } from "./locations";
 import { DEFAULT_START, partBody, PartsEditor, useOpenToTeams } from "./team-calendar";
 
 /**
@@ -224,6 +225,9 @@ function EventTypeDialog({
   const [call, setCall] = useState(type?.callMinutes ? String(type.callMinutes) : "");
   const [parts, setParts] = useState<EventPart[]>(type?.parts ?? []);
   const [withSet, setWithSet] = useState(type?.withSet ?? true);
+  // Where its events usually are (issue #559): one of the owner's locations.
+  const locations = useLocations("teamId" in owner ? { teamId: owner.teamId } : { organizationId: owner.organizationId });
+  const [locationId, setLocationId] = useState(type?.locationId ?? "");
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -231,7 +235,7 @@ function EventTypeDialog({
   const save = async () => {
     setBusy(true);
     setError(null);
-    const body = { name, startTime: startTime || null, durationMinutes: duration ? Number(duration) : null, callMinutes: call ? Number(call) : null, parts: parts.map(partBody), withSet };
+    const body = { name, startTime: startTime || null, durationMinutes: duration ? Number(duration) : null, callMinutes: call ? Number(call) : null, parts: parts.map(partBody), withSet, ...(locationId ? { locationId } : type?.locationId ? { locationId: null } : {}) };
     try {
       if (type) await calls.update(type.id, body);
       else await calls.create(body);
@@ -273,6 +277,7 @@ function EventTypeDialog({
             <Label htmlFor="event-type-call">{t("teamCalendar.callMinutes")}</Label>
             <Input id="event-type-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} />
           </div>
+          <LocationField id="event-type-location" locations={locations} value={locationId} place="" onChange={(change) => setLocationId(change.locationId)} />
           {makesSets ? <WithSetField id="event-type-with-set" checked={withSet} onChange={setWithSet} /> : null}
           <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} />
         </form>

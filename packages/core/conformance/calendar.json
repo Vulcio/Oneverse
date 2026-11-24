@@ -1730,6 +1730,199 @@
         }
       ]
     },
+    "needsFromParts": {
+      "about": "An organisation's event from one of its event types (issue #559): each position goes to the team it comes from, as what the event needs of that team; a position from no team (or the group using the type) is left out.",
+      "params": [
+        "parts"
+      ],
+      "cases": [
+        {
+          "name": "positions grouped by team, in order",
+          "args": [
+            [
+              {
+                "part": "HOST",
+                "count": 1,
+                "openTo": [
+                  "t_presidency"
+                ]
+              },
+              {
+                "part": "MUSIC_LEADER",
+                "count": 1,
+                "openTo": [
+                  "t_worship"
+                ]
+              },
+              {
+                "part": "DRUMS",
+                "count": 1,
+                "openTo": [
+                  "t_worship"
+                ]
+              },
+              {
+                "name": "Greeter",
+                "count": 2,
+                "openTo": [
+                  "t_welcome"
+                ]
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "teamId": "t_presidency",
+              "parts": [
+                {
+                  "part": "HOST",
+                  "count": 1,
+                  "openTo": [
+                    "t_presidency"
+                  ]
+                }
+              ]
+            },
+            {
+              "teamId": "t_worship",
+              "parts": [
+                {
+                  "part": "MUSIC_LEADER",
+                  "count": 1,
+                  "openTo": [
+                    "t_worship"
+                  ]
+                },
+                {
+                  "part": "DRUMS",
+                  "count": 1,
+                  "openTo": [
+                    "t_worship"
+                  ]
+                }
+              ]
+            },
+            {
+              "teamId": "t_welcome",
+              "parts": [
+                {
+                  "name": "Greeter",
+                  "count": 2,
+                  "openTo": [
+                    "t_welcome"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "from no team, or the group using it: left out",
+          "args": [
+            [
+              {
+                "part": "SPEAKER",
+                "count": 1
+              },
+              {
+                "part": "MEDIA_OPERATOR",
+                "count": 1,
+                "openTo": [
+                  "own"
+                ]
+              },
+              {
+                "part": "BASS_GUITAR",
+                "count": 1,
+                "openTo": [
+                  "t_worship"
+                ]
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "teamId": "t_worship",
+              "parts": [
+                {
+                  "part": "BASS_GUITAR",
+                  "count": 1,
+                  "openTo": [
+                    "t_worship"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "partsFromNeeds": {
+      "about": "An event type's positions from what an organisation's event needs (issue #559): each part from the team asked for it, unless it already says which.",
+      "params": [
+        "needs"
+      ],
+      "cases": [
+        {
+          "name": "each part from its team",
+          "args": [
+            [
+              {
+                "teamId": "t_worship",
+                "parts": [
+                  {
+                    "part": "DRUMS",
+                    "count": 1
+                  },
+                  {
+                    "part": "HOST",
+                    "count": 1,
+                    "openTo": [
+                      "t_presidency"
+                    ]
+                  }
+                ]
+              },
+              {
+                "teamId": "t_welcome",
+                "parts": [
+                  {
+                    "name": "Greeter",
+                    "count": 2
+                  }
+                ]
+              },
+              {
+                "teamId": "t_tech"
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "part": "DRUMS",
+              "count": 1,
+              "openTo": [
+                "t_worship"
+              ]
+            },
+            {
+              "part": "HOST",
+              "count": 1,
+              "openTo": [
+                "t_presidency"
+              ]
+            },
+            {
+              "name": "Greeter",
+              "count": 2,
+              "openTo": [
+                "t_welcome"
+              ]
+            }
+          ]
+        }
+      ]
+    },
     "swapCandidates": {
       "about": "Who's offered someone's place when they ask for a replacement: members who cover its part, not the one asking, not already on it, not unavailable (or away) that date.",
       "params": [

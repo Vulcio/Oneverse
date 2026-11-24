@@ -83,8 +83,13 @@ r = await call(member, "GET", `/teams/${team.id}/events/${sunday.needs[0].teamEv
 check("…its group's part follows", r.body.locationId === annex.id && r.body.place === "Annex", JSON.stringify(r.body));
 r = await call(lead, "GET", `${base}/event-dates?from=${plus(6)}&to=${plus(6)}`);
 check("its dates say where", r.status === 200 && r.body[0]?.locationId === annex.id, JSON.stringify(r.body));
-r = await call(lead, "POST", `${base}/event-presets`, { name: `Usual ${stamp}`, title: "Sunday service", startTime: "10:00", locationId: campus.id, needs: [{ teamId: team.id }] });
-check("a preset keeps its location", r.status === 201 && r.body.locationId === campus.id && r.body.place === "Main campus", JSON.stringify(r.body));
+r = await call(lead, "POST", `${base}/event-types`, { name: `Usual ${stamp}`, startTime: "10:00", locationId: campus.id, parts: [{ part: "DRUMS", count: 1, openTo: [team.id] }] });
+check("an event type keeps its location (issue #559)", r.status === 201 && r.body.locationId === campus.id, JSON.stringify(r.body));
+const usual = r.body;
+r = await call(lead, "PATCH", `${base}/event-types/${usual.id}`, { locationId: null });
+check("…and forgets it", r.status === 200 && r.body.locationId === null, JSON.stringify(r.body));
+r = await call(lead, "POST", `/teams/${team.id}/event-types`, { name: `Elsewhere ${stamp}`, locationId: "nowhere" });
+check("…only one of its owner's", r.status === 400, JSON.stringify(r.body));
 
 // --- removing one
 r = await call(member, "DELETE", `/locations/${annex.id}`);

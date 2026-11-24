@@ -861,6 +861,13 @@ function EventDialog({
     // Its roles open to the groups that fill them (issue #549), unless the type says who.
     setParts(withFillingGroups(partsForTeam(type.parts, teamId), openToTeams));
     setWithSet(type.withSet);
+    // Where its events usually are (issue #559).
+    const typeLocation = locations.find((one) => one.id === type.locationId);
+    if (typeLocation) {
+      setLocationId(typeLocation.id);
+      if (!place || place === locations.find((one) => one.id === locationId)?.name) setPlace(typeLocation.name);
+      if (!parentEvent) setTimeZone(typeLocation.timeZone);
+    }
   };
 
   const save = async () => {

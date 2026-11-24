@@ -87,6 +87,7 @@ export const CreateTeamEventTypeSchema = z.strictObject({
   callMinutes: optional(callMinutes),
   parts: optional(eventParts),
   withSet: optional(z.boolean()).describe("Whether its events' dates get a set; true when left out"),
+  locationId: optional(z.string().trim().min(1).max(64)).describe("Where its events usually are (issue #559): one of its owner's locations"),
 });
 export type CreateTeamEventTypeRequest = z.input<typeof CreateTeamEventTypeSchema>;
 
@@ -98,6 +99,7 @@ export const UpdateTeamEventTypeSchema = z.strictObject({
   callMinutes: callMinutes.nullable().optional(),
   parts: eventParts.optional(),
   withSet: z.boolean().optional(),
+  locationId: z.string().trim().min(1).max(64).nullable().optional(),
 });
 export type UpdateTeamEventTypeRequest = z.input<typeof UpdateTeamEventTypeSchema>;
 
@@ -113,7 +115,7 @@ export type UpdateTeamEventDateRequest = z.input<typeof UpdateTeamEventDateSchem
  * What a date asks for besides its event's parts (issue #549): the
  * instruments (or the group's positions, or names) its music lead wants
  * that date, each with how many. Whoever the event's Music part is open to
- * answers them; given parts (Host, Speaker) aren't asked this way.
+ * answers them; Host and Speaker aren't asked this way (only an event asks for them).
  */
 export const SetTeamEventDateAsksSchema = z.strictObject({
   parts: z
@@ -270,15 +272,3 @@ export type UpdateOrganizationEventRequest = z.input<typeof UpdateOrganizationEv
 export const UpdateOrganizationEventDateSchema = z.strictObject({
   cancelled: z.boolean(),
 });
-
-/** A preset (issue #241): what an organisation's event usually needs, and its usual timing. */
-export const OrganizationEventPresetSchema = z.strictObject({
-  name: requiredText(60),
-  title: requiredText(120),
-  startTime: time("startTime"),
-  durationMinutes: optional(duration),
-  place: optional(z.string().trim().max(200)),
-  locationId: optional(z.string().trim().min(1).max(64)).describe("Where it takes place (issue #320): one of the organisation's locations; `place` is filled from it when left out"),
-  needs,
-});
-export type OrganizationEventPresetRequest = z.input<typeof OrganizationEventPresetSchema>;

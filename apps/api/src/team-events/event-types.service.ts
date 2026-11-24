@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { EVENT_TYPES_LIMIT, type CreateTeamEventTypeRequest, type UpdateTeamEventTypeRequest } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
+import { eventLocation } from "../locations/locations.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { partsOf, TeamEventsService } from "./team-events.service.js";
 
@@ -38,6 +39,7 @@ export class EventTypesService {
       callMinutes: type.callMinutes,
       parts: partsOf(type),
       withSet: type.withSet,
+      locationId: type.locationId,
       eventCount: type._count.events,
     };
   }
@@ -76,9 +78,10 @@ export class EventTypesService {
   async create(owner: EventTypeOwner, dto: CreateTeamEventTypeRequest) {
     if ((await this.prisma.client.teamEventType.count({ where: owner })) >= EVENT_TYPES_LIMIT) throw new BadRequestException([`At most ${EVENT_TYPES_LIMIT} event types are kept`]);
     const parts = (await this.events.checkParts(dto.parts ?? undefined, this.partsOwner(owner))) ?? [];
+    const location = dto.locationId ? await eventLocation(this.prisma, owner, dto.locationId) : null;
     const type = await this.saving(() =>
       this.prisma.client.teamEventType.create({
-        data: { ...owner, name: dto.name, startTime: dto.startTime ?? null, durationMinutes: dto.durationMinutes ?? null, callMinutes: dto.callMinutes ?? null, parts, withSet: dto.withSet ?? true },
+        data: { ...owner, name: dto.name, startTime: dto.startTime ?? null, durationMinutes: dto.durationMinutes ?? null, callMinutes: dto.callMinutes ?? null, parts, withSet: dto.withSet ?? true, locationId: location?.id ?? null },
         include: withCount,
       }),
     );
@@ -88,10 +91,11 @@ export class EventTypesService {
   async update(owner: EventTypeOwner, typeId: string, dto: UpdateTeamEventTypeRequest) {
     await this.find(owner, typeId);
     const parts = await this.events.checkParts(dto.parts, this.partsOwner(owner));
+    const location = dto.locationId ? await eventLocation(this.prisma, owner, dto.locationId) : null;
     const type = await this.saving(() =>
       this.prisma.client.teamEventType.update({
         where: { id: typeId },
-        data: { name: dto.name, startTime: dto.startTime, durationMinutes: dto.durationMinutes, callMinutes: dto.callMinutes, parts, withSet: dto.withSet },
+        data: { name: dto.name, startTime: dto.startTime, durationMinutes: dto.durationMinutes, callMinutes: dto.callMinutes, parts, withSet: dto.withSet, locationId: dto.locationId === undefined ? undefined : (location?.id ?? null) },
         include: withCount,
       }),
     );

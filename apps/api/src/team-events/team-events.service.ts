@@ -190,9 +190,18 @@ export class TeamEventsService {
     const teamId = typeof owner === "string" ? owner : null;
     // The group's own positions (issue #241): its, not another group's.
     const positionIds = parts.map((part) => part.position).filter((id): id is string => !!id);
-    if (!teamId && positionIds.length > 0) throw new BadRequestException(["parts: an organisation's event type can't ask for a group's positions"]);
+    // An organisation's type (issue #559): a group's position, from that group - "a Greeter from Welcome".
+    const groupOf = new Map<string, string>();
+    const groupNames = new Map<string, string>();
+    if (!teamId && positionIds.length > 0) {
+      const rows = await this.prisma.client.teamPosition.findMany({ where: { id: { in: positionIds }, team: { organizationId: (owner as { organizationId: string }).organizationId } }, select: { id: true, teamId: true, name: true } });
+      for (const row of rows) groupOf.set(row.id, row.teamId);
+      for (const row of rows) groupNames.set(row.id, row.name);
+      const unfrom = parts.filter((part) => part.position && groupOf.has(part.position) && !(part.openTo ?? []).includes(groupOf.get(part.position)!));
+      if (unfrom.length > 0) throw new BadRequestException(["parts: a group's position comes from that group"]);
+    }
     const positions = new Map(teamId ? (await this.prisma.client.teamPosition.findMany({ where: { teamId, id: { in: positionIds } }, select: { id: true, name: true } })).map((row) => [row.id, row.name]) : []);
-    const strangers = positionIds.filter((id) => !positions.has(id));
+    const strangers = positionIds.filter((id) => !positions.has(id) && !groupOf.has(id));
     if (strangers.length > 0) throw new BadRequestException(strangers.map((id) => `parts: "${id}" isn't one of the team's positions`));
     const keys = parts.map((part) => part.part).filter((key): key is string => !!key);
     const known = new Set<string>([...INSTRUMENTS, ...TECH_ROLES, ...EVENT_ONLY_PARTS]);
@@ -213,7 +222,7 @@ export class TeamEventsService {
     const extra = (part: EventPart) => ({ ...(part.required && { required: true }), ...(part.openTo?.length && { openTo: [...new Set(part.openTo)] }), ...(typeof part.leadsSet === "boolean" && { leadsSet: part.leadsSet }) });
     // A position keeps its name beside it, as it's shown (renaming it renames it there too).
     return parts.map((part) => ({
-      ...(part.position ? { position: part.position, name: positions.get(part.position)!, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name, count: part.count }),
+      ...(part.position ? { position: part.position, name: positions.get(part.position) ?? groupNames.get(part.position)!, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name, count: part.count }),
       ...extra(part),
     }));
   }

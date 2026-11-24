@@ -37,11 +37,11 @@ export async function loadOrganizationPage(api: ApiClient, organizationId: strin
 export async function loadOrganizationEventsPage(api: ApiClient, organizationId: string) {
   const organization = await api.getOrganization(organizationId).catch(() => null);
   if (!organization) return null;
-  const [events, presets, members, customInstruments] = await Promise.all([
+  const [events, types, members, customInstruments] = await Promise.all([
     api.listOrganizationEvents(organizationId),
-    api.listOrganizationEventPresets(organizationId),
+    api.listOrganizationEventTypes(organizationId),
     api.listOrganizationMembers(organizationId),
     api.listCustomInstruments(),
   ]);
-  return { organization, events, presets, members, customInstruments };
+  return { organization, events, types, members, customInstruments };
 }

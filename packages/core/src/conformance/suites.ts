@@ -47,7 +47,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, notificationUrl, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, setLeadingKeys, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, setLeadingKeys, needsFromParts, partsFromNeeds, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
@@ -2954,6 +2954,23 @@ export const CONFORMANCE: ConformanceArea[] = [
         cases: [
           { name: "nothing marked: Host and Music leader", args: [[{ part: "DRUMS", count: 1 }, { part: "MUSIC_LEADER", count: 1 }, { part: "HOST", count: 1 }]] },
           { name: "marked: a position leads, Host doesn't", args: [[{ part: "HOST", count: 1, leadsSet: false }, { position: "p_music", count: 2, leadsSet: true }, { name: "Greeter", count: 1 }]] },
+        ],
+      },
+      needsFromParts: {
+        about: "An organisation's event from one of its event types (issue #559): each position goes to the team it comes from, as what the event needs of that team; a position from no team (or the group using the type) is left out.",
+        params: ["parts"],
+        run: needsFromParts,
+        cases: [
+          { name: "positions grouped by team, in order", args: [[{ part: "HOST", count: 1, openTo: ["t_presidency"] }, { part: "MUSIC_LEADER", count: 1, openTo: ["t_worship"] }, { part: "DRUMS", count: 1, openTo: ["t_worship"] }, { name: "Greeter", count: 2, openTo: ["t_welcome"] }]] },
+          { name: "from no team, or the group using it: left out", args: [[{ part: "SPEAKER", count: 1 }, { part: "MEDIA_OPERATOR", count: 1, openTo: ["own"] }, { part: "BASS_GUITAR", count: 1, openTo: ["t_worship"] }]] },
+        ],
+      },
+      partsFromNeeds: {
+        about: "An event type's positions from what an organisation's event needs (issue #559): each part from the team asked for it, unless it already says which.",
+        params: ["needs"],
+        run: partsFromNeeds,
+        cases: [
+          { name: "each part from its team", args: [[{ teamId: "t_worship", parts: [{ part: "DRUMS", count: 1 }, { part: "HOST", count: 1, openTo: ["t_presidency"] }] }, { teamId: "t_welcome", parts: [{ name: "Greeter", count: 2 }] }, { teamId: "t_tech" }]] },
         ],
       },
       swapCandidates: {

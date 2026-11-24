@@ -68,7 +68,7 @@ import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { AddQuickSelectionSchema, AddSetlistItemSchema, OperatorPresetsRequest, OperatorTimerPreset, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
-import type { AnswerEventDateRequest, AssignPartRequest, VolunteerRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, SetTeamEventDateAsksRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
+import type { AnswerEventDateRequest, AssignPartRequest, VolunteerRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, SetTeamEventDateAsksRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { AnalyseRecordingRequest, SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateOwnRoleRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateOwnRoleRequest, UpdateRoleRequest } from "../requests/roles.js";
@@ -1668,6 +1668,8 @@ export interface TeamEventType {
   callMinutes: number | null;
   parts: EventPart[];
   withSet: boolean;
+  /** Where its events usually are (issue #559). */
+  locationId?: string | null;
   /** How many of the team's events were made from it. */
   eventCount: number;
 }
@@ -1740,19 +1742,6 @@ export interface OrganizationEventDate {
     coverage: PartCoverage[] | null;
     lineup: { displayName: string; partKey: string; status: AssignmentStatus }[];
   }[];
-}
-
-/** What an organisation's event usually needs, kept under a name (issue #241). */
-export interface OrganizationEventPreset {
-  id: string;
-  name: string;
-  title: string;
-  startTime: string;
-  durationMinutes: number;
-  place: string | null;
-  /** Where it takes place (issue #320): one of its owner's locations. */
-  locationId: string | null;
-  needs: { teamId: string; parts?: EventPart[]; callMinutes?: number; withSet?: boolean }[];
 }
 
 /** A date of a team's event, with its set. */
@@ -3300,10 +3289,6 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     deleteOrganizationEvent: (organizationId: string, eventId: string) => request<void>(`/organizations/${organizationId}/events/${eventId}`, { method: "DELETE" }),
     setOrganizationEventDateCancelled: (organizationId: string, eventId: string, date: string, cancelled: boolean) =>
       request<void>(`/organizations/${organizationId}/events/${eventId}/dates/${date}`, { method: "PATCH", body: JSON.stringify({ cancelled }) }),
-    listOrganizationEventPresets: (organizationId: string) => request<OrganizationEventPreset[]>(`/organizations/${organizationId}/event-presets`),
-    createOrganizationEventPreset: (organizationId: string, data: OrganizationEventPresetRequest) =>
-      request<OrganizationEventPreset>(`/organizations/${organizationId}/event-presets`, { method: "POST", body: JSON.stringify(data) }),
-    deleteOrganizationEventPreset: (organizationId: string, presetId: string) => request<void>(`/organizations/${organizationId}/event-presets/${presetId}`, { method: "DELETE" }),
     /** Takes a team out of the organisation (its admins). */
     removeOrganizationTeam: (organizationId: string, teamId: string) => request<void>(`/organizations/${organizationId}/teams/${teamId}`, { method: "DELETE" }),
 

@@ -296,6 +296,40 @@ export const EVENT_TYPES_LIMIT = 30;
  */
 export const OWN_TEAM = "own";
 
+/** What an organisation's event asks one of its teams for (issue #241): that team's parts. */
+export interface TeamNeed {
+  teamId: string;
+  parts: EventPart[];
+}
+
+/**
+ * An organisation's event from one of its event types (issue #559): each
+ * position goes to the team it comes from (its first openTo), as what the
+ * event needs of that team, in the type's order. A position from no team,
+ * or from the group using the type (OWN_TEAM), has no team to go to and is
+ * left out: the admins add it to a team.
+ */
+export function needsFromParts(parts: readonly EventPart[]): TeamNeed[] {
+  const needs: TeamNeed[] = [];
+  for (const part of parts) {
+    const teamId = part.openTo?.[0];
+    if (!teamId || teamId === OWN_TEAM) continue;
+    const need = needs.find((one) => one.teamId === teamId);
+    if (need) need.parts.push(part);
+    else needs.push({ teamId, parts: [part] });
+  }
+  return needs;
+}
+
+/**
+ * An event type's positions from what an organisation's event needs (issue
+ * #559, needsFromParts() the other way): each part, from the team asked for
+ * it unless it already says which. A team asked for nothing gives none.
+ */
+export function partsFromNeeds(needs: readonly { teamId: string; parts?: readonly EventPart[] }[]): EventPart[] {
+  return needs.flatMap((need) => (need.parts ?? []).map((part) => (part.openTo?.length ? { ...part } : { ...part, openTo: [need.teamId] })));
+}
+
 /** The one who runs the screens (issue #528: "screen operator"). */
 const MEDIA_OPERATOR = "MEDIA_OPERATOR";
 

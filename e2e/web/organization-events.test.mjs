@@ -1,6 +1,6 @@
-// An organisation's events in the browser (issue #241): its admin keeps a
-// preset of what a Sunday needs (music from the music team, a greeter from
-// the welcome team), makes the event from it with a host; each group's
+// An organisation's events in the browser (issue #241): its admin keeps
+// what a Sunday needs as an event type (issue #559: music from the music
+// team, a greeter from the welcome team), makes the event from it with a host; each group's
 // calendar shows its part, planned by the organisation; the host cancels a
 // date for everyone from the organisation's Events.
 import { chromium } from "playwright";
@@ -19,14 +19,14 @@ await api(alice, "PUT", `/teams/${music.id}/organization`, { organizationId: org
 const welcome = await api(alice, "POST", `/organizations/${org.id}/groups`, { name: `Welcome ${stamp}` });
 await api(alice, "POST", `/teams/${welcome.id}/positions`, { name: "Greeter" });
 await api(host, "POST", `/organizations/join/${(await api(alice, "POST", `/organizations/${org.id}/invite-links`, {})).token}`);
-const presetName = `Sunday ${stamp}`;
+const typeName = `Sunday ${stamp}`;
 
 const browser = await chromium.launch();
 try {
   page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, timezoneId: "UTC" });
   const dialog = () => page.getByTestId("org-event-dialog");
 
-  await step("the admin keeps a preset: music from the music team, a greeter from welcome", async () => {
+  await step("the admin keeps an event type: music from the music team, a greeter from welcome", async () => {
     await signIn(page, alice);
     await page.goto(`${WEB}/organizations/${org.id}`);
     await page.getByTestId("organization-events").click();
@@ -37,17 +37,18 @@ try {
     await dialog().locator(`[data-need="Music ${stamp}"]`).getByTestId("event-part-add").selectOption({ label: "Music" });
     await dialog().getByTestId("org-event-add-group").selectOption({ label: `Welcome ${stamp}` });
     await dialog().locator(`[data-need="Welcome ${stamp}"]`).getByTestId("event-part-add").selectOption({ label: "Greeter" });
-    await dialog().getByTestId("org-save-preset").click();
-    await dialog().getByLabel("Preset name").fill(presetName);
-    await dialog().getByTestId("org-preset-save").click();
+    await dialog().getByTestId("org-save-type").click();
+    await dialog().getByLabel("Event type's name").fill(typeName);
+    await dialog().getByTestId("org-type-save").click();
     await dialog().waitFor({ state: "hidden" });
-    await page.getByTestId("org-presets").locator(`[data-preset="${presetName}"]`).waitFor();
+    const saved = (await api(alice, "GET", `/organizations/${org.id}/event-types`)).find((one) => one.name === typeName);
+    if (saved?.parts.map((part) => part.openTo.join()).join() !== `${music.id},${welcome.id}`) throw new Error(`each part from the team it was asked of: ${JSON.stringify(saved)}`);
   });
 
   await step("…makes the event from it, with a host", async () => {
     await page.getByTestId("org-new-event").click();
-    await dialog().getByTestId("org-event-preset").selectOption({ label: presetName });
-    if ((await dialog().getByLabel("Title").inputValue()) !== "Sunday service") throw new Error("the preset didn't fill the title");
+    await dialog().getByTestId("org-event-type").selectOption({ label: typeName });
+    if ((await dialog().getByLabel("Title").inputValue()) !== typeName) throw new Error("the type didn't fill the title");
     await dialog().getByTestId("org-event-host").selectOption({ label: "Orgev web host" });
     await dialog().getByTestId("org-event-save").click();
     await dialog().waitFor({ state: "hidden" });
