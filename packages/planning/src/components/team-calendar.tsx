@@ -1266,37 +1266,28 @@ export function PartsEditor({
                     {t("teamCalendar.partLeadsSet")}
                   </label>
                 ) : null}
+                {/* Issue #559: a position comes from a team - its members offer, and are on at once. None: the admins choose who. */}
                 {openToTeams.length > 0 && !instruments && !(part.part && isGivenPart(part.part)) ? (
                   <label className="flex items-center gap-1.5">
-                    <input
-                      type="checkbox"
-                      className="size-3.5"
-                      checked={!!part.openTo?.length}
-                      onChange={(e) => change(index, { openTo: e.target.checked ? [ownTeamId ?? openToTeams[0]!.id] : undefined })}
-                      data-testid="event-part-open"
-                    />
-                    {t("teamCalendar.partOpen")}
+                    {t("teamCalendar.partFrom")}
+                    <NativeSelect
+                      compact
+                      value={part.openTo?.length === 1 ? part.openTo[0] : part.openTo?.length ? "__several" : ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value !== "__several") change(index, { openTo: value ? [value] : undefined });
+                      }}
+                      data-testid="event-part-from"
+                    >
+                      <option value="">{t("teamCalendar.partFromNobody")}</option>
+                      {(part.openTo?.length ?? 0) > 1 ? <option value="__several">{part.openTo!.map((id) => openToTeams.find((team) => team.id === id)?.name ?? "?").join(", ")}</option> : null}
+                      {openToTeams.map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.name}
+                        </option>
+                      ))}
+                    </NativeSelect>
                   </label>
-                ) : null}
-                {part.openTo?.length && openToTeams.length > 1 && !instruments ? (
-                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1" aria-label={t("teamCalendar.partOpenTo")}>
-                    <span>{t("teamCalendar.partOpenTo")}</span>
-                    {openToTeams.map((team) => (
-                      <label key={team.id} className="flex items-center gap-1">
-                        <input
-                          type="checkbox"
-                          className="size-3.5"
-                          checked={part.openTo!.includes(team.id)}
-                          onChange={(e) => {
-                            const openTo = e.target.checked ? [...part.openTo!, team.id] : part.openTo!.filter((id) => id !== team.id);
-                            change(index, { openTo: openTo.length > 0 ? openTo : undefined });
-                          }}
-                          data-testid="event-part-open-team"
-                        />
-                        {team.name}
-                      </label>
-                    ))}
-                  </span>
                 ) : null}
               </div>
             </li>
@@ -1317,7 +1308,7 @@ export function PartsEditor({
           data-testid="event-part-add"
         >
           <option value="">{t("teamCalendar.addPart")}</option>
-          {/* High-level roles first (issue #549): who hosts, speaks, leads the music, runs the screens, the sound and the lights. */}
+          {/* The roles people list on their dashboard (issue #549), or a name of the event's own; each from a team (issue #559). */}
           {!instruments && choices(EVENT_ROLES).length > 0 ? (
             <optgroup label={t("teamCalendar.partRoles")}>
               {choices(EVENT_ROLES).map((choice) => (

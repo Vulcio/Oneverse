@@ -99,7 +99,7 @@ check("…the set list says so too", (await call(leader, "GET", "/setlists")).bo
 r = await call(leader, "POST", `/setlists/${setlistId}/items`, { text: { title: "Welcome", body: "Hello" } });
 check("…adds to it", r.status === 201 || r.status === 200, `${r.status} ${JSON.stringify(r.body)}`);
 r = await call(leader, "GET", `/setlists/${setlistId}/availability`);
-check("…sees who can play, not the notes", r.status === 200 && r.body.members.every((one) => one.note === null) && r.body.leaders.map((one) => one.partKey).join() === "HOST,MUSIC_LEADER", JSON.stringify(r.body));
+check("…sees who can play, not the notes", r.status === 200 && r.body.members.every((one) => one.note === null) && r.body.leaders.map((one) => one.partKey).join() === "MUSIC_LEADER,HOST", JSON.stringify(r.body));
 r = await call(leader, "DELETE", `/setlists/${setlistId}`);
 check("…doesn't delete it", r.status === 403, String(r.status));
 r = await call(leader, "PATCH", `/setlists/${setlistId}`, { teamId: null });
@@ -126,6 +126,6 @@ set = (await call(quiet, "GET", `/setlists/${setlistId}`)).body;
 check("…the drummer does", set.canEdit === true && set.canManage === false, JSON.stringify({ canEdit: set.canEdit }));
 check("…the set list says so too", (await call(quiet, "GET", "/setlists")).body.find((one) => one.id === setlistId)?.canEdit === true);
 r = await call(admin, "GET", `/setlists/${setlistId}/availability`);
-check("…and its leading parts are those", r.body.leadingParts.join() === "DRUMS" && r.body.leaders.map((one) => one.userId).join() === quiet.id, JSON.stringify({ parts: r.body.leadingParts, leaders: r.body.leaders }));
+check("…and its leading parts are those", r.body.leadingParts.join() === "MUSIC_LEADER,DRUMS" && r.body.leaders.map((one) => one.userId).join() === quiet.id, JSON.stringify({ parts: r.body.leadingParts, leaders: r.body.leaders }));
 
 await finish();

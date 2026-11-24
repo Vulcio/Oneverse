@@ -45,7 +45,7 @@ try {
     await dialog.getByTestId("event-type").selectOption({ label: "Service" });
     const leader = dialog.locator('[data-part="MUSIC_LEADER"]');
     if (!(await leader.getByTestId("event-part-required").isChecked())) throw new Error("the music leader isn't required");
-    if (!(await leader.getByTestId("event-part-open").isChecked())) throw new Error("the music leader's place isn't open");
+    if (!(await leader.getByTestId("event-part-from").inputValue())) throw new Error("the music leader's place comes from no team");
     await dialog.getByRole("button", { name: "Save event" }).click();
     await dialog.waitFor({ state: "hidden" });
     await calendar.locator("[data-event-date]").filter({ hasText: "Service" }).first().getByTestId("lineup-missing").waitFor();

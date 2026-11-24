@@ -27,11 +27,12 @@ try {
     await dialog.getByTestId("event-part-add").selectOption("HOST");
     await dialog.getByTestId("event-part-add").selectOption("MUSIC_LEADER");
     const host = dialog.locator('[data-part="HOST"]');
-    if (await host.getByTestId("event-part-open").count()) throw new Error("Host can be opened");
+    if (await host.getByTestId("event-part-from").count()) throw new Error("Host can come from a team");
     await host.getByTestId("event-part-required").check();
     const leader = dialog.locator('[data-part="MUSIC_LEADER"]');
     await leader.getByTestId("event-part-required").check();
-    await leader.getByTestId("event-part-open").check();
+    // Issue #559: the place comes from a team, whose members offer.
+    await leader.getByTestId("event-part-from").selectOption(team.id);
     if (shots) await dialog.screenshot({ path: `${shots}/required-open-parts.png` });
     await dialog.getByRole("button", { name: "Save event" }).click();
     await dialog.waitFor({ state: "hidden" });

@@ -209,7 +209,8 @@ export class TeamEventsService {
       if (far.length > 0) throw new BadRequestException(far.map((id) => `parts: "${id}" isn't this team or a group of its organisation`));
     }
     // What a part asks beyond its count (issue #528): only when set.
-    const extra = (part: EventPart) => ({ ...(part.required && { required: true }), ...(part.openTo?.length && { openTo: [...new Set(part.openTo)] }) });
+    // Who leads the set (issue #559): kept only when said, as Host and Music leader lead it otherwise.
+    const extra = (part: EventPart) => ({ ...(part.required && { required: true }), ...(part.openTo?.length && { openTo: [...new Set(part.openTo)] }), ...(typeof part.leadsSet === "boolean" && { leadsSet: part.leadsSet }) });
     // A position keeps its name beside it, as it's shown (renaming it renames it there too).
     return parts.map((part) => ({
       ...(part.position ? { position: part.position, name: positions.get(part.position)!, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name, count: part.count }),
