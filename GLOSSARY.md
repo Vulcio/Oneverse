@@ -192,37 +192,34 @@ A team's or organisation's logos, colours, fonts and links, for templates and wi
 One level of what a screen shows (background, words, widgets, messages), that can be hidden or cleared on its own.
 
 **Operator**:
-Whoever runs the screens during a live session, from the operator console or Live.
+Whoever is in charge of a live session's screens, from the operator console or Live; there is always one, and they can take the screens over at any moment.
 _Avoid_: tech, media person
 
 ## Live
 
 **Live**:
-Songverse's page for playing a set on stage, song after song.
+Songverse's mode for playing a set on stage, song after song, beside Edit and Practice.
 _Avoid_: stage view, performance mode
 
 **Live session**:
-One running of a set, live: what plays, what the screens show and who controls them, shared by every device in it until it ends.
+One running of a set, live: what plays, where everyone is in it and what the screens show, shared by every device in it until it ends.
 _Avoid_: sync session, room, sync play (for the session itself)
 
 **Sync play**:
-Devices in a live session playing in time with the leader: the metronome, the song open and the stems.
+Everyone in a live session following where it is, in time: the song, the section, the line and the metronome. On by default.
 _Avoid_: sync, follow mode
 
-**Leader**:
-The person a live session follows for what plays: song, tempo, stems.
-_Avoid_: master, host (for this)
+**Sync level**:
+How closely one person follows a live session: to the line, to the section, to the song, or not at all; at any level but none, the metronome stays in time.
+_Avoid_: sync mode
 
 **Presenting**:
 What a live session's screens show right now: an item and its slide, or black.
 _Avoid_: projecting, casting
 
-**Presenter**:
-Someone who may move what the screens show in a live session.
-
 **Slide**:
 What a screen shows at once of a set item: a few lines of a song, a paragraph of text, a few verses.
 
-**Takeover**:
-Oneverse Pulse running a live session at the venue while the internet is gone, and handing it back after.
-_Avoid_: failover, offline mode (for this)
+**Fallback**:
+Oneverse Pulse running a live session at the venue while the internet is gone, and handing it back after ("secours" in French).
+_Avoid_: takeover, failover, offline mode
