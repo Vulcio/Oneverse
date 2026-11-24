@@ -38,7 +38,7 @@ try {
 
   // --- the roles a group fills
   let r = await call(planner, "PATCH", `/teams/${worship.id}/group`, { fills: ["HOST"] });
-  check("Host isn't a role a group fills: a role gives it to people", r.status === 400, JSON.stringify(r.body));
+  check("a group fills Host too, like any role (issue #559)", r.status === 200, JSON.stringify(r.body));
   r = await call(planner, "PATCH", `/teams/${worship.id}/group`, { fills: ["MUSIC_LEADER"] });
   check("Worship fills Music", r.status === 200, JSON.stringify(r.body));
   r = await call(planner, "PATCH", `/teams/${tech.id}/group`, { fills: ["MEDIA_OPERATOR", "SOUND_ENGINEER", "LIGHTS"] });
