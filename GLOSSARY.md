@@ -160,6 +160,30 @@ _Avoid_: proposal, change request, pull request
 **Open place**:
 A position of an event date that members of other teams may take.
 
+**Venue**:
+A place events happen at, with its address and time zone: a church building, a rented hall, a home where a homegroup meets. An organisation's or a team's.
+_Avoid_: location, site
+
+**Room**:
+A space inside a venue that events book: Main hall, Kids room 1, Kitchen. A venue may have none.
+_Avoid_: space, area
+
+**Resource**:
+A thing an organisation or a team owns that events book: the van, the portable PA, the projector.
+_Avoid_: equipment, asset, item
+
+**Booking**:
+A room or resource held for an event date, from its setup to its teardown. Never two at once for the same room or resource.
+_Avoid_: reservation
+
+**Clash**:
+A booking refused because the room or resource is already booked then; the person is told by which event.
+_Avoid_: conflict, double booking
+
+**Manager** (of a room or resource):
+Whoever confirms its bookings when it requires approval; until then a booking is requested.
+_Avoid_: owner, approver
+
 ## Screens
 
 **Screen**:
