@@ -66,34 +66,34 @@ A named set of rights given to people and teams beyond their own content: review
 _Avoid_: permission, capability (in what people read)
 
 **Position**:
-A job a team's members cover besides their instruments: Greeter, Coffee, Host.
-_Avoid_: role (for a job at an event)
+A place at an event that one required team fills, with how many people it needs (one unless the event asks for more): Music, Host, Speaker, Welcome.
+_Avoid_: role (for this), part, slot, Music leader (as a fixed job)
 
-**Part**:
-What an event needs filled: an instrument or a position, and how many.
-_Avoid_: role (for this), slot
+**Required team**:
+A team or sub-team an event or event type needs people from; its members offer to fill the event's positions.
+_Avoid_: group needed, filling team
 
 ## Songs
 
-**Work**:
-The composition every version of a song shares, whatever its language or edition.
-_Avoid_: song (for this), composition
-
 **Song**:
-One written version of a work: its title, chart, credits and files, in one language, owned by a person, a team or the catalogue.
-_Avoid_: song version (in what people read), track
+One work as people sing it: its title, chart, credits and files, in one language, owned by a person, a team or the catalogue.
+_Avoid_: work, song version, track
 
-**Version** (of a song):
-Another song of the same work: a translation, a live edit, a radio edit.
-_Avoid_: version (for an arrangement)
+**Related song**:
+Another song linked to a song: its original, a translation of it, an adaptation of it. It may be known only by its title and credits, with no chart or files.
+_Avoid_: version (for a translation), parent song
+
+**Version**:
+How a person or a team plays a song: its order, key, capo, tempo and changes on some passes, pointing at the song's own sections, never a copy of it. A radio edit or a simplified version is a version.
+_Avoid_: arrangement (for this), copy, setup
 
 **Arrangement**:
-How a song is played: its order, key, capo, tempo and changes per pass, pointing at the song's own sections, never a copy of it.
-_Avoid_: version (for this), copy
+An optional free-text description of a version's instrumentation: "String quartet", "Acoustic".
+_Avoid_: arrangement (for the version itself)
 
-**Usual arrangement**:
-The arrangement a team picks by default when the song goes in one of its sets.
-_Avoid_: default arrangement
+**Usual version**:
+The version a team picks by default when the song goes in one of its sets.
+_Avoid_: default version, default arrangement
 
 **Chart**:
 A song's music as written: its sections, lines, words, chords and the order it's sung in.
@@ -131,7 +131,7 @@ An ordered list of items prepared for one occasion, owned by a person or a team.
 _Avoid_: setlist, playlist, service order
 
 **Set item**:
-One entry of a set: a song (with its arrangement), slides of text, or a Bible passage.
+One entry of a set: a song (in one of its versions), slides of text, or a Bible passage.
 _Avoid_: entry, element
 
 **Event**:
@@ -142,15 +142,15 @@ _Avoid_: service (as a term), occurrence
 One occurrence of an event, with its answers, its line-up and maybe its set.
 
 **Event type**:
-A kind of event a team or an organisation holds, with what it usually needs: Service, Rehearsal, Meeting.
-_Avoid_: preset (for this), template (for this)
+A kind of event a team or an organisation holds (Service, Rehearsal, Meeting), with its required teams and positions.
+_Avoid_: event preset, template (for this)
 
 **Line-up**:
-Who is on for an event date, in which part.
+Who is on for an event date, in which position.
 _Avoid_: rota, roster, assignment (in what people read)
 
 **Open place**:
-A part of an event date that members of other teams may take.
+A position of an event date that members of other teams may take.
 
 ## Screens
 
