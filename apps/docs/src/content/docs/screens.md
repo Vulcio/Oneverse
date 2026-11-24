@@ -42,8 +42,8 @@ The screen has a menu of its own, for whoever stands by it, even while a set is 
 - **Template for songs** lists the **Built-in** templates and the owner's **Saved templates**, with the one in use marked. Pick one with **OK** and the screen changes at once. It keeps that template, as if you'd picked it in the tile's **Settings**.
 - **Template for Bible passages** does the same for the passages that don't have a template of their own, the templates for scripture first; **Same as songs** shows them with the template for songs.
 - **Video input**, with a template that shows one (see [Layers](/screens/#layers)), lists the device's cameras and capture cards: **The first camera there is**, or one by name. The screen keeps the one picked, on that device. The browser asks to allow the camera the first time.
-- **Profiles** lists the screen's profiles, one for each time it was paired, with the one showing marked: pick another and the screen shows it. **Pair it again** shows a code for one more (see [For a while, or for several](/screens/#for-a-while-or-for-several)).
-- **Back** steps out of the themes, the cameras or the profiles, and Back (Escape) or **Close** closes the menu.
+- **Pairings** lists the screen's pairings, one for each time it was paired, with the one showing marked: pick another and the screen shows it. **Pair it again** shows a code for one more (see [For a while, or for several](/screens/#for-a-while-or-for-several)).
+- **Back** steps out of the templates, the cameras or the pairings, and Back (Escape) or **Close** closes the menu.
 
 ### Whose screen it is
 
@@ -58,7 +58,7 @@ A screen is yours, a team's or an organisation's. When you pair it, **For** choo
 
 A screen paired for **12 hours**, **1 day** or **1 week** says when it ends on its tile ("Until 14 Oct 2026, 22:00"). Its managers push the end back with **Extend**, on the tile: for that long from now, or **Unlimited**. When it ends, the screen is disconnected by itself: it goes back to showing a new code, and its tile goes from **Screens**.
 
-One screen can also have several profiles - a venue's TV used by two churches, say. Its managers open its **Settings** and press **Show a code again**, or someone by the screen picks **Profiles**, then **Pair it again**, in [its menu](/screens/#the-screens-menu). The screen shows a code, and someone else pairs it as usual, to their own set, template and owner, for as long as they choose; **Back** on the screen returns to the profile it showed. Each profile is its own screen in **Screens**: each owner sees and changes only theirs, and **Disconnect** removes only that profile. The screen switches between its profiles from its menu's **Profiles**, and shows the last one again when it's turned back on. A profile disconnected, or ended, is forgotten: the screen shows one of the others, or a new code when there's none left. A Pulse has one owner: pair another Pulse instead.
+One screen can also have several pairings - a venue's TV used by two churches, say. Its managers open its **Settings** and press **Show a code again**, or someone by the screen picks **Pairings**, then **Pair it again**, in [its menu](/screens/#the-screens-menu). The screen shows a code, and someone else pairs it as usual, to their own set, template and owner, for as long as they choose; **Back** on the screen returns to the pairing it showed. Each pairing is its own screen in **Screens**: each owner sees and changes only theirs, and **Disconnect** removes only that pairing. The screen switches between its pairings from its menu's **Pairings**, and shows the last one again when it's turned back on. A pairing disconnected, or ended, is forgotten: the screen shows one of the others, or a new code when there's none left. A Pulse has one owner: pair another Pulse instead.
 
 ## Presenting from Live
 

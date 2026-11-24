@@ -1,9 +1,9 @@
 ---
 title: Organisations
-description: Une église, un club ou un groupe dont les équipes planifient ensemble, sur un serveur qui a des organisations.
+description: Une église, un club ou une école dont les équipes planifient ensemble, sur un serveur qui a des organisations.
 ---
 
-Une organisation, c'est l'église, le club ou le groupe dont font partie vos équipes : l'équipe de louange, d'accueil, technique… C'est là qu'elles planifient ensemble - qui accueille chaque événement, de quels groupes chacun a besoin - dans Songverse, ou dans [Oneverse Plan](/fr/plan/), la planification à part, quand le serveur l'a. Songverse fonctionne sans : un serveur n'a d'organisations que si ses administrateurs les ont activées (voir [Administration](/fr/admin/#organisations)), et d'ici là vous ne les voyez pas.
+Une organisation, c'est l'église, le club ou l'école dont font partie vos équipes : l'équipe de louange, d'accueil, technique… C'est là qu'elles planifient ensemble - qui accueille chaque événement, de quelles équipes chacun a besoin - dans Songverse, ou dans [Oneverse Plan](/fr/plan/), la planification à part, quand le serveur l'a. Songverse fonctionne sans : un serveur n'a d'organisations que si ses administrateurs les ont activées (voir [Administration](/fr/admin/#organisations)), et d'ici là vous ne les voyez pas.
 
 ## Où les trouver
 
@@ -33,7 +33,7 @@ Jusqu'à ce que les administrateurs de ce serveur approuvent votre organisation,
 Les administrateurs d'une nouvelle organisation trouvent **Mettre en place votre organisation** en haut de sa page : les étapes pour que ses membres planifient ensemble, chacune cochée une fois faite, avec **Y aller** (la carte sur la page) et **Guide** (la page d'ici qui l'explique) :
 
 1. **Invitez vos membres**, avec un lien d'invitation (voir [La page d'une organisation](/fr/organizations/#la-page-dune-organisation)) ;
-2. **Créez vos équipes** : ses groupes (voir [Groupes](/fr/organizations/#groupes)) ;
+2. **Créez vos équipes** (voir [Équipes](/fr/organizations/#équipes)) ;
 3. **Définissez leurs droits** : ses rôles propres, donnés à des personnes ou à des équipes entières (voir [Ses rôles propres](/fr/organizations/#ses-rôles-propres)) ;
 4. **Gardez vos fichiers dans votre propre stockage**, facultatif, là où ce serveur le permet (voir [Votre propre stockage](/fr/own-storage/)) ;
 5. **Faites tourner votre propre Songverse Sonic**, facultatif, là où ce serveur le permet (voir [Votre propre serveur de séparation](/fr/sonic/)).
@@ -44,9 +44,9 @@ La croix la range ; **Afficher la liste de démarrage**, sous **Détails**, la f
 
 ![La page d'une organisation, pour son administrateur](../../../assets/screenshots/fr/organization.jpg)
 
-Elle commence par son **Calendrier** : les prochaines dates de ses événements, chacune avec son responsable, son lieu et les groupes nécessaires, **Places à pourvoir** quand il manque quelqu'un à un groupe ; **Ouvrir le calendrier** les montre toutes (voir [Événements](/fr/organizations/#événements)).
+Elle commence par son **Calendrier** : les prochaines dates de ses événements, chacune avec son responsable, son lieu et les équipes nécessaires, **Places à pourvoir** quand il manque quelqu'un à une équipe ; **Ouvrir le calendrier** les montre toutes (voir [Événements](/fr/organizations/#événements)).
 
-Chacun y voit ses **Groupes** - chacun sous celui dont il fait partie, ceux qui n'utilisent pas Songverse marqués **Planification seule**, les vôtres marqués **Votre équipe** et qui ouvrent leur page - et ses **Membres**.
+Chacun y voit ses **Équipes** - chacune sous celle dont elle fait partie, celles qui n'utilisent pas Songverse marquées **Planification seule**, les vôtres marquées **Votre équipe** et qui ouvrent leur page - et ses **Membres**.
 
 Ses administrateurs peuvent aussi :
 
@@ -68,54 +68,54 @@ Sous **Bible**, ses administrateurs cochent **Montrer la Bible dans la barre lat
 
 Sur la page d'une équipe, ses administrateurs choisissent l'organisation sous **Organisation** - une dont ils sont administrateurs - puis **Enregistrer**. Les membres de l'équipe rejoignent l'organisation, comme quiconque rejoindra l'équipe plus tard. La page de l'équipe indique alors **Fait partie de** l'organisation. **Aucune (une équipe à part entière)** l'en retire.
 
-## Groupes
+## Équipes
 
-Les groupes d'une organisation sont ses équipes : l'équipe de louange, mais aussi une équipe d'accueil ou un planning de ménage. Ses administrateurs en créent un avec **Nouveau groupe** : un **Nom**, le groupe sous lequel il se place (**Sous**, ou aucun, au premier niveau), et s'il **Utilise Songverse**, puis **Créer le groupe** - vous en êtes l'administrateur, et sa page s'ouvre.
+Les équipes d'une organisation sont tout ce qu'on y fait ensemble : l'équipe de louange, mais aussi une équipe d'accueil ou un planning de ménage. Ses administrateurs en créent une avec **Nouvelle équipe** : un **Nom**, l'équipe sous laquelle elle se place (**Sous**, ou aucune, au premier niveau), et si elle **Utilise Songverse**, puis **Créer l'équipe** - vous en êtes l'administrateur, et sa page s'ouvre.
 
-- Un groupe qui **Utilise Songverse** est une équipe comme vous la connaissez : ses chants, ses recueils, ses arrangements et ses listes.
-- Un groupe qui ne l'utilise pas (par défaut pour un nouveau groupe) ne fait que planifier : il a son calendrier, ses membres et ses postes, et ni chants ni recueils à lui. Ses dates peuvent tout de même avoir une liste - pour les passages bibliques, diapositives et chants du catalogue qu'elles projettent - quand son événement en demande une (**Créer une liste pour chaque date**, désactivé par défaut pour un tel groupe). Ses listes s'ouvrent dans Songverse. Il n'apparaît pas parmi vos équipes dans Songverse ; vous le trouvez sur la page de l'organisation.
+- Une équipe qui **Utilise Songverse** a ses chants, ses recueils, ses arrangements et ses listes.
+- Une équipe qui ne l'utilise pas (par défaut pour une nouvelle équipe) ne fait que planifier : elle a son calendrier, ses membres et ses postes, et ni chants ni recueils à elle. Ses dates peuvent tout de même avoir une liste - pour les passages bibliques, diapositives et chants du catalogue qu'elles projettent - quand son événement en demande une (**Créer une liste pour chaque date**, désactivé par défaut pour une telle équipe). Ses listes s'ouvrent dans Songverse. Elle n'apparaît pas parmi vos équipes dans Songverse ; vous la trouvez sur la page de l'organisation.
 
-Sur la page d'un groupe, ses administrateurs changent les deux sous **Groupe**, puis **Enregistrer**. Une équipe qui a des chants, des recueils ou des arrangements continue d'utiliser Songverse tant qu'ils ne sont pas déplacés ou supprimés ; ses listes restent dans tous les cas. Un groupe retiré de l'organisation redevient une équipe à part entière, qui utilise Songverse.
+Sur la page d'une équipe, ses administrateurs changent les deux sous **Équipe**, puis **Enregistrer**. Une équipe qui a des chants, des recueils ou des arrangements continue d'utiliser Songverse tant qu'ils ne sont pas déplacés ou supprimés ; ses listes restent dans tous les cas. Une équipe retirée de l'organisation redevient une équipe à part entière, qui utilise Songverse.
 
-Les administrateurs d'un groupe créent aussi des groupes en dessous : **Nouveau sous-groupe** sur sa page, avec un **Nom** et s'il **Utilise Songverse**, puis **Créer le groupe** - vous en êtes l'administrateur.
+Les administrateurs d'une équipe créent aussi des équipes en dessous : **Nouvelle sous-équipe** sur sa page, avec un **Nom** et si elle **Utilise Songverse**, puis **Créer l'équipe** - vous en êtes l'administrateur.
 
-Faire partie d'un groupe ne vous met pas dans le groupe au-dessus : chaque groupe a ses propres membres.
+Faire partie d'une équipe ne vous met pas dans l'équipe au-dessus : chaque équipe a ses propres membres.
 
-**Rôles qu'il tient**, sur la page d'un groupe, dit quels rôles il prend aux événements de l'organisation : Louange tient la **Musique** ; Technique tient **Projection**, **Sono** et **Lumières**. Un rôle demandé par un événement est alors ouvert aux membres de ce groupe dès qu'il est ajouté, affiché **Musique · Louange**, et aux membres des groupes en dessous : Projection, Sono et Lumières sous Technique. Si aucun groupe ne tient un rôle, les administrateurs choisissent qui, comme avant.
+**Rôles qu'elle tient**, sur la page d'une équipe, dit quels rôles elle prend aux événements de l'organisation : Louange tient la **Musique** ; Technique tient **Projection**, **Sono** et **Lumières**. Un rôle demandé par un événement est alors ouvert aux membres de cette équipe dès qu'il est ajouté, affiché **Musique · Louange**, et aux membres des équipes en dessous : Projection, Sono et Lumières sous Technique. Si aucune équipe ne tient un rôle, les administrateurs choisissent qui, comme avant.
 
 ## Postes
 
-![Un groupe qui ne fait que planifier, avec ses postes](../../../assets/screenshots/fr/group.jpg)
+![Une équipe qui ne fait que planifier, avec ses postes](../../../assets/screenshots/fr/group.jpg)
 
-En plus des instruments et rôles que chacun indique pour lui-même, chaque groupe a ses propres **Postes** - « Accueil » et « Café » pour une équipe d'accueil, « Salle » et « Cuisine » pour un planning de ménage. Ses administrateurs les ajoutent sous **Postes** (**Nouveau poste**, puis **Ajouter**) et les retirent avec la croix.
+En plus des instruments et rôles que chacun indique pour lui-même, chaque équipe a ses propres **Postes** - « Accueil » et « Café » pour une équipe d'accueil, « Salle » et « Cuisine » pour un planning de ménage. Ses administrateurs les ajoutent sous **Postes** (**Nouveau poste**, puis **Ajouter**) et les retirent avec la croix.
 
-À côté du nom de chaque membre, les postes du groupe s'affichent : cochez ceux que vous assurez en cliquant dessus. Les administrateurs du groupe peuvent les cocher pour n'importe qui ; les autres ne voient que ceux que chacun assure.
+À côté du nom de chaque membre, les postes de l'équipe s'affichent : cochez ceux que vous assurez en cliquant dessus. Les administrateurs de l'équipe peuvent les cocher pour n'importe qui ; les autres ne voient que ceux que chacun assure.
 
-Un événement du groupe les demande sous **Postes nécessaires** : **Ajouter un poste** liste d'abord les **Postes de ce groupe** (voir [Postes nécessaires](/fr/teams/#postes-nécessaires)). Un poste est couvert par les membres qui l'ont coché, et son nom suit quand il est renommé ; un poste qu'un événement demande encore ne peut pas être retiré.
+Un événement de l'équipe les demande sous **Postes nécessaires** : **Ajouter un poste** liste d'abord les **Postes de cette équipe** (voir [Postes nécessaires](/fr/teams/#postes-nécessaires)). Un poste est couvert par les membres qui l'ont coché, et son nom suit quand il est renommé ; un poste qu'un événement demande encore ne peut pas être retiré.
 
 ## Événements
 
-Les événements d'une organisation ont besoin de plusieurs de ses groupes : un culte du dimanche demande la batterie et la basse de l'équipe de louange, deux personnes à l'accueil, quelqu'un à la régie son. Sur la page de l'organisation, **Calendrier** ouvre ses prochaines dates (**Voir plus** pour les suivantes), chacune avec son responsable et chaque groupe nécessaire. **Événements**, à côté de **Dates**, liste chaque événement une fois - son rythme, son responsable et ses groupes - avec **Modifier la série** pour en changer un en entier.
+Les événements d'une organisation ont besoin de plusieurs de ses équipes : un culte du dimanche demande la batterie et la basse de l'équipe de louange, deux personnes à l'accueil, quelqu'un à la régie son. Sur la page de l'organisation, **Calendrier** ouvre ses prochaines dates (**Voir plus** pour les suivantes), chacune avec son responsable et chaque équipe nécessaire. **Événements**, à côté de **Dates**, liste chaque événement une fois - son rythme, son responsable et ses équipes - avec **Modifier la série** pour en changer un en entier.
 
-![Les événements d'une organisation, avec la couverture de chaque groupe](../../../assets/screenshots/fr/organization-events.jpg)
+![Les événements d'une organisation, avec la couverture de chaque équipe](../../../assets/screenshots/fr/organization-events.jpg)
 
-Ses administrateurs en créent un avec **Nouvel événement** : son **Titre**, sa première date, son heure de début, sa durée, son fuseau horaire, **Répétition** et **Lieu (facultatif)** comme pour l'événement d'une équipe, son **Responsable** - un membre de l'organisation, qui est prévenu - et sous **Groupes nécessaires**, **Ajouter un groupe** pour chacun, avec les postes qu'on lui demande (ses postes, instruments, rôles ou noms ; voir [Postes nécessaires](/fr/teams/#postes-nécessaires)) et, si vous voulez, son **Arrivée (minutes avant)** : les musiciens une heure avant, l'accueil un quart d'heure. La part de chaque groupe a **Créer une liste pour chaque date**, activé par défaut pour un groupe qui utilise Songverse et désactivé pour un groupe qui ne fait que planifier : désactivez-le pour une réunion, et les dates de ce groupe n'ont pas de liste. **Enregistrer l'événement** ajoute l'événement au calendrier de chaque groupe : ses administrateurs font son équipe du jour comme pour n'importe lequel de ses événements, la date d'un groupe a sa liste quand il en demande une, et les inscrits reçoivent leurs rappels.
+Ses administrateurs en créent un avec **Nouvel événement** : son **Titre**, sa première date, son heure de début, sa durée, son fuseau horaire, **Répétition** et **Lieu (facultatif)** comme pour l'événement d'une équipe, son **Responsable** - un membre de l'organisation, qui est prévenu - et sous **Équipes nécessaires**, **Ajouter une équipe** pour chacune, avec les postes qu'on lui demande (ses postes, instruments, rôles ou noms ; voir [Postes nécessaires](/fr/teams/#postes-nécessaires)) et, si vous voulez, son **Arrivée (minutes avant)** : les musiciens une heure avant, l'accueil un quart d'heure. La part de chaque équipe a **Créer une liste pour chaque date**, activé par défaut pour une équipe qui utilise Songverse et désactivé pour une équipe qui ne fait que planifier : désactivez-le pour une réunion, et les dates de cette équipe n'ont pas de liste. **Enregistrer l'événement** ajoute l'événement au calendrier de chaque équipe : ses administrateurs font son équipe du jour comme pour n'importe lequel de ses événements, la date d'une équipe a sa liste quand il en demande une, et les inscrits reçoivent leurs rappels.
 
-- Dans le calendrier d'un groupe, l'événement est marqué **Planifié par** l'organisation (et son responsable). Sa date, son heure et son lieu se règlent dans les Événements de l'organisation ; les administrateurs du groupe choisissent seulement ce dont il a besoin, sous **Postes nécessaires**, et son heure d'arrivée.
-- Dans les Événements de l'organisation, ses administrateurs et le responsable de l'événement voient comment les postes de chaque groupe sont couverts (**Manque : Batterie**, ou **Au complet**), modifient l'événement avec **Modifier la série** (**Modifier l'événement** pour un événement qui ne se répète pas), et **Annuler cette date** - ou la rétablir - pour tous les groupes à la fois. Les autres voient les groupes et combien sont prévus pour chacun.
-- Seuls les administrateurs choisissent un autre responsable (qui est prévenu) et **Supprimer l'événement**, pour tous les groupes. Un groupe retiré des **Groupes nécessaires** perd sa part ; un groupe retiré de l'organisation la garde, comme son propre événement.
+- Dans le calendrier d'une équipe, l'événement est marqué **Planifié par** l'organisation (et son responsable). Sa date, son heure et son lieu se règlent dans les Événements de l'organisation ; les administrateurs de l'équipe choisissent seulement ce dont elle a besoin, sous **Postes nécessaires**, et son heure d'arrivée.
+- Dans les Événements de l'organisation, ses administrateurs et le responsable de l'événement voient comment les postes de chaque équipe sont couverts (**Manque : Batterie**, ou **Au complet**), modifient l'événement avec **Modifier la série** (**Modifier l'événement** pour un événement qui ne se répète pas), et **Annuler cette date** - ou la rétablir - pour toutes les équipes à la fois. Les autres voient les équipes et combien sont prévus pour chacune.
+- Seuls les administrateurs choisissent un autre responsable (qui est prévenu) et **Supprimer l'événement**, pour toutes les équipes. Une équipe retirée des **Équipes nécessaires** perd sa part ; une équipe retirée de l'organisation la garde, comme son propre événement.
 
-Les administrateurs d'un groupe peuvent confier l'un de ses événements à l'organisation (voir [Calendrier](/fr/teams/#calendrier)). Il attend en haut du calendrier, pour les administrateurs de l'organisation, sous **Demandes pour rejoindre le calendrier** : **Accepter** en fait un événement de l'organisation, au même horaire, dont la personne qui a demandé est responsable, avec la part du groupe telle quelle - ses dates, réponses, équipes du jour et listes ; **Refuser** le laisse au groupe. La personne qui a demandé est prévenue dans les deux cas.
+Les administrateurs d'une équipe peuvent confier l'un de ses événements à l'organisation (voir [Calendrier](/fr/teams/#calendrier)). Il attend en haut du calendrier, pour les administrateurs de l'organisation, sous **Demandes pour rejoindre le calendrier** : **Accepter** en fait un événement de l'organisation, au même horaire, dont la personne qui a demandé est responsable, avec la part de l'équipe telle quelle - ses dates, réponses, équipes du jour et listes ; **Refuser** le laisse à l'équipe. La personne qui a demandé est prévenue dans les deux cas.
 
-Les **Modèles** gardent ce dont un événement a habituellement besoin : dans la fenêtre d'un événement, **Enregistrer comme modèle** sous un **Nom du modèle**. **Nouvel événement** part alors de l'un d'eux avec **Modèle**, qui remplit son titre, son heure, son lieu et ses groupes. Les administrateurs retirent les modèles sous **Modèles**.
+Les **Modèles** gardent ce dont un événement a habituellement besoin : dans la fenêtre d'un événement, **Enregistrer comme modèle** sous un **Nom du modèle**. **Nouvel événement** part alors de l'un d'eux avec **Modèle**, qui remplit son titre, son heure, son lieu et ses équipes. Les administrateurs retirent les modèles sous **Modèles**.
 
 ### Types d'événement
 
-**Types d'événement**, en haut de la page de l'organisation, garde les sortes d'événements de tous ses groupes - un culte, une soirée de prière, une réunion - pour ses administrateurs : chacun avec son horaire habituel, ses postes (lesquels sont obligatoires, et quelles places sont ouvertes au groupe concerné ou à d'autres groupes ; voir [Postes nécessaires](/fr/teams/#postes-nécessaires)) et **Créer une liste pour chaque date**. Ils sont proposés à chaque groupe : dans le calendrier d'un groupe, **Types d'événement** les liste, marqués du nom de l'organisation, et **Nouvel événement** les choisit comme ceux du groupe. Un événement créé à partir de l'un d'eux peut encore demander plus de postes. Seuls les administrateurs de l'organisation les modifient ou les suppriment ; les administrateurs du groupe peuvent toujours garder leurs propres types.
+**Types d'événement**, en haut de la page de l'organisation, garde les sortes d'événements de toutes ses équipes - un culte, une soirée de prière, une réunion - pour ses administrateurs : chacun avec son horaire habituel, ses postes (lesquels sont obligatoires, et quelles places sont ouvertes à l'équipe concernée ou à d'autres équipes ; voir [Postes nécessaires](/fr/teams/#postes-nécessaires)) et **Créer une liste pour chaque date**. Ils sont proposés à chaque équipe : dans le calendrier d'une équipe, **Types d'événement** les liste, marqués du nom de l'organisation, et **Nouvel événement** les choisit comme ceux de l'équipe. Un événement créé à partir de l'un d'eux peut encore demander plus de postes. Seuls les administrateurs de l'organisation les modifient ou les suppriment ; les administrateurs de l'équipe peuvent toujours garder leurs propres types.
 
 ## Sites
 
-Où ont lieu les événements de l'organisation - une église, une salle, un campus : ses administrateurs les ajoutent sous **Sites** sur sa page, avec **Ajouter un site** (un **Nom**, une **Adresse (facultatif)**, un **Fuseau horaire**), **Modifier** et **Retirer**. Ses événements en choisissent un avec **Site** dans leur fenêtre, ce qui remplit le lieu et le fuseau horaire, et la part de chaque groupe le suit ; un modèle le garde aussi. Les événements propres à ses groupes peuvent aussi les utiliser, à côté de ceux de l'équipe (voir [Sites](/fr/teams/#sites)).
+Où ont lieu les événements de l'organisation - une église, une salle, un campus : ses administrateurs les ajoutent sous **Sites** sur sa page, avec **Ajouter un site** (un **Nom**, une **Adresse (facultatif)**, un **Fuseau horaire**), **Modifier** et **Retirer**. Ses événements en choisissent un avec **Site** dans leur fenêtre, ce qui remplit le lieu et le fuseau horaire, et la part de chaque équipe le suit ; un modèle le garde aussi. Les événements propres à ses équipes peuvent aussi les utiliser, à côté de ceux de l'équipe (voir [Sites](/fr/teams/#sites)).
 
 ## Ses rôles propres
 
@@ -130,7 +130,7 @@ Cochez qui a chacun sous le rôle. Un rôle qui garde des fichiers peut aussi ê
 
 ## Annonces
 
-Les administrateurs d'une organisation envoient des nouvelles à ses membres depuis sa page : **Annonces**, puis **Nouvelle annonce** - un **Titre**, un **Texte** et, si vous voulez, un **Lien** (une adresse web, ou une page de l'application, tapée comme `/calendar` ou choisie sous **Ou une page de l'application**). **Destinataires** : **Tous ses membres**, ou **Les membres de certains de ses groupes** - cochez les groupes, et **Et les groupes en dessous** pour les inclure aussi ; chacun la reçoit une seule fois. **Sous la cloche** montre à quoi elle ressemblera ; elle reste un **Brouillon** jusqu'à **Envoyer**, qui dit à combien de membres elle part. Les membres la reçoivent sous la cloche avec le nom de l'organisation, et sur leurs appareils ; par e-mail seulement s'ils l'activent. Une annonce envoyée peut encore être corrigée pour tout le monde (**Enregistrer : corrigée pour tout le monde**) ou retirée (**Retirer**).
+Les administrateurs d'une organisation envoient des nouvelles à ses membres depuis sa page : **Annonces**, puis **Nouvelle annonce** - un **Titre**, un **Texte** et, si vous voulez, un **Lien** (une adresse web, ou une page de l'application, tapée comme `/calendar` ou choisie sous **Ou une page de l'application**). **Destinataires** : **Tous ses membres**, ou **Les membres de certaines de ses équipes** - cochez les équipes, et **Et les équipes en dessous** pour les inclure aussi ; chacun la reçoit une seule fois. **Sous la cloche** montre à quoi elle ressemblera ; elle reste un **Brouillon** jusqu'à **Envoyer**, qui dit à combien de membres elle part. Les membres la reçoivent sous la cloche avec le nom de l'organisation, et sur leurs appareils ; par e-mail seulement s'ils l'activent. Une annonce envoyée peut encore être corrigée pour tout le monde (**Enregistrer : corrigée pour tout le monde**) ou retirée (**Retirer**).
 
 ## Son propre stockage
 

@@ -90,7 +90,7 @@ try {
 
   await step("…and makes a sub-group under it, from its page", async () => {
     await page.goto(groupUrl);
-    await page.getByTestId("organization-new-group").filter({ hasText: "New sub-group" }).click();
+    await page.getByTestId("organization-new-group").filter({ hasText: "New sub-team" }).click();
     const form = page.getByTestId("organization-group-form");
     await form.getByText(`Under Welcome team ${stamp}`).waitFor();
     await form.getByLabel("Name").fill(`Parking ${stamp}`);

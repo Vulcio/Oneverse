@@ -54,7 +54,7 @@ try {
     await phone.getByTestId("screen-pair-again-hint").getByText("The screen shows a code.").waitFor();
     await phone.getByTestId("screen-dialog-done").click();
     page = tv;
-    await tv.getByText("To add a profile to this screen, pair it again:").waitFor({ timeout: 10000 });
+    await tv.getByText("To add a pairing to this screen, pair it again:").waitFor({ timeout: 10000 });
     await tv.getByTestId("screen-pairing-back").click();
     await idle(`Owner's set ${stamp}`);
   });
