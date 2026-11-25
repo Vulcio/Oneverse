@@ -13,6 +13,7 @@ export const planningHost: PlanningHost = {
     organization: (organizationId) => `/organizations/${organizationId}`,
     organizationEvents: (organizationId) => `/organizations/${organizationId}/events`,
     notifications: "/notifications",
+    notificationSettings: "/dashboard#notifications",
     notification: (url) => url,
   },
   sets: { href: (setlistId) => `/sets/${setlistId}`, canMake: true },

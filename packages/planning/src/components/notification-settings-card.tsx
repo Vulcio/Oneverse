@@ -1,12 +1,12 @@
-import { NOTIFICATION_KINDS, type MyNotificationPreferences, type NotificationChannel, type NotificationKind, type PushDevice } from "@oneverse/core";
+import { NOTIFICATION_KINDS, type MyNotificationPreferences, type NotificationChannel, type NotificationKind } from "@oneverse/core";
 import { BellOff, BellRing, Send, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Input } from "@oneverse/ui/components/input";
 import { usePlanning } from "../host";
-import { currentSubscription, deviceLabel, pushSupported, subscribe } from "../push";
+import { usePushDevice } from "../use-push-device";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
 import { FieldError } from "@oneverse/ui/components/field";
 
@@ -20,25 +20,12 @@ export function NotificationSettingsCard() {
   const { api } = usePlanning();
   const { t, i18n } = useTranslation();
   const [preferences, setPreferences] = useState<MyNotificationPreferences | null>(null);
-  const [devices, setDevices] = useState<PushDevice[]>([]);
-  // This device's push address, if it's on; undefined until known.
-  const [here, setHere] = useState<string | null | undefined>(undefined);
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
-  const [busy, setBusy] = useState(false);
+  const { devices, here, thisDevice, permission, busy, error, run, turnOn, remove } = usePushDevice(preferences === null ? undefined : preferences.pushKey);
   const [testSent, setTestSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadDevices = useCallback(async () => {
-    setDevices(await api.listMyPushDevices());
-    const subscription = await currentSubscription().catch(() => null);
-    setHere(subscription?.endpoint ?? null);
-  }, []);
 
   useEffect(() => {
     void api.getMyNotificationPreferences().then(setPreferences);
-    setPermission(pushSupported() ? Notification.permission : "unsupported");
-    void loadDevices();
-  }, [loadDevices]);
+  }, [api]);
 
   const change = async (kind: NotificationKind, channel: NotificationChannel, on: boolean) => {
     if (!preferences) return;
@@ -46,36 +33,6 @@ export function NotificationSettingsCard() {
     setPreferences({ ...preferences, kinds: { ...preferences.kinds, [kind]: { ...preferences.kinds[kind], [channel]: on } } });
     setPreferences(await api.updateMyNotificationPreferences({ kinds: { [kind]: { [channel]: on } } }));
   };
-
-  const run = async (action: () => Promise<void>) => {
-    setBusy(true);
-    setError(null);
-    try {
-      await action();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const turnOn = () =>
-    run(async () => {
-      if (!preferences?.pushKey) return;
-      const subscription = await subscribe(preferences.pushKey);
-      setPermission(Notification.permission);
-      if (!subscription) return;
-      const json = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
-      await api.addMyPushDevice({ endpoint: json.endpoint, keys: json.keys, label: deviceLabel(navigator.userAgent) });
-      await loadDevices();
-    });
-
-  const remove = (device: PushDevice) =>
-    run(async () => {
-      await api.removeMyPushDevice(device.id);
-      if (device.endpoint === here) await (await currentSubscription())?.unsubscribe();
-      await loadDevices();
-    });
 
   const quiet = preferences?.quiet ?? null;
   const saveQuiet = async (next: { from: string; to: string } | null) => {
@@ -87,7 +44,6 @@ export function NotificationSettingsCard() {
   };
 
   const pushAvailable = !!preferences?.pushKey;
-  const thisDevice = devices.find((device) => device.endpoint === here);
 
   return (
     <Card id="notifications" data-testid="notification-settings" data-ready={preferences ? "true" : undefined}>

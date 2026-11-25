@@ -44,8 +44,13 @@ export function planningHost(): PlanningHost {
       organization: (organizationId) => `${planning}/organizations/${organizationId}`,
       organizationEvents: (organizationId) => `${planning}/organizations/${organizationId}/events`,
       notifications: `${planning}/notifications`,
+      // The Notifications settings (issue #568): Plan's account page, or Songverse's dashboard where Plan isn't deployed.
+      notificationSettings: plan ? `${plan}/account#notifications` : `${songverse}/dashboard#notifications`,
       notification: (url) => (/^https?:\/\//.test(url) ? url : `${PLAN_PATHS.test(url) ? planning : songverse}${url}`),
     },
     sets: { href: (setlistId) => `${songverse}/sets/${setlistId}`, canMake: false },
+    // No service worker here: a device gets them from Plan or Songverse.
+    devicePush: false,
   };
 }
+

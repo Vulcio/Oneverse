@@ -17,11 +17,12 @@ Sur certains d'entre eux, vous pouvez aussi vous inscrire en demandant votre org
 
 ## Vos premiers pas
 
-Une fois votre adresse vérifiée, vous arrivez dans votre bibliothèque, vide pour l'instant. Songverse demande **Que jouez-vous ou que faites-vous ?** (voir [Rôles](/fr/account/#rôles)), et la bibliothèque affiche **Pour commencer**, trois étapes de votre premier chant à une liste avec votre groupe, cochées au fur et à mesure :
+Une fois votre adresse vérifiée, vous arrivez dans votre bibliothèque, vide pour l'instant. Songverse demande **Que jouez-vous ou que faites-vous ?** (voir [Rôles](/fr/account/#rôles)), et la bibliothèque affiche **Pour commencer**, les étapes de votre premier chant à une liste avec votre groupe, cochées au fur et à mesure :
 
-1. **Ajoutez un chant** - tapez ou collez ses accords et ses paroles, ou importez un fichier (voir [Ajouter un chant](/fr/library/#ajouter-un-chant)). Vous seul·e le voyez tant que vous ne le partagez pas : un cadenas l'indique.
-2. **Rejoignez votre équipe, ou créez-en une** - vous rejoignez l'équipe de votre groupe par le lien d'invitation qu'un de ses administrateurs vous envoie : ouvrez-le (en vous inscrivant là si ce n'est pas fait) et vous en faites partie. Ou **Créer une équipe** et envoyez son lien à votre groupe (voir [Équipes](/fr/teams/)).
-3. **Préparez une liste avec votre équipe** - la liste d'une équipe est pour tous ses membres. Ajoutez-y vos chants : ils sont partagés avec l'équipe en les ajoutant (voir [Listes](/fr/sets/)).
+1. **Activez les notifications** - pour être prévenu·e des listes où vous jouez, des invitations et des changements sur ce téléphone ou cet ordinateur, même quand Songverse est fermé. **Activer les notifications** demande l'autorisation à votre navigateur (voir [Notifications](/fr/account/#notifications)). Cette étape n'apparaît pas quand l'appareil ne peut pas les recevoir, ou qu'elles sont bloquées dans le navigateur.
+2. **Ajoutez un chant** - tapez ou collez ses accords et ses paroles, ou importez un fichier (voir [Ajouter un chant](/fr/library/#ajouter-un-chant)). Vous seul·e le voyez tant que vous ne le partagez pas : un cadenas l'indique.
+3. **Rejoignez votre équipe, ou créez-en une** - vous rejoignez l'équipe de votre groupe par le lien d'invitation qu'un de ses administrateurs vous envoie : ouvrez-le (en vous inscrivant là si ce n'est pas fait) et vous en faites partie. Ou **Créer une équipe** et envoyez son lien à votre groupe (voir [Équipes](/fr/teams/)).
+4. **Préparez une liste avec votre équipe** - la liste d'une équipe est pour tous ses membres. Ajoutez-y vos chants : ils sont partagés avec l'équipe en les ajoutant (voir [Listes](/fr/sets/)).
 
 La page de chaque équipe dit ce que vous pouvez y faire : **membre**, vous ouvrez les chants, recueils et listes de l'équipe et les jouez ; **administrateur**, vous les modifiez, invitez des personnes et gérez l'équipe. **Ranger** (**×**) masque Pour commencer sur cet appareil.
 

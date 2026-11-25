@@ -17,11 +17,12 @@ On some of those, you can also sign up by asking for your organisation: **Sign u
 
 ## Your first steps
 
-Once your email is verified, you land in your library, empty for now. Songverse asks **What do you play or do?** (see [Roles](/account/#roles)), and the library shows **Getting started**, three steps from your first song to a set with your band, each ticked as you do it:
+Once your email is verified, you land in your library, empty for now. Songverse asks **What do you play or do?** (see [Roles](/account/#roles)), and the library shows **Getting started**, the steps from your first song to a set with your band, each ticked as you do it:
 
-1. **Add a song** - type or paste its chords and words, or import a file (see [Adding a song](/library/#adding-a-song)). Only you see it until you share it: a lock on it says so.
-2. **Join your team, or start one** - your band's team joins you through the invite link one of its admins sends you: open it (signing up there if you haven't yet) and you're in. Or **Create a team** and send your band its link (see [Teams](/teams/)).
-3. **Plan a set with your team** - a team's set is for everyone in it. Add your songs to it: they're shared with the team as you add them (see [Sets](/sets/)).
+1. **Turn on notifications** - so you hear about the sets you're in, invites and changes on this phone or computer, even when Songverse is closed. **Turn on notifications** asks your browser for permission (see [Notifications](/account/#notifications)). This step isn't shown where the device can't have them, or when they're blocked in the browser.
+2. **Add a song** - type or paste its chords and words, or import a file (see [Adding a song](/library/#adding-a-song)). Only you see it until you share it: a lock on it says so.
+3. **Join your team, or start one** - your band's team joins you through the invite link one of its admins sends you: open it (signing up there if you haven't yet) and you're in. Or **Create a team** and send your band its link (see [Teams](/teams/)).
+4. **Plan a set with your team** - a team's set is for everyone in it. Add your songs to it: they're shared with the team as you add them (see [Sets](/sets/)).
 
 Each team's page says what you can do there: as a **member**, you open the team's songs, songbooks and sets and play them; as an **admin**, you change them, invite people and run the team. **Put away** (**×**) hides Getting started on this device.
 

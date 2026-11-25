@@ -335,11 +335,10 @@ function FollowCard({ organization }: { organization: OrganizationSummary }) {
 function SettingsCard({ organization }: { organization: OrganizationSummary | null }) {
   const { links } = usePlanning();
   const { t } = useTranslation();
-  const { songverse, plan } = appAddresses();
   const admin = organization?.currentUserRole === "ADMIN";
   const rows: { key: string; label: string; href: string; admins?: boolean }[] = [
     { key: "account", label: t("hub.profileSettings"), href: "/account" },
-    { key: "notifications", label: t("hub.notificationSettings"), href: `${plan ?? songverse}/account#notifications` },
+    { key: "notifications", label: t("hub.notificationSettings"), href: links.notificationSettings },
     ...(organization && admin ? [{ key: "organization", label: t("hub.organizationSettings"), href: links.organization(organization.id), admins: true }] : []),
   ];
   return (
