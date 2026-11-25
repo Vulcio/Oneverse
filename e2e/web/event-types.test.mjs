@@ -3,7 +3,7 @@
 // a new event picked from Meeting is filled from it - its title, time and
 // "Make a set for each date" off - and its date gets no set, nor a "Plan set".
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -18,7 +18,8 @@ try {
 
   await step("the admin adds the suggested types", async () => {
     await signIn(page, admin);
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     await calendar.getByTestId("calendar-event-types").click();
     const dialog = page.getByTestId("event-types-dialog");
     await dialog.getByTestId("event-type-suggest-service").click();

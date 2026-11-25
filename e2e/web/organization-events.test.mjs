@@ -4,7 +4,7 @@
 // calendar shows its part, planned by the organisation; the host cancels a
 // date for everyone from the organisation's Events.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -28,9 +28,8 @@ try {
 
   await step("the admin keeps an event type: music from the music team, a greeter from welcome", async () => {
     await signIn(page, alice);
-    await page.goto(`${WEB}/organizations/${org.id}`);
-    await page.getByTestId("organization-events").click();
-    await page.waitForURL(/\/events$/);
+    await page.goto(`${PLANIVERSE}/organizations/${org.id}/events`);
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("org-new-event").click();
     await dialog().getByLabel("Title").fill("Sunday service");
     await dialog().getByTestId("org-event-add-group").selectOption({ label: `Music ${stamp}` });
@@ -59,7 +58,8 @@ try {
   });
 
   await step("the music team's calendar: its part, planned by the organisation, only its parts to change", async () => {
-    await page.goto(`${WEB}/teams/${music.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${music.id}`);
+    await page.waitForLoadState("networkidle");
     const row = page.locator("[data-event-date]").first();
     await row.getByTestId("calendar-planned").getByText(`Planned by Events web ${stamp}`).waitFor();
     await row.getByRole("button", { name: / actions$/ }).click();
@@ -74,7 +74,8 @@ try {
   await step("the host cancels the first date for every group", async () => {
     await page.context().clearCookies();
     await signIn(page, host);
-    await page.goto(`${WEB}/organizations/${org.id}/events`);
+    await page.goto(`${PLANIVERSE}/organizations/${org.id}/events`);
+    await page.waitForLoadState("networkidle");
     const row = page.locator("[data-org-event-date]").first();
     await row.getByRole("button", { name: / actions$/ }).click();
     await page.getByTestId("org-toggle-date").click();

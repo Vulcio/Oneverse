@@ -3,7 +3,7 @@
 // event asks for roles, not instruments, since #549) - the calendar shows the
 // admins what's short, and Who can play lists them by part.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -24,7 +24,8 @@ try {
 
   await step("the event's dialog: media, audio, and a name of the team's own", async () => {
     await signIn(page, admin);
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     await row().getByRole("button", { name: /actions$/ }).click();
     await page.getByTestId("calendar-edit-event").click();
     const parts = page.getByTestId("event-parts");

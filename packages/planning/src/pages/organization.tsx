@@ -100,7 +100,7 @@ export function OrganizationPage({
             {t("organizations.events")}
           </Button>
           {/* The event types its groups pick from (issue #528). */}
-          {isAdmin ? <OrganizationEventTypesButton organizationId={organization.id} teams={organization.teams} /> : null}
+          {isAdmin && !links.manageEvents?.(`organization:${organization.id}`) ? <OrganizationEventTypesButton organizationId={organization.id} teams={organization.teams} /> : null}
           {isAdmin ? (
             <ConfirmButton
               label={t("organizations.delete")}

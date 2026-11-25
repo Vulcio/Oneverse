@@ -24,7 +24,7 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * every date in them that isn't answered.
  */
 export function MyCalendarPage({ section = false }: { section?: boolean } = {}) {
-  const { api } = usePlanning();
+  const { api, songverseTeamsOnly } = usePlanning();
   const { t } = useTranslation();
   const router = useRouter();
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
@@ -42,10 +42,18 @@ export function MyCalendarPage({ section = false }: { section?: boolean } = {}) 
 
   const load = useCallback(async () => {
     const today = addDays(localDate(new Date(), browserZone()), -1);
-    const [found, ranges, open] = await Promise.all([api.listMyEventDates(today, addDays(today, weeks * 7)), api.listMyAway(), api.listOpenPlaces(today, addDays(today, weeks * 7)).catch(() => [])]);
-    setOpenPlaces(open.filter((place) => place.guest));
+    const [found, ranges, open, teams] = await Promise.all([
+      api.listMyEventDates(today, addDays(today, weeks * 7)),
+      api.listMyAway(),
+      api.listOpenPlaces(today, addDays(today, weeks * 7)).catch(() => []),
+      // Songverse's teams only (issue #551): a group that only plans isn't in them, its dates are in Plan.
+      songverseTeamsOnly ? api.listTeams() : null,
+    ]);
+    const shown = teams ? new Set(teams.map((team) => team.id)) : null;
+    const kept = (teamId: string) => !shown || shown.has(teamId);
+    setOpenPlaces(open.filter((place) => place.guest && kept(place.teamId)));
     const now = Date.now();
-    setDates(found.filter((date) => Date.parse(date.endsAt) >= now - 12 * 3600_000));
+    setDates(found.filter((date) => Date.parse(date.endsAt) >= now - 12 * 3600_000 && kept(date.teamId)));
     setAway(ranges);
   }, [weeks]);
 

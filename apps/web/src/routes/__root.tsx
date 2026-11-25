@@ -19,7 +19,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <AppDocument
       app="web"
-      env={["ONEVERSE_URL", "SCREEN_URL"]}
+      env={["ONEVERSE_URL", "SCREEN_URL", "PLANIVERSE_URL"]}
       themeScript={MODE_SCRIPT}
       serviceWorker
       bodyClassName="min-h-screen bg-neutral-50 text-neutral-900 antialiased dark:bg-background dark:text-foreground"

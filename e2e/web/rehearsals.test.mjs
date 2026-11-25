@@ -3,7 +3,7 @@
 // with its badge and the date it's for, opening that date's set, with no
 // answers of its own; a member signed up for the date sees it on My calendar.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -24,7 +24,8 @@ try {
 
   await step("an admin adds a rehearsal for the service, 2 days before", async () => {
     await signIn(page, admin);
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("calendar-new-event").click();
     const dialog = page.getByTestId("event-dialog");
     await dialog.getByLabel("Title").fill("Band practice");

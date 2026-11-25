@@ -3,7 +3,7 @@
 // music leader's place to the team's members. A member sees what's missing,
 // takes the music leader's place themselves, and gives it up again.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -20,7 +20,8 @@ try {
 
   await step("the admin makes an event: Host and Music leader required, the music leader's place open", async () => {
     await signIn(page, admin);
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     await calendar.getByTestId("calendar-new-event").click();
     const dialog = page.getByTestId("event-dialog");
     await dialog.getByLabel("Title").fill("Sunday");
@@ -43,7 +44,8 @@ try {
   await step("a member takes the music leader's place, then gives it up", async () => {
     await page.context().clearCookies();
     await signIn(page, member);
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     calendar = page.getByTestId("team-calendar");
     const row = calendar.locator("[data-event-date]").filter({ hasText: "Sunday" }).first();
     await row.getByTestId("lineup-missing").waitFor();

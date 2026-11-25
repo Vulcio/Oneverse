@@ -2369,6 +2369,7 @@ const en = {
     },
   },
   calendarSection: {
+    manageInPlan: "Events in Plan",
     title: "Calendar",
     picker: "Calendar",
     tab: { dates: "Dates", events: "Events", types: "Event types", subscribe: "Subscribe", availability: "Availability" },

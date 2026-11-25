@@ -4,7 +4,7 @@
 // usually views it; in Songverse, someone who only views the date's set asks
 // to edit it, and someone on the line-up of a team that edits it grants it.
 import { chromium } from "playwright";
-import { WEB, api, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, WEB, api, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -32,7 +32,7 @@ try {
 
   await step("an organisation's event, one set per date, the media team only viewing it", async () => {
     await signIn(page, planner);
-    await page.goto(`${WEB}/organizations/${org.id}/events`);
+    await page.goto(`${PLANIVERSE}/organizations/${org.id}/events`);
     await page.waitForLoadState("networkidle");
     await page.getByTestId("org-new-event").click();
     const dialog = page.getByTestId("org-event-dialog");

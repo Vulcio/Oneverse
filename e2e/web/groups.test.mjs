@@ -5,7 +5,7 @@
 // sidebar doesn't list it among the teams. Its admin renames it (issue #244) and makes a sub-group
 // under it (issue #245).
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -47,7 +47,9 @@ try {
     await mine.locator('button[aria-pressed="true"]', { hasText: "Greeter" }).waitFor();
   });
 
-  await step("…an event of the group asks for two greeters", async () => {
+  await step("…an event of the group asks for two greeters, made in Plan (issue #551)", async () => {
+    await page.goto(`${PLANIVERSE}${new URL(page.url()).pathname}`);
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("calendar-new-event").click();
     const dialog = page.getByTestId("event-dialog");
     await dialog.getByLabel("Title").fill("Sunday welcome");

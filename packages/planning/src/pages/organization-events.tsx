@@ -1,6 +1,6 @@
 import { addDays, localDate, needsFromParts, partsFromNeeds, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type TeamEventType, type OrganizationEventTransfer, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Ban, CalendarArrowUp, CalendarDays, CircleCheck, MapPin, MoreHorizontal, Pencil, PencilLine, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { ArrowLeft, Ban, CalendarArrowUp, CalendarDays, CircleCheck, ExternalLink, MapPin, MoreHorizontal, Pencil, PencilLine, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -51,6 +51,8 @@ export function OrganizationEventsPage({
   const router = useRouter();
   const { organization, events, types, members, customInstruments } = data;
   const isAdmin = organization.currentUserRole === "ADMIN";
+  // Its events made and changed elsewhere (issue #551: Plan's Calendar, from Songverse); who edits a date's set stays here.
+  const managedIn = links.manageEvents?.(`organization:${organization.id}`) ?? null;
   // Its groups name the roles they fill (issue #549): "Music · Worship".
   const partLabel = usePartLabel(customInstruments, organization.teams);
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
@@ -99,7 +101,12 @@ export function OrganizationEventsPage({
           <p className="text-sm text-muted-foreground">{t("organizations.eventsHint")}</p>
         </div>
         )}
-        {isAdmin ? (
+        {isAdmin && managedIn ? (
+          <Button variant="outline" render={<a href={managedIn} />} data-testid="org-manage-in-plan">
+            <ExternalLink />
+            {t("calendarSection.manageInPlan")}
+          </Button>
+        ) : isAdmin ? (
           <Button onClick={() => setEditing("new")} data-testid="org-new-event">
             {t("organizations.newEvent")}
           </Button>
@@ -129,7 +136,7 @@ export function OrganizationEventsPage({
           </Tabs>
           )}
           {view === "events" ? (
-            <OrganizationSeriesList events={events} onEdit={setEditing} />
+            <OrganizationSeriesList events={events} onEdit={managedIn ? null : setEditing} />
           ) : (
           <>
           {dates === null ? null : dates.length === 0 ? (
@@ -162,18 +169,20 @@ export function OrganizationEventsPage({
                           </span>
                         </div>
                       </div>
-                      {date.canManage && event ? (
+                      {date.canManage && event && (!managedIn || (!date.cancelled && date.groups.some((group) => group.setlistId))) ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger render={<button type="button" className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("teamCalendar.dateActions", { title: `${date.title}, ${dayFormat.format(new Date(`${date.date}T12:00:00Z`))}` })} />}>
                             <MoreHorizontal className="size-4" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => void act(() => api.setOrganizationEventDateCancelled(organization.id, date.eventId, date.date, !date.cancelled))} data-testid="org-toggle-date">
-                              {date.cancelled ? <RotateCcw /> : <Ban />}
-                              {date.cancelled ? t("teamCalendar.restoreDate") : t("teamCalendar.cancelDate")}
-                            </DropdownMenuItem>
+                            {managedIn ? null : (
+                              <DropdownMenuItem onClick={() => void act(() => api.setOrganizationEventDateCancelled(organization.id, date.eventId, date.date, !date.cancelled))} data-testid="org-toggle-date">
+                                {date.cancelled ? <RotateCcw /> : <Ban />}
+                                {date.cancelled ? t("teamCalendar.restoreDate") : t("teamCalendar.cancelDate")}
+                              </DropdownMenuItem>
+                            )}
                             {/* Another day for this date, for every team (issue #576). */}
-                            {date.cancelled ? null : (
+                            {date.cancelled || managedIn ? null : (
                               <DropdownMenuItem onClick={() => setMoving(date)} data-testid="org-move-date">
                                 <CalendarArrowUp />
                                 {t("teamCalendar.moveDate")}
@@ -185,10 +194,12 @@ export function OrganizationEventsPage({
                                 {t("organizations.dateEditors")}
                               </DropdownMenuItem>
                             ) : null}
-                            <DropdownMenuItem onClick={() => setEditing(event)} data-testid="org-edit-event">
-                              <Pencil />
-                              {event.repeat ? t("teamCalendar.editSeries") : t("organizations.editEvent")}
-                            </DropdownMenuItem>
+                            {managedIn ? null : (
+                              <DropdownMenuItem onClick={() => setEditing(event)} data-testid="org-edit-event">
+                                <Pencil />
+                                {event.repeat ? t("teamCalendar.editSeries") : t("organizations.editEvent")}
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : null}
@@ -432,7 +443,7 @@ function TransfersCard({ organizationId, onDecided }: { organizationId: string; 
 }
 
 /** Each of the organisation's events once (issue #549): how it repeats, its host and groups, to change it as a whole. */
-function OrganizationSeriesList({ events, onEdit }: { events: OrganizationEvent[]; onEdit: (event: OrganizationEvent) => void }) {
+function OrganizationSeriesList({ events, onEdit }: { events: OrganizationEvent[]; onEdit: ((event: OrganizationEvent) => void) | null }) {
   const { t, i18n } = useTranslation();
   if (events.length === 0) return <p className="text-sm text-muted-foreground">{t("organizations.noEventsYet")}</p>;
   const today = localDate(new Date(), browserZone());
@@ -469,7 +480,7 @@ function OrganizationSeriesList({ events, onEdit }: { events: OrganizationEvent[
               {[event.host ? t("organizations.hostedBy", { name: event.host.displayName }) : null, event.needs.map((need) => need.teamName).join(", ") || null].filter(Boolean).join(" · ")}
             </span>
           </div>
-          {event.canManage ? (
+          {event.canManage && onEdit ? (
             <Button variant="outline" size="sm" onClick={() => onEdit(event)} data-testid="series-edit">
               <Pencil />
               {event.repeat ? t("teamCalendar.editSeries") : t("organizations.editEvent")}

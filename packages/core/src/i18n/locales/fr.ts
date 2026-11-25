@@ -2372,6 +2372,7 @@ const fr: typeof en = {
     },
   },
   calendarSection: {
+    manageInPlan: "Événements dans Plan",
     title: "Calendrier",
     picker: "Calendrier",
     tab: { dates: "Dates", events: "Événements", types: "Types d'événement", subscribe: "S'abonner", availability: "Disponibilités" },

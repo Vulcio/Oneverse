@@ -5,7 +5,7 @@
 // for instruments on its set; a team's event is moved to the organisation,
 // whose page opens on its calendar, and accepted there.
 import { chromium } from "playwright";
-import { WEB, api, call, finish, sql, stamp, stepper, signIn, user } from "../lib/harness.mjs";
+import { PLANIVERSE, WEB, api, call, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -33,7 +33,8 @@ try {
 
   await step("Worship says it fills Music, on its page", async () => {
     await signIn(page, planner);
-    await page.goto(`${WEB}/teams/${worship.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${worship.id}`);
+    await page.waitForLoadState("networkidle");
     const card = page.getByTestId("team-group-card");
     await card.locator('[data-fills="MUSIC_LEADER"]').check();
     if (shots) await card.screenshot({ path: `${shots}/group-fills.png` });
@@ -42,7 +43,8 @@ try {
   });
 
   await step("the series, from Events: Music added is open to Worship", async () => {
-    await page.goto(`${WEB}/teams/${sunday.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${sunday.id}`);
+    await page.waitForLoadState("networkidle");
     await calendar.getByTestId("calendar-view-events").click();
     const series = calendar.locator(`[data-series="${event.id}"]`);
     await series.getByText(/Every week · \w+ 10:00/).waitFor();
@@ -89,14 +91,16 @@ try {
   await step("the series moved to the organisation, then accepted on its calendar", async () => {
     await page.context().clearCookies();
     await signIn(page, planner);
-    await page.goto(`${WEB}/teams/${sunday.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${sunday.id}`);
+    await page.waitForLoadState("networkidle");
     await calendar.getByTestId("calendar-view-events").click();
     await calendar.locator(`[data-series="${event.id}"]`).getByTestId("series-edit").click();
     const dialog = page.getByTestId("event-dialog");
     await dialog.getByTestId("event-transfer-ask").click();
     await dialog.waitFor({ state: "hidden" });
     await calendar.getByTestId("series-transfer-waiting").waitFor();
-    await page.goto(`${WEB}/organizations/${org.id}`);
+    await page.goto(`${PLANIVERSE}/organizations/${org.id}`);
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("organization-calendar").waitFor();
     await page.getByTestId("organization-calendar-open").click();
     const transfers = page.getByTestId("org-transfers");
@@ -108,7 +112,8 @@ try {
     await page.getByTestId("org-view-events").click();
     await page.getByTestId("org-series").getByText(/Every week/).waitFor();
     if (shots) await page.screenshot({ path: `${shots}/organization-series.png` });
-    await page.goto(`${WEB}/organizations/${org.id}`);
+    await page.goto(`${PLANIVERSE}/organizations/${org.id}`);
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("organization-calendar").locator(`[data-coming-date="${plus(10)}"]`).waitFor();
     if (shots) await page.getByTestId("organization-calendar").screenshot({ path: `${shots}/organization-page.png` });
   });

@@ -1,3 +1,4 @@
+import { publicEnvValue } from "@oneverse/app/public-env";
 import type { PlanningHost } from "@oneverse/planning/host";
 import { apiClient } from "#/lib/api-client";
 import { watchNotifications } from "#/lib/live-notes";
@@ -16,7 +17,13 @@ export const planningHost: PlanningHost = {
     notifications: "/notifications",
     notificationSettings: "/dashboard#notifications",
     notification: (url) => url,
+    // With Plan deployed (issue #551), events and event types are made there, in its Calendar.
+    manageEvents: (of) => {
+      const plan = publicEnvValue("PLANIVERSE_URL");
+      return plan ? `${plan}/calendar?of=${encodeURIComponent(of)}&tab=events` : null;
+    },
   },
+  songverseTeamsOnly: true,
   sets: { href: (setlistId) => `/sets/${setlistId}`, canMake: true },
   // The bell, live (issue #27).
   watchNotifications,

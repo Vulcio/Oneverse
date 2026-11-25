@@ -4,7 +4,7 @@
 // a new event picked from it gets its parts - the music leader's place open
 // to the group itself.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -22,7 +22,8 @@ try {
 
   await step("the organisation's admin adds the suggested Service", async () => {
     await signIn(page, admin);
-    await page.goto(`${WEB}/organizations/${org.id}`);
+    await page.goto(`${PLANIVERSE}/organizations/${org.id}`);
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("organization-event-types").click();
     const dialog = page.getByTestId("event-types-dialog");
     await dialog.getByTestId("event-type-suggest-service").click();
@@ -32,7 +33,8 @@ try {
   });
 
   await step("a group lists it, marked with the organisation, and a new event takes its parts", async () => {
-    await page.goto(`${WEB}/teams/${music.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${music.id}`);
+    await page.waitForLoadState("networkidle");
     const calendar = page.getByTestId("team-calendar");
     await calendar.getByTestId("calendar-event-types").click();
     const row = page.getByTestId("event-types-dialog").locator('[data-event-type="Service"]');

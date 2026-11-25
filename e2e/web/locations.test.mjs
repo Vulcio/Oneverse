@@ -2,7 +2,7 @@
 // a new event picks it, which fills its place and time zone, and its date shows the place. Edited, then removed:
 // the event keeps its place.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -16,7 +16,8 @@ try {
   const card = () => page.getByTestId("locations-card");
 
   await step("an admin adds a location on the team's page", async () => {
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     await card().getByText("No locations yet.").waitFor();
     await card().getByTestId("location-add").click();
     const form = card().getByTestId("location-form");

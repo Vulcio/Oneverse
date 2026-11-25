@@ -1,6 +1,6 @@
 import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Ban, Building2, CalendarArrowUp, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { Ban, Building2, CalendarArrowUp, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, ExternalLink, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -63,8 +63,11 @@ export function TeamCalendar({
   /** False for a group that only plans (issue #241): its new events start without a set, which can still be asked for (issue #531). */
   setsByDefault?: boolean;
 }) {
-  const { api, sets } = usePlanning();
+  const { api, sets, links } = usePlanning();
   const { t, i18n } = useTranslation();
+  // Its events made and changed elsewhere (issue #551: Plan's Calendar, from Songverse): answers, line-ups and sets stay here.
+  const managedIn = isAdmin ? (links.manageEvents?.(`team:${teamId}`) ?? null) : null;
+  const editsEvents = isAdmin && !managedIn;
   // The team and its organisation's groups (issue #528): who a part may be open to, named on it (issue #549: "Music · Worship").
   const openToTeams = useOpenToTeams(teamId);
   // Not the team itself: on its own calendar, "Music" is plainly its.
@@ -154,7 +157,13 @@ export function TeamCalendar({
         </div>
         {isAdmin ? (
           <div className="flex flex-wrap gap-2">
-            {shownView ? null : (
+            {managedIn ? (
+              <Button variant="outline" size="sm" render={<a href={managedIn} />} data-testid="calendar-manage-in-plan">
+                <ExternalLink />
+                {t("calendarSection.manageInPlan")}
+              </Button>
+            ) : null}
+            {shownView || !editsEvents ? null : (
               <Button variant="outline" size="sm" onClick={() => setTypesOpen(true)} data-testid="calendar-event-types">
                 <Shapes />
                 {t("teamCalendar.eventTypes")}
@@ -164,10 +173,12 @@ export function TeamCalendar({
               <MessageCircleQuestion />
               {t("teamCalendar.askAnswers")}
             </Button>
-            <Button size="sm" onClick={() => setEditing("new")} data-testid="calendar-new-event">
-              <CalendarPlus />
-              {t("teamCalendar.newEvent")}
-            </Button>
+            {editsEvents ? (
+              <Button size="sm" onClick={() => setEditing("new")} data-testid="calendar-new-event">
+                <CalendarPlus />
+                {t("teamCalendar.newEvent")}
+              </Button>
+            ) : null}
           </div>
         ) : null}
       </CardHeader>
@@ -215,7 +226,7 @@ export function TeamCalendar({
         </Tabs>
         )}
         {view === "events" ? (
-          <EventSeriesList events={events} types={types} isAdmin={isAdmin} partLabel={partLabel} onEdit={setEditing} organizationName={organization?.name ?? null} />
+          <EventSeriesList events={events} types={types} isAdmin={editsEvents} partLabel={partLabel} onEdit={setEditing} organizationName={organization?.name ?? null} />
         ) : (
         <>
         {dates === null ? null : dates.length === 0 ? (
@@ -327,7 +338,7 @@ export function TeamCalendar({
                       {t("teamCalendar.planSet")}
                     </Button>
                   ) : null}
-                  {isAdmin ? (
+                  {editsEvents || (isAdmin && !date.cancelled && !rehearsal && date.setlistId && makesSets) ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={<button type="button" className="col-start-3 row-start-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("teamCalendar.dateActions", { title: `${date.title}, ${dayFormat.format(new Date(`${date.date}T12:00:00Z`))}` })} />}
@@ -335,7 +346,7 @@ export function TeamCalendar({
                         <MoreHorizontal className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {rehearsal || event?.planned ? null : (
+                        {rehearsal || event?.planned || !editsEvents ? null : (
                           <DropdownMenuItem onClick={() => void act(() => api.updateTeamEventDate(teamId, date.eventId, date.date, { cancelled: !date.cancelled }))} data-testid="calendar-toggle-date">
                             {date.cancelled ? <RotateCcw /> : <Ban />}
                             {date.cancelled ? t("teamCalendar.restoreDate") : t("teamCalendar.cancelDate")}
@@ -356,20 +367,20 @@ export function TeamCalendar({
                           </DropdownMenuItem>
                         ) : null}
                         {/* One date on its own (issue #549): a series' date, not a rehearsal's or an organisation's. */}
-                        {event && event.repeat && !rehearsal && !event.planned ? (
+                        {editsEvents && event && event.repeat && !rehearsal && !event.planned ? (
                           <DropdownMenuItem onClick={() => setEditingDate(date)} data-testid="calendar-edit-date">
                             <CalendarClock />
                             {t("teamCalendar.editDate")}
                           </DropdownMenuItem>
                         ) : null}
                         {/* Another day for this date (issue #576): an organisation's event moves on its calendar. */}
-                        {event && !rehearsal && !event.planned && !date.cancelled ? (
+                        {editsEvents && event && !rehearsal && !event.planned && !date.cancelled ? (
                           <DropdownMenuItem onClick={() => setMovingDate(date)} data-testid="calendar-move-date">
                             <CalendarArrowUp />
                             {t("teamCalendar.moveDate")}
                           </DropdownMenuItem>
                         ) : null}
-                        {event ? (
+                        {editsEvents && event ? (
                           <DropdownMenuItem onClick={() => setEditing(event)} data-testid="calendar-edit-event">
                             <Pencil />
                             {event.repeat ? t("teamCalendar.editSeries") : t("teamCalendar.editEvent")}

@@ -5,7 +5,7 @@
 // link of their own, made by their admins; a team's or organisation's link
 // is seen by its members, who can't change it.
 import { chromium } from "playwright";
-import { ONEVERSE, PLANIVERSE, api, call, check, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { ONEVERSE, PLANIVERSE, WEB, api, call, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -21,6 +21,9 @@ sql(`insert into "TeamMembership" (id, "teamId", "userId", role, "joinedAt", "up
 sql(`insert into "OrganizationMembership" (id, "organizationId", "userId", role, "joinedAt", "updatedAt") select 'omcs${stamp}', '${org.id}', '${bob.id}', 'MEMBER', now(), now() where not exists (select 1 from "OrganizationMembership" where "organizationId"='${org.id}' and "userId"='${bob.id}')`);
 const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 await api(alice, "POST", `/teams/${music.id}/events`, { title: `Rehearsal ${stamp}`, date: tomorrow, startTime: "19:00", timeZone: "UTC" });
+// A group that only plans: its dates are in Plan, not on Songverse's My calendar.
+const welcome = await api(alice, "POST", `/organizations/${org.id}/groups`, { name: `Section welcome ${stamp}` });
+await api(alice, "POST", `/teams/${welcome.id}/events`, { title: `Door welcome ${stamp}`, date: tomorrow, startTime: "09:30", timeZone: "UTC" });
 await api(alice, "POST", `/organizations/${org.id}/events`, { title: `Big service ${stamp}`, date: tomorrow, startTime: "10:00", timeZone: "UTC", hostUserId: alice.id, needs: [{ teamId: music.id }] });
 
 async function signInHere(who) {
@@ -66,6 +69,7 @@ try {
     check("mine", (await section().getAttribute("data-calendar")) === "me");
     check("its tabs", (await tabs()) === "dates,subscribe,availability", await tabs());
     await page.locator("[data-event-date]", { hasText: `Rehearsal ${stamp}` }).first().waitFor();
+    await page.locator("[data-event-date]", { hasText: `Door welcome ${stamp}` }).first().waitFor();
     const options = await page.getByTestId("calendar-picker").locator("option").allInnerTexts();
     check("the picker: mine, the organisation, the team", options[0] === "My calendar" && options.includes(`Section org ${stamp}`) && options.some((one) => one.startsWith(`Section music ${stamp}`)), options.join("|"));
   });
@@ -129,6 +133,23 @@ try {
     await pick(`team:${music.id}`);
     await page.getByTestId("team-calendar-feed").getByTestId("calendar-feed-none").waitFor();
     check("the tabs fit across a phone", (await page.getByTestId("calendar-tab-subscribe").boundingBox()).y < 400);
+  });
+
+  await step("Songverse: My calendar has the Songverse teams' dates; events are made in Plan", async () => {
+    page = await browser.newPage({ viewport: { width: 1280, height: 1000 }, timezoneId: "UTC" });
+    await signIn(page, alice);
+    await page.goto(`${WEB}/calendar`);
+    await page.locator("[data-event-date]", { hasText: `Rehearsal ${stamp}` }).first().waitFor();
+    check("not the group that only plans", (await page.locator("[data-event-date]", { hasText: `Door welcome ${stamp}` }).count()) === 0);
+    await page.goto(`${WEB}/teams/${music.id}`);
+    const calendar = page.getByTestId("team-calendar");
+    const plan = calendar.getByTestId("calendar-manage-in-plan");
+    check("Events in Plan", (await plan.getAttribute("href")) === `${PLANIVERSE}/calendar?of=${encodeURIComponent(`team:${music.id}`)}&tab=events`, await plan.getAttribute("href"));
+    check("no New event or Event types here", (await calendar.getByTestId("calendar-new-event").count()) === 0 && (await calendar.getByTestId("calendar-event-types").count()) === 0);
+    await calendar.getByTestId("calendar-ask").waitFor();
+    await page.goto(`${WEB}/organizations/${org.id}/events`);
+    await page.getByTestId("org-manage-in-plan").waitFor();
+    check("no New event for the organisation", (await page.getByTestId("org-new-event").count()) === 0);
   });
 
   r = await call(alice, "DELETE", `/organizations/${org.id}/calendar-feed`);

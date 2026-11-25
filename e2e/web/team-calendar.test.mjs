@@ -4,7 +4,7 @@
 // demand; "Create sets ahead" saved; the event edited. A member sees the
 // dates and opens a set, without the admin's tools.
 import { chromium } from "playwright";
-import { WEB, api, finish, pickDay, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, api, finish, pickDay, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -22,7 +22,8 @@ try {
   const rows = () => calendar().locator("[data-event-date]");
 
   await step("an admin adds a weekly event: its dates show, the first ones with their sets", async () => {
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     await calendar().getByText("No events yet", { exact: false }).waitFor();
     await page.getByTestId("calendar-new-event").click();
     const dialog = page.getByTestId("event-dialog");
@@ -71,7 +72,8 @@ try {
   });
 
   await step("Create sets ahead: 13 weeks", async () => {
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("calendar-sets-ahead").fill("13");
     await page.getByTestId("calendar-sets-ahead-save").click();
     await page.getByTestId("calendar-sets-ahead-save").getByText("Saved").waitFor();
@@ -95,7 +97,8 @@ try {
   await step("a member sees the dates and opens a set, without the admin's tools", async () => {
     await page.context().clearCookies();
     await signIn(page, member);
-    await page.goto(`${WEB}/teams/${team.id}`);
+    await page.goto(`${PLANIVERSE}/teams/${team.id}`);
+    await page.waitForLoadState("networkidle");
     await rows().first().getByText("Sunday service").waitFor();
     if (await page.getByTestId("calendar-new-event").count()) throw new Error("a member can add events");
     if (await calendar().getByRole("button", { name: /actions$/ }).count()) throw new Error("a member has date actions");

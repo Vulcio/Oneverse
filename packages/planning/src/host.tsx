@@ -34,7 +34,19 @@ export interface PlanningHost {
      * "team:<id>" or "organization:<id>" - where the app has it.
      */
     calendar?: (of: string) => string;
+    /**
+     * Where a team's or an organisation's events and event types are made
+     * and changed, when not here (issue #551): Plan's Calendar, from
+     * Songverse when Plan is deployed. Null or left out: here. Answers,
+     * line-ups and sets stay here either way.
+     */
+    manageEvents?: (of: string) => string | null;
   };
+  /**
+   * My calendar shows only the dates of the teams that use Songverse
+   * (issue #551): Songverse's, where a group that only plans is Plan's.
+   */
+  songverseTeamsOnly?: boolean;
   /**
    * A date's set: where it opens, and whether one can be made here. Null in
    * an app without sets. `songverse`, where the running order (issue #521)
