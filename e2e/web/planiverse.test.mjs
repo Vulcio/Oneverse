@@ -66,7 +66,8 @@ try {
 
   await step("the organisation, its groups, a group's page in Planiverse", async () => {
     await page.getByTestId("nav-organizations").click();
-    await page.getByText(`Planiverse org ${stamp}`).click();
+    await page.waitForURL(`${PLANIVERSE}/organizations`);
+    await page.getByRole("link", { name: `Planiverse org ${stamp}` }).click();
     await page.waitForURL(`${PLANIVERSE}/organizations/${org.id}`);
     await page.getByRole("link", { name: `Welcome ${stamp}` }).click();
     await page.waitForURL(`${PLANIVERSE}/teams/${welcome.id}`);

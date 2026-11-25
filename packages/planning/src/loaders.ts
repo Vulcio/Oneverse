@@ -45,3 +45,24 @@ export async function loadOrganizationEventsPage(api: ApiClient, organizationId:
   ]);
   return { organization, events, types, members, customInstruments };
 }
+
+/**
+ * What the Calendar section (issue #551) needs: one's teams and
+ * organisations to pick from, and the chosen calendar's own - a team's
+ * (positions, instruments, whether it's in an organisation) or an
+ * organisation's events and types. `of`: "me", "team:<id>" or
+ * "organization:<id>"; one that isn't theirs falls back to My calendar.
+ */
+export async function loadCalendarSection(api: ApiClient, of: string | undefined) {
+  const [teams, organizations] = await Promise.all([api.listTeams(true), api.listMyOrganizations().catch(() => null)]);
+  const [kind, id] = (of ?? "me").split(":") as [string, string | undefined];
+  if (kind === "team" && id && teams.some((one) => one.id === id)) {
+    const [team, positions, customInstruments] = await Promise.all([api.getTeam(id), api.listTeamPositions(id), api.listCustomInstruments()]);
+    return { teams, organizations, chosen: { kind: "team" as const, team, positions, customInstruments } };
+  }
+  if (kind === "organization" && id && organizations?.organizations.some((one) => one.id === id)) {
+    const data = await loadOrganizationEventsPage(api, id);
+    if (data) return { teams, organizations, chosen: { kind: "organization" as const, data } };
+  }
+  return { teams, organizations, chosen: { kind: "me" as const } };
+}

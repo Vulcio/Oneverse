@@ -67,9 +67,9 @@ export class TeamEventsController {
     return this.types.remove({ teamId }, typeId);
   }
 
-  /** The team's calendar link (issue #240): all its dates, no answers. Its admins make, reset or turn it off. */
+  /** The team's calendar link (issue #240): all its dates, no answers. Its members see it (issue #551); its admins make, reset or turn it off. */
   @Get("calendar-feed")
-  @UseGuards(TeamAdminGuard)
+  @UseGuards(TeamMemberGuard)
   feed(@Param("teamId") teamId: string) {
     return this.feeds.team(teamId);
   }

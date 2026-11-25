@@ -38,7 +38,14 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * start one from one of its event types.
  */
 
-export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<ReturnType<typeof loadOrganizationEventsPage>>> }) {
+export function OrganizationEventsPage({
+  data,
+  view: shownView,
+}: {
+  data: NonNullable<Awaited<ReturnType<typeof loadOrganizationEventsPage>>>;
+  /** Shown by the Calendar section (issue #551), which picks dates or events from its own menu: no title or tabs here. */
+  view?: "dates" | "events";
+}) {
   const { api, links, sets } = usePlanning();
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -53,7 +60,8 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
   // Who edits one date's set (issue #578).
   const [editors, setEditors] = useState<OrganizationEventDate | null>(null);
   // Its dates, or each event once (issue #549): a series is changed as a whole from there.
-  const [view, setView] = useState<"dates" | "events">("dates");
+  const [ownView, setView] = useState<"dates" | "events">("dates");
+  const view = shownView ?? ownView;
   const [error, setError] = useState<string | null>(null);
   const dayFormat = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short" });
   const timeFormat = (zone: string) => new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit", timeZone: zone });
@@ -80,7 +88,8 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className={cn("flex flex-wrap items-start justify-between gap-4", shownView && "justify-end")}>
+        {shownView ? null : (
         <div className="min-w-0">
           <HostLink href={links.organization(organization.id)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" />
@@ -89,6 +98,7 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
           <h1 className="text-2xl font-semibold">{t("organizations.events")}</h1>
           <p className="text-sm text-muted-foreground">{t("organizations.eventsHint")}</p>
         </div>
+        )}
         {isAdmin ? (
           <Button onClick={() => setEditing("new")} data-testid="org-new-event">
             {t("organizations.newEvent")}
@@ -103,6 +113,7 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
 
       <Card>
         <CardContent className="flex flex-col gap-3">
+          {shownView ? null : (
           <Tabs value={view} onValueChange={(value) => setView(value as "dates" | "events")}>
             <TabsList aria-label={t("organizations.events")}>
               <TabsTrigger value="dates" data-testid="org-view-dates">
@@ -116,6 +127,7 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          )}
           {view === "events" ? (
             <OrganizationSeriesList events={events} onEdit={setEditing} />
           ) : (

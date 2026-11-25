@@ -3400,6 +3400,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getTeamCalendarFeed: (teamId: string) => request<{ url: string | null }>(`/teams/${teamId}/calendar-feed`),
     resetTeamCalendarFeed: (teamId: string) => request<{ url: string }>(`/teams/${teamId}/calendar-feed`, { method: "POST" }),
     turnOffTeamCalendarFeed: (teamId: string) => request<void>(`/teams/${teamId}/calendar-feed`, { method: "DELETE" }),
+    /** An organisation's calendar link (issue #551): its members see it, its admins make, reset or turn it off. */
+    getOrganizationCalendarFeed: (organizationId: string) => request<{ url: string | null }>(`/organizations/${organizationId}/calendar-feed`),
+    resetOrganizationCalendarFeed: (organizationId: string) => request<{ url: string }>(`/organizations/${organizationId}/calendar-feed`, { method: "POST" }),
+    turnOffOrganizationCalendarFeed: (organizationId: string) => request<void>(`/organizations/${organizationId}/calendar-feed`, { method: "DELETE" }),
     listMyAway: () => request<AwayDays[]>("/users/me/away"),
     addMyAway: (data: CreateAwayRequest) => request<AwayDays>("/users/me/away", { method: "POST", body: JSON.stringify(data) }),
     updateMyAway: (id: string, data: UpdateAwayRequest) => request<AwayDays>(`/users/me/away/${id}`, { method: "PATCH", body: JSON.stringify(data) }),

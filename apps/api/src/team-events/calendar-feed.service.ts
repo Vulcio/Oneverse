@@ -35,7 +35,7 @@ export class CalendarFeedService {
     return { url: `${apiUrl()}/calendar/${token}.ics` };
   }
 
-  /** A team's link (issue #240), for its admins: null when it's off. */
+  /** A team's link (issue #240), for its members (issue #551): null when it's off. */
   async team(teamId: string) {
     const feed = await this.prisma.client.calendarFeed.findUnique({ where: { teamId } });
     return feed ? this.address(feed.token) : { url: null };
@@ -51,6 +51,24 @@ export class CalendarFeedService {
 
   async turnOffTeam(teamId: string): Promise<void> {
     await this.prisma.client.calendarFeed.deleteMany({ where: { teamId } });
+  }
+
+  /** An organisation's link (issue #551), for its members: null when it's off. */
+  async organization(organizationId: string) {
+    const feed = await this.prisma.client.calendarFeed.findUnique({ where: { organizationId } });
+    return feed ? this.address(feed.token) : { url: null };
+  }
+
+  /** A new organisation link, in the words of the admin making it; the old one stops working. */
+  async resetOrganization(organizationId: string, userId: string) {
+    const locale = (await this.prisma.client.user.findUnique({ where: { id: userId }, select: { locale: true } }))?.locale ?? "en";
+    const token = randomBytes(32).toString("base64url");
+    await this.prisma.client.calendarFeed.upsert({ where: { organizationId }, create: { organizationId, token, locale }, update: { token, locale, createdAt: new Date() } });
+    return this.address(token);
+  }
+
+  async turnOffOrganization(organizationId: string): Promise<void> {
+    await this.prisma.client.calendarFeed.deleteMany({ where: { organizationId } });
   }
 
   /** The link, or null when it's off. */
@@ -72,14 +90,18 @@ export class CalendarFeedService {
 
   /** The feed for a token, and its ETag; NotFound for a token that isn't one (any more). */
   async feed(token: string): Promise<{ body: string; etag: string }> {
-    const feed = await this.prisma.client.calendarFeed.findUnique({ where: { token }, include: { user: { select: { id: true, displayName: true, locale: true } }, team: { select: { id: true, name: true } } } });
-    if (!feed || !(feed.user || feed.team)) throw new NotFoundException("This calendar link doesn't work any more.");
+    const feed = await this.prisma.client.calendarFeed.findUnique({ where: { token }, include: { user: { select: { id: true, displayName: true, locale: true } }, team: { select: { id: true, name: true } }, organization: { select: { id: true, name: true } } } });
+    if (!feed || !(feed.user || feed.team || feed.organization)) throw new NotFoundException("This calendar link doesn't work any more.");
     const today = new Date().toISOString().slice(0, 10);
     const from = addDays(today, -BACK_DAYS);
     const to = addDays(today, AHEAD_DAYS);
-    const entries = feed.team ? await this.teamEntries(feed.team.id, from, to, feed.locale ?? "en") : await this.personalEntries(feed.user!.id, from, to, feed.user!.locale);
+    const entries = feed.team
+      ? await this.teamEntries(feed.team.id, from, to, feed.locale ?? "en")
+      : feed.organization
+        ? await this.organizationEntries(feed.organization.id, from, to, feed.locale ?? "en")
+        : await this.personalEntries(feed.user!.id, from, to, feed.user!.locale);
     entries.sort((a, b) => a.start.localeCompare(b.start));
-    const name = feed.team ? `Songverse - ${feed.team.name}` : `Songverse - ${feed.user!.displayName}`;
+    const name = `Songverse - ${feed.team?.name ?? feed.organization?.name ?? feed.user!.displayName}`;
     const body = calendarFeed(entries, { name, now: new Date(`${localDate(new Date(), "UTC")}T00:00:00Z`).toISOString() });
     return { body, etag: `"${createHash("sha256").update(body).digest("base64url").slice(0, 27)}"` };
   }
@@ -109,6 +131,35 @@ export class CalendarFeedService {
           description: [callLine(date.startsAt, event.callMinutes, event.timeZone, locale), event.note, setUrl].filter(Boolean).join("\n"),
           // Its page (issue #575): when, where, the line-up and the set.
           url: `${webUrl()}${eventDatePath(event.id, date.date)}`,
+        });
+      }
+    }
+    return entries;
+  }
+
+  /**
+   * An organisation's dates (issue #551): each of its events' once, however
+   * many groups it needs, cancelled ones left out - nobody's answers.
+   */
+  private async organizationEntries(organizationId: string, from: string, to: string, locale: string): Promise<CalendarFeedEntry[]> {
+    const events = await this.prisma.client.organizationEvent.findMany({ where: { organizationId }, select: { id: true, teamEvents: { include: withDates, orderBy: { createdAt: "asc" } } } });
+    const entries: CalendarFeedEntry[] = [];
+    for (const { id, teamEvents } of events) {
+      const [first] = teamEvents;
+      if (!first) continue;
+      // Every group's part has the same dates; a date is gone only when every group's is cancelled.
+      const parts = teamEvents.map((part) => eventDates(timingOf(part), from, to, changesOf(part)));
+      for (const date of parts[0]!) {
+        if (parts.every((dates) => dates.find((one) => one.date === date.date)?.cancelled !== false)) continue;
+        const setlistId = teamEvents.map((part) => part.dates.find((row) => dateText(row.date) === date.date)?.setlist?.id).find(Boolean);
+        entries.push({
+          uid: `${id}-${date.date}@songverse`,
+          start: date.startsAt,
+          end: date.endsAt,
+          title: date.title || first.title,
+          location: first.place,
+          description: [callLine(date.startsAt, first.callMinutes, first.timeZone, locale), first.note, setlistId ? `${webUrl()}/sets/${setlistId}` : null].filter(Boolean).join("\n"),
+          url: `${webUrl()}${eventDatePath(first.id, date.date)}`,
         });
       }
     }

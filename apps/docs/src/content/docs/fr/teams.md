@@ -83,7 +83,9 @@ Le calendrier se met à jour tout seul, mais les applications de calendrier vér
 
 ### Le lien de calendrier de l'équipe
 
-Les administrateurs d'une équipe en ont un de plus sur sa page : **Lien de calendrier de l'équipe**, avec **Obtenir le lien de calendrier de l'équipe**. Il contient toutes les dates de l'équipe - événements et répétitions, avec leur heure d'arrivée, leur lieu, leur note et leur liste - sans les réponses de chacun, pour un agenda partagé, le site de l'église ou quiconque a besoin du planning. Il fonctionne comme votre propre lien : **Copier le lien**, les boutons **Ajouter à…**, **Réinitialiser le lien** s'il circule trop, **Désactiver**.
+Les administrateurs d'une équipe en ont un de plus sur sa page : **Lien de calendrier de l'équipe**, avec **Obtenir le lien de calendrier de l'équipe**. Il contient toutes les dates de l'équipe - événements et répétitions, avec leur heure d'arrivée, leur lieu, leur note et leur liste - sans les réponses de chacun, pour un agenda partagé, le site de l'église ou quiconque a besoin du planning. Il fonctionne comme votre propre lien : **Copier le lien**, les boutons **Ajouter à…**, **Réinitialiser le lien** s'il circule trop, **Désactiver**. Les membres de l'équipe voient aussi le lien, pour l'ajouter à leur agenda, mais seuls ses administrateurs le créent, le réinitialisent ou le désactivent ; tant qu'ils n'en ont pas créé, c'est indiqué.
+
+Une organisation en a un aussi, pour tous ses événements (voir [Événements](/fr/organizations/#événements)).
 
 ### Les listes que vous voyez
 

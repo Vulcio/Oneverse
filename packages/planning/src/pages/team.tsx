@@ -17,7 +17,7 @@ import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Input } from "@oneverse/ui/components/input";
-import { Pencil } from "lucide-react";
+import { CalendarDays, Pencil } from "lucide-react";
 import { AnnouncementsCard, type AnnouncementsActions } from "../components/announcements-card";
 import { CalendarFeedCard } from "../components/calendar-feed-card";
 import { InviteLinksCard } from "../components/invite-links-card";
@@ -182,6 +182,12 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {links.calendar ? (
+            <Button variant="outline" size="sm" render={<HostLink href={links.calendar(`team:${team.id}`)} />} data-testid="team-open-calendar">
+              <CalendarDays />
+              {t("calendarSection.title")}
+            </Button>
+          ) : null}
           {isAdmin ? (
             <ConfirmButton
               label={t("teams.deleteTeam")}
@@ -321,7 +327,7 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
       {isAdmin ? adminCards : null}
 
       {/* Its calendar link (issue #240): all its dates, for a shared calendar or a website. */}
-      {isAdmin ? <CalendarFeedCard teamId={team.id} /> : null}
+      <CalendarFeedCard owner={{ teamId: team.id }} canManage={isAdmin} />
 
       {/* Where its events take place (issue #320). */}
       {isAdmin ? <LocationsCard owner={{ teamId: team.id }} /> : null}

@@ -45,9 +45,16 @@ export function TeamCalendar({
   setsByDefault = true,
   positions = [],
   organization = null,
+  view: shownView,
 }: {
   teamId: string;
   isAdmin: boolean;
+  /**
+   * Shown by the Calendar section (issue #551), which picks dates or events
+   * from its own menu and keeps the event types apart: no tabs here, nor an
+   * Event types button.
+   */
+  view?: "dates" | "events";
   /** The team's organisation (issue #549): an event can be moved to it, once its admins accept. */
   organization?: { id: string; name: string } | null;
   customInstruments?: readonly CustomInstrument[];
@@ -79,7 +86,8 @@ export function TeamCalendar({
   const [typesOpen, setTypesOpen] = useState(false);
   const [editing, setEditing] = useState<TeamEvent | "new" | null>(null);
   // Dates, or each event once (issue #549): a series is changed as a whole from there.
-  const [view, setView] = useState<"dates" | "events">("dates");
+  const [ownView, setView] = useState<"dates" | "events">("dates");
+  const view = shownView ?? ownView;
   // A date changed on its own (issue #549): its title and start time.
   const [editingDate, setEditingDate] = useState<TeamEventDateSummary | null>(null);
   const [movingDate, setMovingDate] = useState<TeamEventDateSummary | null>(null);
@@ -146,10 +154,12 @@ export function TeamCalendar({
         </div>
         {isAdmin ? (
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setTypesOpen(true)} data-testid="calendar-event-types">
-              <Shapes />
-              {t("teamCalendar.eventTypes")}
-            </Button>
+            {shownView ? null : (
+              <Button variant="outline" size="sm" onClick={() => setTypesOpen(true)} data-testid="calendar-event-types">
+                <Shapes />
+                {t("teamCalendar.eventTypes")}
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setAsking(true)} data-testid="calendar-ask">
               <MessageCircleQuestion />
               {t("teamCalendar.askAnswers")}
@@ -189,6 +199,7 @@ export function TeamCalendar({
           </div>
         ))}
         {/* The coming dates, or each event once (issue #549). */}
+        {shownView ? null : (
         <Tabs value={view} onValueChange={(value) => setView(value as "dates" | "events")}>
           <TabsList aria-label={t("teamCalendar.title")}>
             <TabsTrigger value="dates" data-testid="calendar-view-dates">
@@ -202,6 +213,7 @@ export function TeamCalendar({
             </TabsTrigger>
           </TabsList>
         </Tabs>
+        )}
         {view === "events" ? (
           <EventSeriesList events={events} types={types} isAdmin={isAdmin} partLabel={partLabel} onEdit={setEditing} organizationName={organization?.name ?? null} />
         ) : (

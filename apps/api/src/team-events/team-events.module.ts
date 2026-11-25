@@ -18,6 +18,6 @@ import { TeamEventsService } from "./team-events.service.js";
   controllers: [TeamEventsController, MyCalendarController, MyCalendarFeedController, CalendarFeedController],
   providers: [TeamEventsService, EventTypesService, AvailabilityService, RemindersService, LineupService, CalendarFeedService, TeamEventsProcessor, TeamEventsScheduler],
   // For an organisation's events (issue #241): each group's part is one of its team events.
-  exports: [TeamEventsService, AvailabilityService, EventTypesService],
+  exports: [TeamEventsService, AvailabilityService, EventTypesService, CalendarFeedService],
 })
 export class TeamEventsModule {}

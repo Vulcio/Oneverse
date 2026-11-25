@@ -29,6 +29,11 @@ export interface PlanningHost {
      * both apps, but a song's, a set's or People are Songverse's.
      */
     notification: (url: string) => string;
+    /**
+     * Plan's Calendar section (issue #551) open on a calendar - "me",
+     * "team:<id>" or "organization:<id>" - where the app has it.
+     */
+    calendar?: (of: string) => string;
   };
   /**
    * A date's set: where it opens, and whether one can be made here. Null in

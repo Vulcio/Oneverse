@@ -6,6 +6,7 @@ import { eventLocation } from "../locations/locations.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { AvailabilityService } from "../team-events/availability.service.js";
+import { CalendarFeedService } from "../team-events/calendar-feed.service.js";
 import { EventTypesService } from "../team-events/event-types.service.js";
 import { dateText, day, partsOf, TeamEventsService } from "../team-events/team-events.service.js";
 import type { CreateTeamEventTypeDto, UpdateTeamEventTypeDto } from "../team-events/dto/team-events.dto.js";
@@ -36,6 +37,7 @@ export class OrganizationEventsService {
     private readonly availability: AvailabilityService,
     private readonly notifications: NotificationsService,
     private readonly types: EventTypesService,
+    private readonly feeds: CalendarFeedService,
   ) {}
 
   /** The viewer's role in the organisation; not in it: not found. */
@@ -408,6 +410,27 @@ export class OrganizationEventsService {
       }
     }
     return [...out.values()].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  }
+
+  /** Its calendar link (issue #551): its events' dates, for its members; null when it's off. */
+  async feed(viewer: Viewer, organizationId: string) {
+    await this.role(viewer, organizationId);
+    return this.feeds.organization(organizationId);
+  }
+
+  /** Its admins make or reset it (the old link stops), or turn it off. */
+  async resetFeed(viewer: Viewer, organizationId: string) {
+    await this.assertFeedAdmin(viewer, organizationId);
+    return this.feeds.resetOrganization(organizationId, viewer.id);
+  }
+
+  async turnOffFeed(viewer: Viewer, organizationId: string) {
+    await this.assertFeedAdmin(viewer, organizationId);
+    await this.feeds.turnOffOrganization(organizationId);
+  }
+
+  private async assertFeedAdmin(viewer: Viewer, organizationId: string) {
+    if ((await this.role(viewer, organizationId)) !== "ADMIN") throw new ForbiddenException("Only the organisation's admins make its calendar link");
   }
 
   /** The organisation's event types (issue #528): its members see them, its groups pick from them. */

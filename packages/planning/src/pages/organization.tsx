@@ -94,8 +94,8 @@ export function OrganizationPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Its events (issue #241): who hosts each, which groups it needs. */}
-          <Button variant="outline" size="sm" render={<HostLink href={links.organizationEvents(organization.id)} />} data-testid="organization-events">
+          {/* Its events (issue #241): who hosts each, which groups it needs - in the Calendar section where the app has one (issue #551). */}
+          <Button variant="outline" size="sm" render={<HostLink href={links.calendar ? links.calendar(`organization:${organization.id}`) : links.organizationEvents(organization.id)} />} data-testid="organization-events">
             <CalendarDays />
             {t("organizations.events")}
           </Button>

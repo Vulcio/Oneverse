@@ -23,7 +23,7 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * team's admins - and the days one is away, which answer Not available for
  * every date in them that isn't answered.
  */
-export function MyCalendarPage() {
+export function MyCalendarPage({ section = false }: { section?: boolean } = {}) {
   const { api } = usePlanning();
   const { t } = useTranslation();
   const router = useRouter();
@@ -67,10 +67,13 @@ export function MyCalendarPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("teamCalendar.myCalendar")}</h1>
-        <p className="text-sm text-muted-foreground">{t("teamCalendar.myCalendarDescription")}</p>
-      </div>
+      {/* In the Calendar section (issue #551), its title, link and away days are the section's. */}
+      {section ? null : (
+        <div>
+          <h1 className="text-2xl font-semibold">{t("teamCalendar.myCalendar")}</h1>
+          <p className="text-sm text-muted-foreground">{t("teamCalendar.myCalendarDescription")}</p>
+        </div>
+      )}
       {error ? <FieldError>{error}</FieldError> : null}
       <div className="grid grid-cols-1 items-start gap-6 @6xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card data-testid="my-calendar">
@@ -101,13 +104,17 @@ export function MyCalendarPage() {
               void act(() => api.takeOpenPlace({ teamId: place.teamId, eventId: place.eventId, date: place.date, part: place.partKey })).finally(() => setTaking(false));
             }}
           />
-          <CalendarFeedCard />
-          <AwayDaysCard
-            away={away}
-            onAdd={(range) => act(() => api.addMyAway(range))}
-            onUpdate={(id, range) => act(() => api.updateMyAway(id, range))}
-            onRemove={(id) => act(() => api.removeMyAway(id))}
-          />
+          {section ? null : (
+            <>
+              <CalendarFeedCard />
+              <AwayDaysCard
+                away={away}
+                onAdd={(range) => act(() => api.addMyAway(range))}
+                onUpdate={(id, range) => act(() => api.updateMyAway(id, range))}
+                onRemove={(id) => act(() => api.removeMyAway(id))}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

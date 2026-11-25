@@ -61,6 +61,23 @@ export class OrganizationEventsController {
     return this.events.setDateEditors(user, organizationId, eventId, dateParam(date), dto.teamId, dto.editsSet);
   }
 
+  /** Its calendar link (issue #551): its events' dates, no answers. Its members see it; its admins make, reset or turn it off. */
+  @Get("calendar-feed")
+  feed(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string) {
+    return this.events.feed(user, organizationId);
+  }
+
+  @Post("calendar-feed")
+  resetFeed(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string) {
+    return this.events.resetFeed(user, organizationId);
+  }
+
+  @Delete("calendar-feed")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  turnOffFeed(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string) {
+    return this.events.turnOffFeed(user, organizationId);
+  }
+
   /** Its groups' events asking to become the organisation's (issue #549): its admins accept or decline them. */
   @Get("event-transfers")
   transfers(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string) {

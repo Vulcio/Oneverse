@@ -83,7 +83,9 @@ The calendar keeps itself up to date, but calendar apps look for changes on thei
 
 ### The team's calendar link
 
-A team's admins have one more on the team's page: **Team calendar link**, with **Get the team's calendar link**. It holds all the team's dates - events and rehearsals, with their call time, place, note and set - and nobody's answers, for a shared calendar, the church's website or anyone who needs the schedule. It works like your own link: **Copy link**, the **Add to…** buttons, **Reset link** if it gets around, **Turn off**.
+A team's admins have one more on the team's page: **Team calendar link**, with **Get the team's calendar link**. It holds all the team's dates - events and rehearsals, with their call time, place, note and set - and nobody's answers, for a shared calendar, the church's website or anyone who needs the schedule. It works like your own link: **Copy link**, the **Add to…** buttons, **Reset link** if it gets around, **Turn off**. The team's members see the link too, to add it to their calendar, but only its admins make, reset or turn it off; until they make one, it says so.
+
+An organisation has one too, for all its events (see [Events](/organizations/#events)).
 
 ### Which sets you see
 

@@ -37,6 +37,7 @@ export function planningHost(): PlanningHost {
       notifications: "/notifications",
       notificationSettings: "/account#notifications",
       // Its own pages here, and a set's running order (/sets/:id redirects there); the rest (a song, People) in Songverse - or My calendar without it.
+      calendar: (of) => (of === "me" ? "/calendar" : `/calendar?of=${encodeURIComponent(of)}`),
       notification: (url) => (PLANIVERSE_PATHS.test(url) || SET_PATH.test(url) ? url : songverse ? `${songverse}${url}` : "/calendar"),
     },
     sets: {

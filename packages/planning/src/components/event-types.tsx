@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { FieldError } from "@oneverse/ui/components/field";
@@ -52,9 +53,12 @@ export function EventTypesDialog({
   partLabel,
   onChanged,
   onClose,
+  inline = false,
 }: {
   owner: EventTypesOwner;
   types: TeamEventType[];
+  /** In the Calendar section (issue #551): on the page, not in a dialog; a type opens in one to change it. */
+  inline?: boolean;
   /** The team keeps sets: whether a type gets them is asked. */
   makesSets: boolean;
   teamNames: string[];
@@ -84,8 +88,7 @@ export function EventTypesDialog({
     }
   };
 
-  if (editing) {
-    return (
+  const editor = editing ? (
       <EventTypeDialog
         owner={owner}
         type={editing === "new" ? null : editing}
@@ -100,16 +103,11 @@ export function EventTypesDialog({
           await onChanged();
         }}
       />
-    );
-  }
+  ) : null;
+  if (editor && !inline) return editor;
 
-  return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg" data-testid="event-types-dialog">
-        <DialogHeader>
-          <DialogTitle>{t("teamCalendar.eventTypes")}</DialogTitle>
-          <DialogDescription>{t("teamCalendar.eventTypesDescription")}</DialogDescription>
-        </DialogHeader>
+  const list = (
+      <>
         {suggestions.length > 0 ? (
           <div className="flex flex-col gap-2">
             <p className="text-sm text-muted-foreground">{types.length === 0 ? t("teamCalendar.eventTypesNone") : t("teamCalendar.eventTypesMore")}</p>
@@ -177,11 +175,41 @@ export function EventTypesDialog({
           </ul>
         ) : null}
         {error ? <FieldError>{error}</FieldError> : null}
+      </>
+  );
+  const newButton = (
+    <Button variant="outline" onClick={() => setEditing("new")} data-testid="event-type-new">
+      <Plus />
+      {t("teamCalendar.eventTypeNew")}
+    </Button>
+  );
+
+  if (inline) {
+    return (
+      <Card data-testid="event-types">
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
+          <div className="flex flex-col gap-1.5">
+            <CardTitle className="text-sm">{t("teamCalendar.eventTypes")}</CardTitle>
+            <CardDescription>{t("teamCalendar.eventTypesDescription")}</CardDescription>
+          </div>
+          {newButton}
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">{list}</CardContent>
+        {editor}
+      </Card>
+    );
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg" data-testid="event-types-dialog">
+        <DialogHeader>
+          <DialogTitle>{t("teamCalendar.eventTypes")}</DialogTitle>
+          <DialogDescription>{t("teamCalendar.eventTypesDescription")}</DialogDescription>
+        </DialogHeader>
+        {list}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
-          <Button variant="outline" onClick={() => setEditing("new")} data-testid="event-type-new">
-            <Plus />
-            {t("teamCalendar.eventTypeNew")}
-          </Button>
+          {newButton}
           <Button variant="ghost" onClick={onClose}>
             {t("teamCalendar.cancel")}
           </Button>
