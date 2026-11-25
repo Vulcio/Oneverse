@@ -22,6 +22,7 @@ import {
 } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import { createDeviceStore } from "@oneverse/ui/lib/device-store";
 import { apiToken, forgetApiToken } from "#/lib/api-client";
 import {
   deviceNow,
@@ -75,6 +76,8 @@ export interface SyncState {
   /** The set sync is on for, or null when it's off. */
   setId: string | null;
   status: "off" | "connecting" | "on";
+  /** Who this device is signed in as, once the server has said (issue #561: not offered to themselves). */
+  me?: string | null;
   session: SyncSession | null;
   members: SyncMember[];
   leading: boolean;
@@ -210,6 +213,7 @@ function receive(message: SyncServerMessage) {
     case "ready": {
       retries = 0;
       userId = message.userId;
+      emit({ me: userId });
       joined = false;
       for (let i = 0; i < FIRST_PINGS; i++) setTimeout(ping, i * 120);
       pingTimer = setInterval(ping, EARLY_PING_MS);
@@ -450,6 +454,40 @@ function resync() {
   } else applySession();
 }
 
+// --- how closely this device follows (issue #561)
+
+/**
+ * How closely this device follows the live session (issue #561): the line
+ * sung (the default), its section, the song, or not at all. At every level
+ * but none the metronome stays in time; none leaves the session.
+ */
+export const SYNC_LEVELS = ["line", "section", "song", "none"] as const;
+export type SyncLevel = (typeof SYNC_LEVELS)[number];
+const levelStore = createDeviceStore<SyncLevel>("songverse.syncLevel", {
+  fallback: "line",
+  parse: (raw) => ((SYNC_LEVELS as readonly string[]).includes(raw ?? "") ? (raw as SyncLevel) : "line"),
+  format: (value) => (value === "line" ? null : value),
+});
+export const useSyncLevel = levelStore.use;
+
+/** Another level for this device; none leaves the set's session, any other joins it again. */
+export function setSyncLevel(level: SyncLevel, setId: string | null) {
+  levelStore.set(level);
+  if (level === "none") disableSync();
+  else if (setId && (state.setId !== setId || state.status === "off")) enableSync(setId);
+}
+
+/**
+ * Live of a set (issue #561): sync play is on by default, so the device
+ * joins the set's live session - unless it follows nothing (level none).
+ */
+export function useJoinLiveSession(setId: string | null | undefined) {
+  useEffect(() => {
+    if (!setId || levelStore.get() === "none") return;
+    if (state.setId !== setId || state.status === "off") enableSync(setId);
+  }, [setId]);
+}
+
 // --- what pages call
 
 /** Turns sync on for a set (from a press: the metronome may make sound then). */
@@ -532,9 +570,9 @@ export function publishPresenting(presenting: SyncPresenting | null) {
 let presentRev = 0;
 let presentShown: SyncPresenting | null = null;
 
-/** Leading: lets someone in the set present beside the leader, or (false) no longer (issue #305). */
+/** Someone who moves the screens lets another person in the set move them too, or (false) no longer (issues #305, #561). */
 export function allowPresenter(userId: string, allow: boolean) {
-  if (state.leading) send({ type: "presenter", userId, allow });
+  if (state.leading || state.canPresent) send({ type: "presenter", userId, allow });
 }
 
 /** The media operator (issue #275) takes the screens, shared or alone, or (null) gives them back. */
@@ -706,12 +744,21 @@ export function useSyncSong(setId: string, itemId: string, go: (itemId: string) 
     if (on && sync.leading) publishSyncItem(itemId);
   }, [on, sync.leading, itemId]);
   const leaderItem = on && !sync.leading ? (sync.session?.itemId ?? null) : null;
+  // Whoever moved the screens on to another item (issue #561): the last move counts, the leader's or theirs.
+  const presentedItem = on && !sync.leading ? (sync.session?.presenting?.itemId ?? null) : null;
   const goRef = useRef(go);
   goRef.current = go;
   useEffect(() => {
     if (leaderItem && leaderItem !== itemId) goRef.current(leaderItem);
     // Only when the leader moves: the follower may look at another song meanwhile.
   }, [leaderItem]);
+  const presentedBefore = useRef(presentedItem);
+  useEffect(() => {
+    // Once it changes: joining, the leader's song is the one to open.
+    if (presentedBefore.current === presentedItem) return;
+    presentedBefore.current = presentedItem;
+    if (presentedItem && presentedItem !== itemId) goRef.current(presentedItem);
+  }, [presentedItem]);
 }
 
 /**

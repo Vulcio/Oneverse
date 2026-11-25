@@ -101,8 +101,7 @@ try {
     await tablet.evaluate(() => localStorage.setItem("songverse.mode", "live"));
     await tablet.goto(`${WEB}/sets/${set.id}/live/${items[0].id}`);
     const control = tablet.getByTestId("sync-control").first();
-    await control.click();
-    await tablet.getByTestId("sync-menu").getByRole("menuitem", { name: "Turn sync on" }).click();
+    // In the live session by default (issue #561).
     await tablet.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
     await control.click();
     await tablet.getByTestId("sync-menu").getByRole("menuitem", { name: "Lead the set" }).click();
@@ -177,6 +176,25 @@ try {
     // The slide's two lines lit, the rest of the section dimmed (issue #431).
     const lit = await tv.locator('[data-testid="screen-chart"][data-highlight] [data-current] [data-line][data-now]').count();
     if (lit !== 2) throw new Error(`lit lines: ${lit}`);
+  });
+
+  await step("the line sung tapped on the tablet (issue #561): the stage chart lights it alone, Live marks it", async () => {
+    page = tablet;
+    await tablet.getByTestId("present-line").nth(1).click();
+    await tablet.locator('[data-testid="present-line"][aria-current="true"]').getByText("how sweet the sound").waitFor();
+    page = tv;
+    const now = tv.locator('[data-testid="screen-chart"][data-highlight] [data-current] [data-line][data-now]');
+    // (Its chords between the words.)
+    await now.filter({ hasText: /sweet the sound/ }).waitFor();
+    if ((await now.count()) !== 1) throw new Error(`lit lines: ${await now.count()}`);
+    page = tablet;
+    // (Its chord in the words, between zero-width spaces.)
+    await tablet.locator("[data-live-line]").filter({ hasText: /sound/ }).waitFor();
+    // Next: the slide's lines again, until someone says which is sung.
+    await tablet.getByTestId("present-next").click();
+    page = tv;
+    await tv.locator('[data-testid="screen-showing"][data-slide="1"]').waitFor();
+    await tv.locator('[data-testid="screen-chart"] [data-line][data-now]').nth(1).waitFor();
   });
 
   await step("disconnected from the phone: the screen goes back to a new code", async () => {

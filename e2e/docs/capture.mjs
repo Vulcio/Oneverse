@@ -309,7 +309,7 @@ try {
     const syncItem = (name) => page.getByTestId("sync-menu").getByRole("menuitem", { name });
     await shoot("sync", `/sets/${set.id}`, async () => {
       await syncControl.click();
-      await syncItem(/^(Turn sync on|Activer la synchro)$/).click();
+      await syncItem(/^(Join the live session|Rejoindre la session en direct)$/).click();
       await page.locator('[data-testid="sync-control"][data-state-sync="on"]').waitFor();
       await syncControl.click();
       await syncItem(/^(Lead the set|Mener la liste)$/).click();
@@ -319,7 +319,8 @@ try {
     });
     await syncItem(/^(End the session|Terminer la session)$/).click();
     await syncControl.click();
-    await syncItem(/^(Turn sync off|Désactiver la synchro)$/).click();
+    await syncItem(/^(Leave the live session|Quitter la session en direct)$/).click();
+    // Left (issue #561): Live stays out of the session on this device until it joins again.
     // Live mode (it's remembered, so back to Edit for the rest).
     await shoot("live", `/sets/${set.id}/live/${items[0].id}`, () => page.locator("[data-pass]").first().waitFor());
     // Floating controls over the chart (issue #224), then back to the footer.
@@ -448,7 +449,7 @@ try {
     await tv.locator('[data-testid="screen-display"][data-state="showing"]').waitFor({ timeout: 15000 });
     await page.goto(`${WEB}/sets/${set.id}/live/${items[0].id}`);
     await syncControl.first().click();
-    await syncItem(/^(Turn sync on|Activer la synchro)$/).click();
+    await syncItem(/^(Join the live session|Rejoindre la session en direct)$/).click();
     await page.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
     await syncControl.first().click();
     await syncItem(/^(Lead the set|Mener la liste)$/).click();
@@ -495,7 +496,7 @@ try {
     await syncControl.first().click();
     await syncItem(/^(End the session|Terminer la session)$/).click();
     await syncControl.first().click();
-    await syncItem(/^(Turn sync off|Désactiver la synchro)$/).click();
+    await syncItem(/^(Leave the live session|Quitter la session en direct)$/).click();
     for (const screen of await api(me, "GET", "/screens")) await api(me, "DELETE", `/screens/${screen.id}`);
     await tvContext.close();
     // Practice: the song's stems, docked at the bottom - minimised, then expanded - one muted.

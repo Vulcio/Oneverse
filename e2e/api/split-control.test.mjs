@@ -89,9 +89,11 @@ try {
   singer.send({ type: "present", presenting: { itemId, slide: 0, black: false }, basedOn: 4 });
   e = await singer.next((m) => m.type === "error");
   check("…their commands are refused, naming who has it", e?.code === "forbidden" && e.message === "Desk runs the screens", JSON.stringify(e));
-  singer.send({ type: "screens", control: "exclusive" });
-  e = await singer.next((m) => m.type === "error");
-  check("…nor can they lock it from under the desk", e?.code === "forbidden", JSON.stringify(e));
+  // (The set's leader could take them: issue #561, at the end.)
+  side.drain();
+  side.send({ type: "screens", control: "exclusive" });
+  e = await side.next((m) => m.type === "error");
+  check("…nor can anyone else lock it from under the desk", e?.code === "forbidden", JSON.stringify(e));
   desk.send({ type: "present", presenting: { itemId, slide: 0, black: true }, basedOn: 4 });
   s = await sessionWhere(desk, (m) => m.session?.presenting?.black === true);
   check("the desk still presents", s?.session.presentingRev === 5);
@@ -154,19 +156,34 @@ try {
   // The leader hands presenting to the helper, live.
   side.send({ type: "presenter", userId: helper.id, allow: true });
   e = await side.next((m) => m.type === "error");
-  check("only the leader hands it on", e?.code === "forbidden", JSON.stringify(e));
+  check("someone who doesn't move the screens can't hand it on", e?.code === "forbidden", JSON.stringify(e));
   singer.send({ type: "presenter", userId: helper.id, allow: true });
   s = await sessionWhere(side, (m) => m.canPresent === true);
   check("handed to the helper: they may present", s?.session.presenters?.some((one) => one.id === helper.id && one.name === "Helper"), JSON.stringify(s?.session.presenters));
   side.send({ type: "present", presenting: { itemId, slide: 1, black: false }, basedOn: 5 });
   s = await sessionWhere(singer, (m) => m.session?.presenting?.slide === 1);
   check("…and their Next moves the screens", s?.session.presentingRev === 6, JSON.stringify(s?.session));
+  side.send({ type: "present", presenting: { itemId, slide: 1, line: 1, black: false }, basedOn: 6 });
+  s = await sessionWhere(singer, (m) => m.session?.presenting?.line === 1);
+  check("…and the line they mark as sung (issue #561)", s?.session.presentingRev === 7, JSON.stringify(s?.session.presenting));
+  side.send({ type: "presenter", userId: operator.id, allow: true });
+  s = await sessionWhere(singer, (m) => m.session?.presenters?.some((one) => one.id === operator.id));
+  check("someone who moves the screens lets another move them too (issue #561)", !!s, JSON.stringify(s?.session.presenters));
+  side.send({ type: "presenter", userId: operator.id, allow: false });
+  await sessionWhere(singer, (m) => !m.session?.presenters?.some((one) => one.id === operator.id));
   singer.send({ type: "presenter", userId: helper.id, allow: false });
   s = await sessionWhere(side, (m) => m.canPresent === false);
   check("taken back: they may not", !!s && !s.session.presenters?.length);
   singer.send({ type: "presenter", userId: admin.id, allow: true });
   e = await singer.next((m) => m.type === "error");
   check("only to someone in the set", e?.code === "bad-request" && e.message === "They're not in the set", JSON.stringify(e));
+
+  // The leader leads the music (issue #561): overrules the desk's lock, and takes the screens.
+  desk3.send({ type: "screens", control: "exclusive" });
+  await sessionWhere(singer, (m) => m.session?.screens?.exclusive === true);
+  singer.send({ type: "screens", control: "shared" });
+  s = await sessionWhere(desk3, (m) => m.session?.screens && !m.session.screens.exclusive);
+  check("the leader takes the screens from a locked desk", s?.session.screens.id === leader.id && s.screensMine === false, JSON.stringify(s?.session.screens));
 } finally {
   for (const device of devices) device.close();
   await call(admin, "DELETE", `/admin/roles/${role.id}`);

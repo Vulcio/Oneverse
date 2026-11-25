@@ -38,6 +38,7 @@ export function ScreenStage({
   mode = screenShowsChart(theme) ? "CHART" : "LYRICS",
   song,
   slide,
+  line,
   black = false,
   idle,
   assets = [],
@@ -50,6 +51,8 @@ export function ScreenStage({
   mode?: ScreenMode;
   song: StageSong | null;
   slide: number;
+  /** The line sung on the slide (issue #561), from 0; left out, none is marked but the slide's. */
+  line?: number;
   black?: boolean;
   /** Shown when there's no song (no set, nothing presented). */
   idle?: ReactNode;
@@ -142,7 +145,7 @@ export function ScreenStage({
           theme={look}
           song={song}
           passIndex={current.passIndex}
-          now={slideLines(song.slides, index)}
+          now={slideLines(song.slides, index, line)}
           phase={outgoing && (outgoing.songChange || outgoing.song?.slides[outgoing.index]?.passIndex !== current.passIndex) ? "in" : "still"}
           transition={transition}
         />
@@ -718,11 +721,16 @@ function reveal(line: string, kind: ScreenTheme["motion"]["reveal"], next: () =>
  * template says, or none); fitted to the stage, never bigger than the
  * template's chart size.
  */
-/** Which of its pass's sung lines a slide shows (issue #431): from the first, how many - the slides cut the pass's lines in order. */
-function slideLines(slides: readonly ScreenSlide[], index: number): { from: number; count: number } | null {
+/**
+ * Which of its pass's sung lines a slide shows (issue #431): from the first,
+ * how many - the slides cut the pass's lines in order. With the line sung
+ * (issue #561), that one alone.
+ */
+function slideLines(slides: readonly ScreenSlide[], index: number, line?: number): { from: number; count: number } | null {
   const slide = slides[index];
   if (!slide || slide.lines.length === 0) return null;
   const from = slides.filter((one) => one.passIndex === slide.passIndex && one.part < slide.part).reduce((sum, one) => sum + one.lines.length, 0);
+  if (line !== undefined) return { from: from + Math.min(Math.max(0, line), slide.lines.length - 1), count: 1 };
   return { from, count: slide.lines.length };
 }
 

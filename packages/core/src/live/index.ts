@@ -64,7 +64,7 @@ export const LIVE_PRESENTERS_MAX = 20;
 const id = z.string().max(64);
 
 /** A slide of a set item, or black (issue #186). */
-export const SyncPresentingSchema = z.object({ itemId: id, slide: z.int().min(0).max(9_999), black: z.boolean(), slideKey: z.string().max(32).optional() });
+export const SyncPresentingSchema = z.object({ itemId: id, slide: z.int().min(0).max(9_999), line: z.int().min(0).max(99).optional(), black: z.boolean(), slideKey: z.string().max(32).optional() });
 
 /** The leader's metronome: its timeline, and its settings as the metronome reads them (the rest kept as sent). */
 export const SyncMetronomeSchema = z.object({
@@ -203,7 +203,7 @@ export function mayRoute(session: LiveSessionState | null, actor: LiveActor): bo
 /** Whether two "this item, slide N" say the same: the same slide, black or not, of the same words (issue #247). */
 export function samePresenting(a: SyncPresenting | null, b: SyncPresenting | null): boolean {
   if (!a || !b) return a === b;
-  return a.itemId === b.itemId && a.slide === b.slide && a.black === b.black && a.slideKey === b.slideKey;
+  return a.itemId === b.itemId && a.slide === b.slide && a.line === b.line && a.black === b.black && a.slideKey === b.slideKey;
 }
 
 const refuse = (code: LiveRefusal, message: string): LiveResult => ({ ok: false, code, message });
@@ -284,6 +284,10 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
         if (op.control === null) return unchanged(null);
         return changed({ rev: 1, leader: me, metronome: null, stems: null, itemId: null, presenting: null, presentingRev: 0, presenters: [], screens: { ...me, exclusive: op.control === "exclusive" } });
       }
+      // The leader overrules whoever runs the screens (issue #561): takes them, or frees them, locked or not.
+      if (current.leader.device === actor.device && current.screens && current.screens.id !== actor.userId) {
+        return changed({ ...current, rev: current.rev + 1, screens: op.control === null ? null : { ...me, exclusive: op.control === "exclusive" } });
+      }
       // Giving them back: only who has them, a person (back from a dropped connection, they take them again). Locking them: not while someone else has them locked.
       if (op.control === null && current.screens?.id !== actor.userId) return unchanged(current);
       if (lockedBy) return refuse("forbidden", `${lockedBy} runs the screens`);
@@ -305,7 +309,8 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
       return changed({ ...current, rev: current.rev + 1, presenting, presentingRev: (current.presentingRev ?? 0) + 1 });
     }
     case "presenter": {
-      if (!current || current.leader.device !== actor.device) return refuse("forbidden", "Only the leader hands presenting to someone");
+      // Whoever moves the screens lets others move them too (issue #561): a singer stepping through the lines.
+      if (!current || !mayPresent(current, actor)) return refuse("forbidden", "Only someone who moves the screens lets others move them");
       const presenters = (current.presenters ?? []).filter((one) => one.id !== op.userId);
       if (op.allow) {
         // Named: someone in the set now, as the server found them there.

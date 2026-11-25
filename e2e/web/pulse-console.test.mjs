@@ -95,8 +95,7 @@ try {
     await page.evaluate(() => localStorage.setItem("songverse.mode", "live"));
     await page.goto(`${WEB}/sets/${set.id}/live/${itemId}`);
     const control = page.getByTestId("sync-control").first();
-    await control.click();
-    await page.getByTestId("sync-menu").getByRole("menuitem", { name: "Turn sync on" }).click();
+    // In the live session by default (issue #561).
     await page.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
     // Once in the set (its clock measured first): the menu offers the lead.
     for (let tries = 0; ; tries++) {

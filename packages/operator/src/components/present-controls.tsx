@@ -1,4 +1,4 @@
-import { barBeatPlaces, setItemSlides, slideAtPosition, slideKey, stepSlide, structureOf, type ChartBar, type RenderedChart, type SetItemPassage, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
+import { barBeatPlaces, lyricSlideLines, setItemSlides, slideAtPosition, slideKey, stepSlide, structureOf, sungAtPosition, type ChartBar, type RenderedChart, type SetItemPassage, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
 import { AudioLines, ChevronLeft, ChevronRight, MonitorOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -45,6 +45,14 @@ function saveFollow(on: boolean) {
  * is), Follow the music (issue #238) moves the slides on by themselves, a
  * couple of beats ahead of the words sung (`slideAtPosition`, from the
  * beats placed in the words); Previous or Next turns it off.
+ *
+ * A song's slide shows which of its lines is sung (issue #561): the one
+ * tapped in the preview, or the one the music is at while following it. Each
+ * device in the session marks it on its chart, and stage monitors on theirs.
+ *
+ * A passage, a text or an announcement is the operator's to move (issue
+ * #561): while someone else runs the screens, these controls wait on it, and
+ * the next song is the band's again.
  */
 export function PresentControls({
   itemId,
@@ -73,16 +81,18 @@ export function PresentControls({
 }) {
   const { t } = useTranslation();
   const sync = useLive();
-  const { present } = useOperatorHost();
+  const { present, takeScreens } = useOperatorHost();
   const confirmed = sync.ready && (sync.leading || sync.canPresent) ? (sync.session?.presenting ?? null) : null;
   // What was last sent, until the session says so (or otherwise): a pedal pressed twice quickly goes two slides on.
   const [sent, setSent] = useState<SyncPresenting | null>(null);
   useEffect(() => {
     // Dropped once the session has it (an echo of something else - the song changing - isn't it), or once nobody's presenting.
-    if (!confirmed || (sent && confirmed.itemId === sent.itemId && confirmed.slide === sent.slide && confirmed.black === sent.black)) setSent(null);
+    if (!confirmed || (sent && confirmed.itemId === sent.itemId && confirmed.slide === sent.slide && confirmed.line === sent.line && confirmed.black === sent.black)) setSent(null);
   }, [confirmed]);
   const presenting = confirmed ? (sent ?? confirmed) : null;
   const slides = useMemo(() => setItemSlides({ chart, text, passage }), [chart, text, passage]);
+  // A song's slides with each line's ID (the same cut as `slides`): which line the music is at.
+  const slideLines = useMemo(() => (chart ? lyricSlideLines(chart) : null), [chart]);
   // With what the slides say (issue #247): a screen whose own differ shows no words rather than the wrong ones.
   const show = (next: SyncPresenting) => {
     const keyed = { ...next, slideKey: slideKey(slides) };
@@ -92,7 +102,10 @@ export function PresentControls({
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
   const screens = sync.ready ? sync.members.filter((member) => member.screen) : [];
   // An operator running the screens alone (issues #275, #305): this Live shows what's on them, and waits.
-  const locked = !!sync.session?.screens?.exclusive && !sync.screensMine;
+  const lockedAlone = !!sync.session?.screens?.exclusive && !sync.screensMine;
+  // Not a song, while someone else runs the screens (issue #561): theirs to move.
+  const operatorsItem = !chart && !!sync.session?.screens && !sync.screensMine;
+  const locked = lockedAlone || operatorsItem;
 
   // Another song opened while presenting: its first slide (its last, stepping back), as black or not as it was.
   useEffect(() => {
@@ -104,6 +117,8 @@ export function PresentControls({
 
   const slide = presenting && presenting.itemId === itemId ? Math.min(presenting.slide, Math.max(0, slides.length - 1)) : 0;
   const current = slides[slide];
+  // The line sung on it (issue #561), a song's, once someone says: until then, the slide's lines.
+  const line = chart && presenting && presenting.itemId === itemId && presenting.line !== undefined ? Math.min(presenting.line, Math.max(0, (current?.lines.length ?? 1) - 1)) : null;
 
   // The chart follows the slide.
   const lastPass = useRef<string | null>(null);
@@ -121,26 +136,32 @@ export function PresentControls({
   };
   const places = useMemo(() => (chart && music ? barBeatPlaces(chart, music.bars) : null), [chart, music?.bars]);
   const following = follow && !!chart && !!music && !!places;
-  const latest = useRef({ presenting, slide, show });
-  latest.current = { presenting, slide, show };
+  const latest = useRef({ presenting, slide, line, show });
+  latest.current = { presenting, slide, line, show };
   useEffect(() => {
     const position = music?.position;
     if (!following || !position || !chart || !places || locked) return;
     const timer = window.setInterval(() => {
-      const { presenting: now, slide: shown, show: send } = latest.current;
+      const { presenting: now, slide: shown, line: shownLine, show: send } = latest.current;
       if (!now || now.black || now.itemId !== itemId) return;
-      const to = slideAtPosition(chart, music.bars, places, position() + FOLLOW_AHEAD);
-      if (to !== null && to !== shown) send({ ...now, itemId, slide: to });
+      const at = position();
+      const to = slideAtPosition(chart, music.bars, places, at + FOLLOW_AHEAD);
+      if (to === null) return;
+      // The line sung now, on that slide (none while the slide's ahead of the words: the slide's lines).
+      const sung = sungAtPosition(chart, music.bars, places, at);
+      const found = sung ? (slideLines?.[to]?.lines.findIndex((one) => one.lineId === sung.lineId) ?? -1) : -1;
+      const sungLine = found >= 0 ? found : null;
+      if (to !== shown || sungLine !== shownLine) send({ ...now, itemId, slide: to, line: sungLine ?? undefined });
     }, 100);
     return () => window.clearInterval(timer);
-  }, [following, music?.position, chart, places, locked, itemId]);
+  }, [following, music?.position, chart, places, slideLines, locked, itemId]);
 
   function go(by: 1 | -1) {
     if (!presenting) return;
     // Taken in hand: no longer following the music.
     if (follow) changeFollow(false);
     const to = stepSlide(slides.length, slide, by);
-    if (to !== null) return show({ ...presenting, itemId, slide: to });
+    if (to !== null) return show({ ...presenting, itemId, slide: to, line: undefined });
     if (by > 0) next?.();
     else if (previous) {
       openOnLastSlide = true;
@@ -174,9 +195,19 @@ export function PresentControls({
   return (
     <section className="flex shrink-0 flex-col gap-2 border-t-2 border-t-primary bg-card px-2 py-2 sm:px-4" aria-label={t("screens.presenting")} data-testid="present-panel" data-slide={slide} data-black={String(presenting.black)} data-sending={String(!!sync.sending)}>
       {locked ? (
-        <p className="text-xs text-muted-foreground" data-testid="present-locked">
-          {t(sync.session?.screens?.online === false ? "screens.operator.lockedByOffline" : "screens.operator.lockedBy", { name: sync.session?.screens?.name })}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="flex-1 text-xs text-muted-foreground" data-testid="present-locked">
+            {lockedAlone
+              ? t(sync.session?.screens?.online === false ? "screens.operator.lockedByOffline" : "screens.operator.lockedBy", { name: sync.session?.screens?.name })
+              : t("screens.operator.operatorMoves", { name: sync.session?.screens?.name })}
+          </p>
+          {/* The leader leads the music: overrules whoever runs the screens (issue #561). */}
+          {sync.leading ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => takeScreens("shared")} data-testid="present-take">
+              {t("screens.operator.takeBack")}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
       <fieldset disabled={locked} className="contents">
       <div className="flex items-center gap-2">
@@ -191,11 +222,28 @@ export function PresentControls({
             {sync.sending ? <span data-testid="present-sending">{` · ${t("screens.sending")}`}</span> : null}
           </p>
           {current && current.lines.length ? (
-            current.lines.map((line, index) => (
-              <p key={index} className="truncate text-sm leading-snug">
-                {line}
-              </p>
-            ))
+            current.lines.map((words, index) =>
+              chart ? (
+                // A song's line: tapped, it's the one sung (issue #561), marked on every device in the session.
+                <button
+                  key={index}
+                  type="button"
+                  className={cn("block w-full truncate text-left text-sm leading-snug", line === null ? "" : index === line ? "font-semibold text-primary" : "text-muted-foreground hover:text-foreground")}
+                  aria-current={index === line ? "true" : undefined}
+                  onClick={() => {
+                    if (follow) changeFollow(false);
+                    show({ ...presenting, itemId, slide, line: index });
+                  }}
+                  data-testid="present-line"
+                >
+                  {words}
+                </button>
+              ) : (
+                <p key={index} className="truncate text-sm leading-snug">
+                  {words}
+                </p>
+              ),
+            )
           ) : (
             <p className="truncate text-sm leading-snug text-muted-foreground italic">{t("screens.noWords")}</p>
           )}
@@ -233,7 +281,7 @@ export function PresentControls({
               disabled={locked}
               onClick={() => {
                 if (follow) changeFollow(false);
-                show({ ...presenting, itemId, slide: first, black: false });
+                show({ ...presenting, itemId, slide: first, line: undefined, black: false });
               }}
               aria-label={t("live.goToPass", { name })}
               aria-current={here ? "step" : undefined}

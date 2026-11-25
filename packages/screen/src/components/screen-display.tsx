@@ -213,6 +213,7 @@ function Showing({
         theme={look}
         song={idle ? null : song}
         slide={presenting?.slide ?? 0}
+        line={presenting?.line}
         black={!!presenting?.black}
         idle={idle}
         assets={current.assets}

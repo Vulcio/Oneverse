@@ -677,3 +677,11 @@ body.sv-dragging {
     animation: none;
   }
 }
+
+/* The line sung in the live session (issue #561), on Live's chart. */
+[data-live-line] {
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--color-primary) 16%, transparent);
+  box-shadow: -0.375rem 0 0 color-mix(in oklab, var(--color-primary) 16%, transparent), 0.375rem 0 0 color-mix(in oklab, var(--color-primary) 16%, transparent);
+  transition: background-color 150ms;
+}

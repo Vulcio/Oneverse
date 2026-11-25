@@ -80,11 +80,11 @@ async function zero(p, since) {
 await step("both on the set's song page, sync on, the leader leading", async () => {
   await follower.goto(songPage);
   await player(follower).waitFor();
-  await choose(follower, "Turn sync on");
+  await choose(follower, "Join the live session");
   page = leader;
   await leader.goto(songPage);
   await player(leader).waitFor();
-  await choose(leader, "Turn sync on");
+  await choose(leader, "Join the live session");
   await leader.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
   await choose(leader, "Lead the set");
   page = follower;

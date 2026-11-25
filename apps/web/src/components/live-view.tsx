@@ -1,4 +1,4 @@
-import { prettyChord, barSeconds, chartBars, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
+import { lyricSlideLines, lyricSlides, prettyChord, barSeconds, chartBars, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
 import { TextItemSlides } from "#/components/set-text-item";
 import { PassageReading } from "#/components/set-passage-item";
 import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Search, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
@@ -34,6 +34,7 @@ import { useChartNotes } from "#/components/notes";
 import { useSongNotes, type NotesContext } from "#/lib/notes";
 import { Button } from "@oneverse/ui/components/button";
 import { SyncControl } from "#/components/sync-control";
+import { useJoinLiveSession, useSync, useSyncLevel } from "#/lib/sync-client";
 import { SidebarTrigger } from "@oneverse/ui/components/sidebar";
 import { chartDisplayProps, changeDisplaySettings, stepChartSizes, stepTextSize } from "#/lib/display-settings";
 import { PinchZoomLabel, usePinchZoom } from "#/lib/pinch-zoom";
@@ -412,6 +413,37 @@ export function LiveView({
     if (!element || !pass) return;
     element.scrollTo({ top: pass.getBoundingClientRect().top - element.getBoundingClientRect().top + element.scrollTop - 12, behavior: "smooth" });
   }
+
+  // The live session (issue #561): joined by default, and followed down to the section or the line sung, as this device chose.
+  useJoinLiveSession(song.setId);
+  const sync = useSync();
+  const level = useSyncLevel();
+  const inSession = !!song.setId && sync.setId === song.setId && sync.status === "on";
+  const presented = inSession ? (sync.session?.presenting ?? null) : null;
+  const followed = presented && !presented.black && presented.itemId === song.id && chart && (level === "line" || level === "section") ? presented : null;
+  const liveSlides = useMemo(() => (chart ? lyricSlides(chart) : []), [chart]);
+  const liveSlideLines = useMemo(() => (chart ? lyricSlideLines(chart) : []), [chart]);
+  const followedPass = followed ? (liveSlides[followed.slide]?.passId ?? null) : null;
+  // The line sung, or (nobody said yet) the slide's lines.
+  const followedLines = useMemo(() => {
+    if (!followed || level !== "line") return [];
+    const lines = liveSlideLines[followed.slide]?.lines ?? [];
+    return (followed.line === undefined ? lines : lines.slice(followed.line, followed.line + 1)).map((one) => one.lineId);
+  }, [followed?.slide, followed?.line, level, liveSlideLines]);
+  const followedKey = followedLines.join(" ");
+  // Someone who moves the screens has the chart follow their own slides (PresentControls).
+  const movesScreens = sync.leading || sync.canPresent;
+  useEffect(() => {
+    if (followedPass && !movesScreens) goToPass(followedPass);
+  }, [followedPass, movesScreens]);
+  // The line sung, marked on the chart (in its pass: a chorus sung twice has its lines twice).
+  useEffect(() => {
+    const root = sections.current[at] ?? scroller.current;
+    if (!root) return;
+    for (const marked of root.querySelectorAll("[data-live-line]")) marked.removeAttribute("data-live-line");
+    const pass = followedPass ? root.querySelector(passSelector(followedPass)) : null;
+    for (const lineId of followedLines) pass?.querySelector(`[data-line-id="${CSS.escape(lineId)}"]`)?.setAttribute("data-live-line", "");
+  }, [followedPass, followedKey, at, chart]);
 
   // Where the controls are, and which show (issue #224); a PDF's page has its own.
   const layout = display.controls;

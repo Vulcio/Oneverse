@@ -7,12 +7,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@oneverse/ui/components/dropdown-menu";
 import { useMetronome } from "#/lib/metronome-engine";
 import { useStems } from "#/lib/stem-engine";
-import { allowPresenter, cueScreens, disableSync, enableSync, endSync, leadSync, publishPresenting, unlockSyncAudio, useSync } from "#/lib/sync-client";
+import { allowPresenter, cueScreens, endSync, leadSync, publishPresenting, setSyncLevel, unlockSyncAudio, useSync, useSyncLevel } from "#/lib/sync-client";
 import { cn } from "@oneverse/ui/lib/utils";
 
 /** The cues a singer has (issue #322), in the order they're read. */
@@ -23,9 +25,13 @@ const CUES = [
   ["next", "item", "screens.cueNextItem"],
 ] as const;
 
+/** The levels a device follows the live session to (issue #561), closest first. */
+const LEVELS = ["line", "section", "song"] as const;
+
 /**
- * Sync play (issue #13) for a set: on or off, who leads, and Lead or End
- * for those who can edit the set. On a set's page, its songs and Live.
+ * The live session (issues #13, #561) for a set: joined or left, how closely
+ * this device follows it, who leads, and Lead or End for those who can edit
+ * the set. On a set's page, its songs and Live (which joins it by itself).
  */
 export function SyncControl({ setId, itemId, compact = false, className }: { setId: string; itemId?: string; compact?: boolean; className?: string }) {
   const { t } = useTranslation();
@@ -35,8 +41,9 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
   const on = sync.setId === setId && sync.status !== "off";
   const session = on ? sync.session : null;
   const following = on && !!session && !sync.leading;
-  // People in the set besides the leader, once each: who the leader may let present.
-  const presenterChoices = on ? [...new Map(sync.members.filter((member) => !member.screen && !member.leading).map((member) => [member.id, member])).values()] : [];
+  const level = useSyncLevel();
+  // People in the set besides the leader and me, once each: who someone moving the screens may let move them too (issue #561).
+  const presenterChoices = on ? [...new Map(sync.members.filter((member) => !member.screen && !member.leading && member.id !== sync.me).map((member) => [member.id, member])).values()] : [];
   const stems = useStems();
   const blocked = following && (metronome.audioBlocked || stems.audioBlocked);
   const label = !on
@@ -89,13 +96,26 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
             onClick={() => {
               // Within the press: the browser lets the metronome make sound from now on.
               unlockSyncAudio();
-              enableSync(setId);
+              setSyncLevel(level === "none" ? "line" : level, setId);
             }}
+            data-testid="sync-join"
           >
             {t("sync.turnOn")}
           </DropdownMenuItem>
         ) : (
           <>
+            {/* How closely this device follows (issue #561): the metronome stays in time at each. */}
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground" title={t("sync.levelHint")}>
+              {t("sync.follow")}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={level}>
+              {LEVELS.map((one) => (
+                <DropdownMenuRadioItem key={one} value={one} closeOnClick={false} onClick={() => setSyncLevel(one, setId)} data-testid={`sync-level-${one}`}>
+                  {t(`sync.levels.${one}`)}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
             {sync.canLead && !sync.leading && sync.status === "on" ? (
               <DropdownMenuItem onClick={leadSync}>{session ? t("sync.leadInstead") : t("sync.lead")}</DropdownMenuItem>
             ) : null}
@@ -121,8 +141,8 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
                 ))}
               </>
             ) : null}
-            {/* Who else presents (issue #305): the leader lets someone in the set send slides too, for this session. */}
-            {sync.leading && presenterChoices.length ? (
+            {/* Who else moves the screens (issues #305, #561): whoever moves them lets someone in the set do so too, for this session. */}
+            {(sync.leading || sync.canPresent) && presenterChoices.length ? (
               <>
                 <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t("screens.letPresent")}</DropdownMenuLabel>
                 {presenterChoices.map((member) => {
@@ -154,7 +174,9 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
                 {t("sync.end")}
               </DropdownMenuItem>
             ) : null}
-            <DropdownMenuItem onClick={disableSync}>{t("sync.turnOff")}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSyncLevel("none", setId)} data-testid="sync-leave">
+              {t("sync.turnOff")}
+            </DropdownMenuItem>
           </>
         )}
       </DropdownMenuContent>

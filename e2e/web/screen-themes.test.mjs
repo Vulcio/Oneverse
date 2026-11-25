@@ -215,8 +215,7 @@ try {
     const [item] = (await api(leader, "GET", `/setlists/${set.id}`)).items;
     await tablet.goto(`${WEB}/sets/${set.id}/live/${item.id}`);
     const control = tablet.getByTestId("sync-control").first();
-    await control.click();
-    await tablet.getByTestId("sync-menu").getByRole("menuitem", { name: "Turn sync on" }).click();
+    // In the live session by default (issue #561).
     await tablet.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
     await control.click();
     await tablet.getByTestId("sync-menu").getByRole("menuitem", { name: "Lead the set" }).click();

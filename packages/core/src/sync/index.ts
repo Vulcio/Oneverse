@@ -76,6 +76,11 @@ export interface SyncStems {
 export interface SyncPresenting {
   itemId: string;
   slide: number;
+  /**
+   * The line being sung on that slide (issue #561), from 0: followers at the
+   * line mark it, stage monitors too. Left out: the slide's first.
+   */
+  line?: number;
   /** The screens go black (between songs, or while someone speaks). */
   black: boolean;
   /**
@@ -461,7 +466,7 @@ export type SyncClientMessage =
   | { type: "present"; presenting: SyncPresenting | null; basedOn?: number }
   /** `played`: the set's songs the leader played (issue #200), all of them, in place of the session's. */
   | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null; presentingBasedOn?: number; playback?: Record<string, PlaybackSource | null>; played?: string[] }
-  /** The leader hands presenting to someone in the set, live, or takes it back (issue #305). */
+  /** Someone who moves the screens lets another person in the set move them too, live, or stops them (issues #305, #561). */
   | { type: "presenter"; userId: string; allow: boolean }
   | { type: "end" }
   /**

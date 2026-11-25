@@ -37,8 +37,7 @@ try {
     await live.evaluate(() => localStorage.setItem("songverse.mode", "live"));
     await live.goto(`${WEB}/sets/${set.id}/live/${items[0].id}`);
     const control = live.getByTestId("sync-control").first();
-    await control.click();
-    await live.getByTestId("sync-menu").getByRole("menuitem", { name: "Turn sync on" }).click();
+    // In the live session by default (issue #561).
     await live.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
     await control.click();
     await live.getByTestId("sync-operator").waitFor();

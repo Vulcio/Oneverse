@@ -241,12 +241,12 @@ await step("Sync play: the leader chooses for everyone, the others' control says
   page = other;
   await other.goto(songPage);
   await control(other).waitFor();
-  await choose(other, "Turn sync on");
+  await choose(other, "Join the live session");
   page = await open(me);
   const leader = page;
   await leader.goto(songPage);
   await control(leader).waitFor();
-  await choose(leader, "Turn sync on");
+  await choose(leader, "Join the live session");
   await leader.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
   await choose(leader, "Lead the set");
   // Only once it leads is its choice everyone's.

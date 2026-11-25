@@ -176,7 +176,7 @@ function ScreenTile({ copy, screen, look, looks, send, picture, onGivenBack }: {
       {picture ? (
         <div className={cn("relative overflow-hidden rounded-md bg-black ring-1 ring-border [container-type:size]", !screen.connected && "opacity-50")} style={{ aspectRatio: "16/9" }}>
           {screen.connected ? (
-            <ScreenStage className="absolute inset-0" theme={showing.look} song={showing.presented ? showing.song : null} slide={presenting?.slide ?? 0} black={!!presenting?.black} idle={idle} assets={looks?.assets ?? []} live={showing.live} />
+            <ScreenStage className="absolute inset-0" theme={showing.look} song={showing.presented ? showing.song : null} slide={presenting?.slide ?? 0} line={presenting?.line} black={!!presenting?.black} idle={idle} assets={looks?.assets ?? []} live={showing.live} />
           ) : (
             <div className="flex size-full items-center justify-center text-neutral-500" data-testid="operator-screen-missing">
               <MonitorOff className="size-5" aria-label={lastSeen} />

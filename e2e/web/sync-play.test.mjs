@@ -81,10 +81,9 @@ async function apart(count = 6) {
 }
 const gapsOf = (clicks) => clicks.slice(1).map((c, i) => c.at - clicks[i].at);
 
-await step("the follower turns sync on in Live: no one leads yet, and they can't", async () => {
+await step("the follower opens Live: in the live session by default (issue #561), no one leads yet, and they can't", async () => {
   // Sync details on (issue #101), to see the skewed timestamp refused.
   await follower.goto(`${WEB}/sets/${set.id}/live/${item1.id}?debug=sync`);
-  await choose(follower, "Turn sync on");
   await syncState(follower, "on");
   await control(follower).click();
   await menu(follower).getByText("Waiting for someone who can edit the set to lead.").waitFor();
@@ -92,10 +91,9 @@ await step("the follower turns sync on in Live: no one leads yet, and they can't
   await follower.keyboard.press("Escape");
 });
 
-await step("the leader turns it on and leads: the follower follows them", async () => {
+await step("the leader opens Live and leads: the follower follows them", async () => {
   page = leader;
   await leader.goto(`${WEB}/sets/${set.id}/live/${item1.id}`);
-  await choose(leader, "Turn sync on");
   await syncState(leader, "on");
   await choose(leader, "Lead the set");
   await syncState(leader, "leading");
@@ -189,6 +187,31 @@ await step("the leader reloads: still leading, the metronome picked up where it 
   page = follower;
   const { worst, output, clock } = await apart();
   check("in time after the leader's reload (ms apart, at most)", worst < 5 && output < 40 && clock < 60, `${worst.toFixed(2)} ms (output ${output.toFixed(2)} ms, audio clock ${clock.toFixed(2)} ms)`);
+  await follower.getByTestId("metronome-following").waitFor();
+});
+
+await step("the follower follows to the section, leaves, and stays out until they join again (issue #561)", async () => {
+  page = follower;
+  await follower.goto(`${WEB}/sets/${set.id}/live/${item1.id}`);
+  await syncState(follower, "following");
+  await control(follower).click();
+  await menu(follower).locator('[data-testid="sync-level-line"][aria-checked="true"]').waitFor();
+  await menu(follower).getByTestId("sync-level-section").click();
+  await menu(follower).locator('[data-testid="sync-level-section"][aria-checked="true"]').waitFor();
+  await menu(follower).getByTestId("sync-leave").click();
+  await syncState(follower, "off");
+  await follower.reload();
+  await follower.getByTestId("sync-control").first().waitFor();
+  await follower.waitForTimeout(1500);
+  await syncState(follower, "off");
+  await choose(follower, "Join the live session");
+  await syncState(follower, "following");
+  // Joined again: down to the line, as by default.
+  await control(follower).click();
+  await menu(follower).locator('[data-testid="sync-level-line"][aria-checked="true"]').waitFor();
+  await follower.keyboard.press("Escape");
+  // Back on the Metronome page, for the end.
+  await follower.goto(`${WEB}/metronome`);
   await follower.getByTestId("metronome-following").waitFor();
 });
 
