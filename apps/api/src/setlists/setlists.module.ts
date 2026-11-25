@@ -16,12 +16,13 @@ import { NotesService } from "../notes/notes.service.js";
 import { ScripturesModule } from "../scriptures/scriptures.module.js";
 import { TeamEventsModule } from "../team-events/team-events.module.js";
 import { SetAvailabilityService } from "./set-availability.service.js";
+import { SetEditRequestsService } from "./set-edit-requests.service.js";
 
 @Module({
   imports: [ArrangementsModule, ScripturesModule, TeamEventsModule],
   controllers: [SetlistsController, SetInvitesController, OwnershipRequestsController, SongTeamsController, QuickSelectionController, OperatorPresetsController],
   // Notes (issue #256) live with sets: who sees a set's notes is the set's to say, and its offline copy carries them.
-  providers: [SetlistAccessService, SetAvailabilityService, OperatorPresetsService, SetlistsService, QuickSelectionService, SetlistSharingService, SongOwnershipService, NotesService],
+  providers: [SetlistAccessService, SetAvailabilityService, SetEditRequestsService, OperatorPresetsService, SetlistsService, QuickSelectionService, SetlistSharingService, SongOwnershipService, NotesService],
   exports: [SetlistsService, SetlistAccessService, NotesService],
 })
 export class SetlistsModule {}

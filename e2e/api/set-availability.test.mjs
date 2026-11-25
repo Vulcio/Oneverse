@@ -110,7 +110,8 @@ await call(leader, "PUT", `${base}/lineup/${place.id}/response`, { status: "DECL
 set = (await call(leader, "GET", `/setlists/${setlistId}`)).body;
 check("declining: no longer edits it", set.canEdit === false, JSON.stringify({ canEdit: set.canEdit }));
 
-// --- the event marks who leads the set (issue #559): here the drums, not the host
+// --- the event marks who leads the set (issue #559): here the drums, not the host.
+// Leading is shown; editing is the line-up's (issue #578), whatever the part.
 r = await call(admin, "PATCH", `/teams/${team.id}/events/${event.id}`, {
   parts: [
     { part: "MUSIC_LEADER", count: 1 },
@@ -121,11 +122,16 @@ r = await call(admin, "PATCH", `/teams/${team.id}/events/${event.id}`, {
 check("an event marks the parts that lead its set", r.status === 200, JSON.stringify(r.body));
 await call(admin, "POST", `${base}/lineup`, { userId: quiet.id, part: "DRUMS" });
 set = (await call(drummer, "GET", `/setlists/${setlistId}`)).body;
-check("…the host no longer edits it", set.canEdit === false, JSON.stringify({ canEdit: set.canEdit }));
+check("…the host still edits it: the line-up does (issue #578)", set.canEdit === true, JSON.stringify({ canEdit: set.canEdit }));
 set = (await call(quiet, "GET", `/setlists/${setlistId}`)).body;
 check("…the drummer does", set.canEdit === true && set.canManage === false, JSON.stringify({ canEdit: set.canEdit }));
 check("…the set list says so too", (await call(quiet, "GET", "/setlists")).body.find((one) => one.id === setlistId)?.canEdit === true);
 r = await call(admin, "GET", `/setlists/${setlistId}/availability`);
 check("…and its leading parts are those", r.body.leadingParts.join() === "MUSIC_LEADER,DRUMS" && r.body.leaders.map((one) => one.userId).join() === quiet.id, JSON.stringify({ parts: r.body.leadingParts, leaders: r.body.leaders }));
+
+// --- a team whose line-up doesn't edit its sets (issue #578): only its admins do
+r = await call(admin, "PATCH", `/teams/${team.id}/events/${event.id}`, { editsSet: false });
+check("the event's line-up no longer edits the set", r.status === 200 && r.body.editsSet === false && (await call(quiet, "GET", `/setlists/${setlistId}`)).body.canEdit === false, JSON.stringify(r.body.editsSet));
+check("…its admins still do", (await call(admin, "GET", `/setlists/${setlistId}`)).body.canEdit === true);
 
 await finish();

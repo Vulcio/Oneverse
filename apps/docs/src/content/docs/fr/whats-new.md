@@ -19,6 +19,7 @@ Ce qui a changé à chaque version, de la plus récente à la plus ancienne. Qua
 - Des types d'événements pour le calendrier d'une équipe et les groupes d'une organisation, des événements sans set, des parties requises et des places libres que chacun peut prendre.
 - Les groupes qui ne font que planifier peuvent aussi avoir des sets.
 - Chaque date a sa propre page, la même dans Songverse, Plan et Oneverse, où mènent ses notifications (voir [La page d'une date](/fr/teams/#la-page-dune-date)) ; une date peut être déplacée à un autre jour avec ses réponses, son équipe du jour et sa liste.
+- La date d'un événement a une liste, pour toutes les équipes dont il a besoin : les équipes qui la modifient la changent (leurs administrateurs et leurs membres dans l'équipe du jour), les autres la consultent et peuvent **Demander à modifier** (voir [Qui modifie la liste d'une date](/fr/sets/#qui-modifie-la-liste-dune-date)).
 - Oneverse a un accueil : connectez-vous-y et retrouvez vos applications, vos prochaines dates à répondre, les places libres, les nouvelles, vos équipes et les liens de votre organisation (voir [L'accueil d'Oneverse](/fr/getting-started/#laccueil-doneverse)).
 - Planiverse s'appelle maintenant [Oneverse Plan](/fr/plan/), à plan.oneverse.top : même application, mêmes pages, sous le nom Oneverse. Les anciens liens planiverse.top y mènent.
 

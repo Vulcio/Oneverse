@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Prisma } from "@oneverse/db";
-import { setLeadingKeys, type EventPart } from "@oneverse/core";
+import { setEditors, setRight, type SetDateTeam } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -32,7 +32,7 @@ export type SetRow = { id: string; ownerUserId: string | null; ownerTeamId: stri
 export interface SetAccess {
   canView: boolean;
   canEdit: boolean;
-  /** Deletes it or hands it to another owner: its owner, the team's admins - not the date's host or music leader (issue #520). */
+  /** Deletes it or hands it to another owner: its owner, the team's admins - not those who edit it through a date (issues #520, #578). */
   canManage: boolean;
   /** Joined through the set's share link, rather than owning it or being on its team. */
   isGuest: boolean;
@@ -40,14 +40,19 @@ export interface SetAccess {
 
 const NO_ACCESS: SetAccess = { canView: false, canEdit: false, canManage: false, isGuest: false };
 
+/** A date a set was made for, with its team's choices and line-up (issue #578). */
+export type SetDate = SetDateTeam & { eventId: string; date: Date };
+
 
 /**
  * Who can open or change a set, and which of its songs they can read.
  *
  * - The owner of a personal set, and admins of a team set's team, edit it;
- *   other team members view it. Global admins can do anything. The host and
- *   music leader on the line-up of the date it was made for edit it too,
- *   without deleting it or giving it away (#520).
+ *   other team members view it. Global admins can do anything.
+ * - A date's set (issue #578): every team whose date it is views it, and in
+ *   the teams that edit it (setRight() in core) their admins and their
+ *   people on the date's line-up edit it - without deleting it or giving it
+ *   away - as does a viewer whose ask to edit was granted.
  * - Guests (joined through the share link) view it.
  * - Everyone who can open a set can read every song in it that its owner
  *   could put there today (see addableWhere) - so a guest sees songs that
@@ -63,32 +68,81 @@ export class SetlistAccessService {
   ) {}
 
   async access(user: AuthenticatedUser, set: SetRow): Promise<SetAccess> {
-    if (user.isGlobalAdmin || set.ownerUserId === user.id) return { canView: true, canEdit: true, canManage: true, isGuest: false };
-    if (set.ownerTeamId) {
-      const role = await this.policy.teamRole(user.id, set.ownerTeamId);
-      if (role === "ADMIN") return { canView: true, canEdit: true, canManage: true, isGuest: false };
-      // The host or music leader on the line-up of the date it was made for edits it too (issue #520), even as a guest there.
-      const leads = await this.leadsMusic(user.id, set.id);
-      if (role || leads) return { canView: true, canEdit: leads, canManage: false, isGuest: false };
-    }
-    const guest = await this.prisma.client.setlistGuest.findUnique({
-      where: { setlistId_userId: { setlistId: set.id, userId: user.id } },
-      select: { id: true },
-    });
-    return guest ? { canView: true, canEdit: false, canManage: false, isGuest: true } : NO_ACCESS;
+    return (await this.accessAll(user, [set])).get(set.id) ?? NO_ACCESS;
   }
 
-  /** Whether someone is on the line-up of the date a set was made for on a part that leads its set, not declining (issues #520, #559). */
-  async leadsMusic(userId: string, setlistId: string): Promise<boolean> {
-    return requestMemo(`leadsMusic:${setlistId}:${userId}`, async () => {
-      const date = await this.prisma.client.teamEventDate.findUnique({ where: { setlistId }, select: { eventId: true, date: true, event: { select: { parts: true } } } });
-      if (!date) return false;
-      const place = await this.prisma.client.teamEventAssignment.findFirst({
-        where: { eventId: date.eventId, date: date.date, userId, partKey: { in: setLeadingKeys(storedParts(date.event.parts)) }, status: { not: "DECLINED" } },
-        select: { id: true },
-      });
-      return !!place;
+  /** access() for several sets at once (the list of sets). */
+  async accessAll(user: AuthenticatedUser, sets: readonly SetRow[]): Promise<Map<string, SetAccess>> {
+    const out = new Map<string, SetAccess>();
+    const left = sets.filter((set) => {
+      if (user.isGlobalAdmin || set.ownerUserId === user.id) out.set(set.id, { canView: true, canEdit: true, canManage: true, isGuest: false });
+      return !out.has(set.id);
     });
+    if (left.length === 0) return out;
+    const dates = await this.datesOfAll(left.map((set) => set.id));
+    const teamIds = [...new Set([...left.flatMap((set) => (set.ownerTeamId ? [set.ownerTeamId] : [])), ...[...dates.values()].flat().map((date) => date.teamId)])];
+    const [memberships, granted, guestOf] = await Promise.all([
+      this.prisma.client.teamMembership.findMany({ where: { userId: user.id, teamId: { in: teamIds } }, select: { teamId: true, role: true } }),
+      this.prisma.client.setEditRequest.findMany({ where: { userId: user.id, status: "GRANTED", setlistId: { in: left.map((set) => set.id) } }, select: { setlistId: true } }),
+      this.prisma.client.setlistGuest.findMany({ where: { userId: user.id, setlistId: { in: left.map((set) => set.id) } }, select: { setlistId: true } }),
+    ]);
+    const teamRoles = Object.fromEntries(memberships.map((m) => [m.teamId, m.role as "ADMIN" | "MEMBER"]));
+    const grants = new Set(granted.map((row) => row.setlistId));
+    const guests = new Set(guestOf.map((row) => row.setlistId));
+    for (const set of left) {
+      if (set.ownerTeamId && teamRoles[set.ownerTeamId] === "ADMIN") {
+        out.set(set.id, { canView: true, canEdit: true, canManage: true, isGuest: false });
+        continue;
+      }
+      const ofSet = dates.get(set.id) ?? [];
+      // A set made by hand for a team: its members view it.
+      const right = ofSet.length > 0 ? setRight({ userId: user.id, teamRoles, granted: grants.has(set.id) }, ofSet) : set.ownerTeamId && teamRoles[set.ownerTeamId] ? "view" : null;
+      if (right) out.set(set.id, { canView: true, canEdit: right === "edit", canManage: false, isGuest: false });
+      else if (guests.has(set.id)) out.set(set.id, { canView: true, canEdit: false, canManage: false, isGuest: true });
+      else out.set(set.id, NO_ACCESS);
+    }
+    return out;
+  }
+
+  /** The dates a set was made for (issue #578): each team's, with its choice to edit and its line-up. */
+  async datesOf(setlistId: string): Promise<SetDate[]> {
+    return (await this.datesOfAll([setlistId])).get(setlistId) ?? [];
+  }
+
+  private async datesOfAll(setlistIds: readonly string[]): Promise<Map<string, SetDate[]>> {
+    const key = `setDates:${[...setlistIds].sort().join(",")}`;
+    return requestMemo(key, async () => {
+      const rows = await this.prisma.client.teamEventDate.findMany({
+        where: { setlistId: { in: [...setlistIds] } },
+        select: { setlistId: true, eventId: true, date: true, editsSet: true, event: { select: { teamId: true, editsSet: true } } },
+      });
+      const lineup = rows.length
+        ? await this.prisma.client.teamEventAssignment.findMany({ where: { OR: rows.map((row) => ({ eventId: row.eventId, date: row.date })) }, select: { eventId: true, date: true, userId: true, status: true } })
+        : [];
+      const out = new Map<string, SetDate[]>();
+      for (const row of rows) {
+        const dates = out.get(row.setlistId!) ?? [];
+        dates.push({
+          eventId: row.eventId,
+          date: row.date,
+          teamId: row.event.teamId,
+          editsSet: row.event.editsSet,
+          dateEditsSet: row.editsSet,
+          lineup: lineup.filter((place) => place.eventId === row.eventId && place.date.getTime() === row.date.getTime()),
+        });
+        out.set(row.setlistId!, dates);
+      }
+      return out;
+    });
+  }
+
+  /** Who edits a date's set through its teams (issue #578): told when someone asks to edit it. */
+  async editorsOf(setlistId: string): Promise<string[]> {
+    const dates = await this.datesOf(setlistId);
+    const admins = await this.prisma.client.teamMembership.findMany({ where: { teamId: { in: dates.map((date) => date.teamId) }, role: "ADMIN" }, select: { teamId: true, userId: true } });
+    const byTeam: Record<string, string[]> = {};
+    for (const admin of admins) (byTeam[admin.teamId] ??= []).push(admin.userId);
+    return setEditors(dates, byTeam);
   }
 
   /** 404 unless the user can open the set (not telling apart "doesn't exist" and "not yours"). */
@@ -108,7 +162,7 @@ export class SetlistAccessService {
 
   async findEditable(user: AuthenticatedUser, setlistId: string): Promise<SetRow> {
     const { set, access } = await this.findViewable(user, setlistId);
-    if (!access.canEdit) throw new ForbiddenException("Only the set's owner, a team admin, or the date's host or music leader can change it");
+    if (!access.canEdit) throw new ForbiddenException("Only the set's owner, a team admin, or the people of the date's teams that edit it can change it");
     return set;
   }
 
@@ -228,9 +282,4 @@ export class SetlistAccessService {
     const [teams, shared] = await Promise.all([this.teamIdsOf(user.id), this.policy.sharedWith(user.id)]);
     return (song) => this.policy.songVisibleGivenTeams(user, teams, song, shared);
   }
-}
-
-/** An event's parts as stored (TeamEvent.parts). */
-export function storedParts(parts: Prisma.JsonValue): EventPart[] {
-  return Array.isArray(parts) ? (parts as unknown as EventPart[]) : [];
 }

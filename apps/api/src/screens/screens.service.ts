@@ -68,7 +68,7 @@ const SCREEN_SELECT = {
   createdAt: true,
   borrowedUntil: true,
   setBy: { select: { displayName: true } },
-  setlist: { select: { id: true, name: true, eventDate: true, eventDateOf: { select: { id: true } } } },
+  setlist: { select: { id: true, name: true, eventDate: true, eventDates: { select: { id: true }, take: 1 } } },
 } as const;
 
 /**
@@ -445,7 +445,7 @@ export class ScreensService {
         : { ownerUserId: screen.ownerUserId ?? "-" };
     const sets = await this.prisma.client.setlist.findMany({
       where,
-      select: { id: true, name: true, eventDate: true, ownerTeam: { select: { name: true } }, eventDateOf: { select: { startTime: true, event: { select: { startTime: true } } } } },
+      select: { id: true, name: true, eventDate: true, ownerTeam: { select: { name: true } }, eventDates: { select: { startTime: true, event: { select: { startTime: true } } }, take: 1 } },
       orderBy: { eventDate: "desc" },
       take: 300,
     });
@@ -453,8 +453,8 @@ export class ScreensService {
       id: set.id,
       name: set.name,
       eventDate: set.eventDate ? set.eventDate.toISOString().slice(0, 10) : null,
-      startTime: set.eventDateOf?.startTime ?? set.eventDateOf?.event.startTime ?? null,
-      fromEvent: !!set.eventDateOf,
+      startTime: set.eventDates[0]?.startTime ?? set.eventDates[0]?.event.startTime ?? null,
+      fromEvent: set.eventDates.length > 0,
       teamName: set.ownerTeam?.name ?? null,
     }));
   }
@@ -795,7 +795,7 @@ function present(
     owner: { displayName: string } | null;
     ownerTeam: { name: string } | null;
     ownerOrganization: { name: string } | null;
-    setlist: { id: string; name: string | null; eventDate: Date | null; eventDateOf?: { id: string } | null } | null;
+    setlist: { id: string; name: string | null; eventDate: Date | null; eventDates?: { id: string }[] } | null;
   },
   canManage = false,
 ) {
@@ -811,7 +811,7 @@ function present(
     name: screen.name,
     mode: screen.mode,
     setlistId: screen.setlistId,
-    setlist: screen.setlist ? { id: screen.setlist.id, name: screen.setlist.name, eventDate: screen.setlist.eventDate ? screen.setlist.eventDate.toISOString().slice(0, 10) : null, fromEvent: !!screen.setlist.eventDateOf } : null,
+    setlist: screen.setlist ? { id: screen.setlist.id, name: screen.setlist.name, eventDate: screen.setlist.eventDate ? screen.setlist.eventDate.toISOString().slice(0, 10) : null, fromEvent: (screen.setlist.eventDates ?? []).length > 0 } : null,
     lastSeenAt: screen.lastSeenAt?.toISOString() ?? null,
     setMode: screen.setMode,
     kind: screen.kind,

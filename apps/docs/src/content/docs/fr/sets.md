@@ -11,7 +11,16 @@ Choisissez **Listes de chants** > **Nouvelle liste** :
 
 - **Date (facultatif)** - sans nom, la liste porte le nom de sa date.
 - **Nom (facultatif)** - « Culte du dimanche », « Soirée jeunes ».
-- **Propriétaire** - **Moi seulement**, ou une équipe dont vous êtes administrateur. Une liste d'équipe est vue par ses membres et modifiée par ses administrateurs - et, pour une liste faite pour une date du calendrier de l'équipe, par ceux qui, dans l'équipe du jour, tiennent un poste qui **Mène la liste** (sauf si l'événement en décide autrement, la **Présidence** et la **Musique**) (voir [Équipe du jour](/fr/teams/#équipe-du-jour)).
+- **Propriétaire** - **Moi seulement**, ou une équipe dont vous êtes administrateur. Une liste d'équipe est vue par ses membres et modifiée par ses administrateurs. Une liste faite pour une date d'un calendrier est aussi modifiée par les personnes de l'équipe du jour de cette date (voir [Qui modifie la liste d'une date](/fr/sets/#qui-modifie-la-liste-dune-date)).
+
+### Qui modifie la liste d'une date
+
+La date d'un événement a une liste. Chaque équipe dont l'événement a besoin la voit : le culte du dimanche d'une organisation a une seule liste pour l'équipe de musique, la présidence et l'équipe média. Dans les équipes qui la modifient, leurs administrateurs et leurs membres dans l'équipe du jour - qui n'ont pas décliné - la changent : ses chants, passages et textes. Ils ne peuvent ni la supprimer ni la donner à quelqu'un d'autre ; cela revient à l'équipe à qui elle appartient. Les autres membres de ces équipes la consultent.
+
+- Pour un événement propre à une équipe, **L'équipe du jour modifie la liste** dit si son équipe du jour la modifie (activé par défaut) ; désactivé, seuls les administrateurs de l'équipe la modifient.
+- Pour un événement d'une organisation, chaque équipe nécessaire a **Modifie la liste** (voir [Événements](/fr/organizations/#événements)), et une date peut le donner à une équipe qui d'habitude la consulte seulement.
+
+Quelqu'un qui consulte la liste d'une date et veut la changer choisit **Demander à modifier** sur la liste. Ceux qui la modifient sont prévenus, et trouvent **Demandes de modification** sur la liste : **Accepter** permet à cette personne de la modifier - c'est la liste de cette date, donc pour cette date - et **Refuser** non ; dans les deux cas elle est prévenue, et peut redemander après un refus.
 
 ### Qui peut jouer
 

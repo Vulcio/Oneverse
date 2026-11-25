@@ -81,7 +81,7 @@ export class SetlistSharingService {
           include: {
             ownerTeam: { select: { name: true } },
             ownerUser: { select: { displayName: true } },
-            eventDateOf: { select: { id: true } },
+            eventDates: { select: { id: true }, take: 1 },
             _count: { select: { items: true } },
           },
         },

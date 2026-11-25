@@ -11,7 +11,16 @@ Choose **Sets** > **New set**:
 
 - **Date** (optional) - unless you give it a name, the set is called by its date.
 - **Name** (optional) - "Sunday service", "Youth night".
-- **Owner** - **Just me**, or a team you're an admin of. A team set is seen by the team's members and changed by its admins - and, for a set made for a date of the team's calendar, by whoever on that date's line-up fills a position that **Leads the set** (unless the event says otherwise, **Host** and **Music**) (see [Line-up](/teams/#line-up)).
+- **Owner** - **Just me**, or a team you're an admin of. A team set is seen by the team's members and changed by its admins. A set made for a date of a calendar is also changed by the people on that date's line-up (see [Who edits a date's set](/sets/#who-edits-a-dates-set)).
+
+### Who edits a date's set
+
+An event's date has one set. Every team the event needs sees it: an organisation's Sunday service has one set for the music team, the hosts and the media team alike. In the teams that edit it, their admins and their people on the date's line-up - who haven't declined - change it: its songs, passages and texts. They can't delete it or give it to someone else; that's for the team that owns it. Everyone else in those teams views it.
+
+- On a team's own event, **The line-up edits the set** says whether its line-up does (on by default); off, only the team's admins do.
+- On an organisation's event, each team needed has **Edits the set** (see [Events](/organizations/#events)), and one date can give it to a team that usually only views it.
+
+Someone who views a date's set and wants to change it chooses **Ask to edit** on the set. Those who edit it are told, and find **Asks to edit** on the set: **Grant** lets that person edit it - it's that date's set, so for that date - and **Decline** doesn't; either way they're told, and can ask again after a decline.
 
 ### Who can play
 

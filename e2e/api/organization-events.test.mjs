@@ -66,7 +66,7 @@ check("each group has its part on its calendar, saying who plans it", musicPart?
 const musicDate = (await call(alice, "GET", `/teams/${music.id}/event-dates?from=${first}&to=${first}`)).body.find((one) => one.eventId === musicPart.id);
 const welcomePart = (await call(alice, "GET", `/teams/${welcome.id}/events`)).body.find((one) => one.organizationEventId === made.id);
 const welcomeDate = (await call(alice, "GET", `/teams/${welcome.id}/event-dates?from=${first}&to=${first}`)).body.find((one) => one.eventId === welcomePart.id);
-check("the music team's date has its set; the group that only plans, none unless asked (issue #531)", !!musicDate?.setlistId && welcomeDate?.setlistId === null && welcomePart.withSet === false, `${musicDate?.setlistId} ${welcomeDate?.setlistId}`);
+check("the date has one set, every group's (issue #578): the music team edits it, the group that only plans views it", !!musicDate?.setlistId && welcomeDate?.setlistId === musicDate.setlistId && musicPart.editsSet === true && welcomePart.editsSet === false, `${musicDate?.setlistId} ${welcomeDate?.setlistId}`);
 
 // --- a group's admins choose its parts, nothing else
 const teamBase = `/teams/${music.id}/events/${musicPart.id}`;
@@ -112,9 +112,9 @@ check("…a group kept keeps its parts", r.body.needs[0].parts.length === 2, JSO
 r = await call(alice, "PATCH", `${base}/events/${made.id}`, { needs: [{ teamId: music.id }, { teamId: welcome.id, parts: [{ position: greeterPosition.id, count: 1 }] }] });
 const back = (await call(alice, "GET", `/teams/${welcome.id}/events`)).body.find((one) => one.organizationEventId === made.id);
 check("a group needed again gets its part, at the event's time", r.status === 200 && back?.startTime === "11:00" && back.parts[0].count === 1, JSON.stringify(back));
-r = await call(alice, "PATCH", `${base}/events/${made.id}`, { needs: [{ teamId: music.id }, { teamId: welcome.id, withSet: true }] });
 const welcomeSet = (await call(alice, "GET", `/teams/${welcome.id}/event-dates?from=${first}&to=${first}`)).body.find((one) => one.eventId === back.id);
-check("…and a set when asked, though it only plans (issue #531)", r.status === 200 && r.body.needs.find((n) => n.teamId === welcome.id)?.withSet === true && !!welcomeSet?.setlistId, JSON.stringify(welcomeSet));
+const musicSet = (await call(alice, "GET", `/teams/${music.id}/event-dates?from=${first}&to=${first}`)).body.find((one) => one.eventId === musicPart.id);
+check("…and the date's one set, every group's (issue #578): the group that only plans views it", r.body.withSet === true && r.body.needs.find((n) => n.teamId === welcome.id)?.editsSet === false && !!welcomeSet?.setlistId && welcomeSet.setlistId === musicSet?.setlistId, JSON.stringify([r.body.needs, welcomeSet?.setlistId, musicSet?.setlistId]));
 
 // --- a group leaving, then the event gone
 r = await call(alice, "DELETE", `${base}/teams/${welcome.id}`);

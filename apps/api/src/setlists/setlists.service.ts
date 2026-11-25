@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
-import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes, type RecentPlays, setLeadingKeys } from "@oneverse/core";
+import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes, type RecentPlays } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -15,7 +15,7 @@ import type {
 } from "./dto/setlist.dto.js";
 import { NotesService } from "../notes/notes.service.js";
 import { songImageUrl } from "../artwork/song-image-url.js";
-import { SetlistAccessService, SONG_SELECT, storedParts, type SetRow, type SongRow } from "./setlist-access.service.js";
+import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./setlist-access.service.js";
 import { SongOwnershipService } from "./song-ownership.service.js";
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
@@ -92,55 +92,46 @@ export class SetlistsService {
       where: { userId: user.id },
       select: { teamId: true, role: true },
     });
+    const memberTeamIds = memberships.map((m) => m.teamId);
     const rows = await this.prisma.client.setlist.findMany({
       where: {
         OR: [
           { ownerUserId: user.id },
-          { ownerTeamId: { in: memberships.map((m) => m.teamId) } },
+          { ownerTeamId: { in: memberTeamIds } },
+          // An organisation's date: one set for all its groups (issue #578).
+          { eventDates: { some: { event: { teamId: { in: memberTeamIds } } } } },
           { guests: { some: { userId: user.id } } },
         ],
       },
       include: {
         ownerTeam: { select: { name: true } },
-        eventDateOf: { select: { id: true, eventId: true, date: true, event: { select: { timeZone: true } } } },
+        eventDates: { select: { id: true, eventId: true, date: true, event: { select: { teamId: true, timeZone: true } } } },
         ownerUser: { select: { displayName: true } },
         _count: { select: { items: true } },
       },
     });
-    const memberTeams = new Set(memberships.map((m) => m.teamId));
-    // An event's set (issue #235): whether the viewer signed up for its date, and whether it's over.
-    const eventDates = rows.flatMap((set) => (set.eventDateOf ? [set.eventDateOf] : []));
+    const memberTeams = new Set(memberTeamIds);
+    // An event's set (issue #235): whether the viewer signed up for its date, and whether it's over -
+    // the date of one of their teams, when the set is several teams'.
+    const dateOf = (set: (typeof rows)[number]) => set.eventDates.find((date) => memberTeams.has(date.event.teamId)) ?? set.eventDates[0];
+    const eventDates = rows.flatMap((set) => set.eventDates);
     // Scheduled on it once it has a line-up, else answered Available (signedUpFor).
     const people = await signedUpFor(this.prisma.client, eventDates.map((date) => ({ eventId: date.eventId, date: date.date.toISOString().slice(0, 10) })));
     const now = new Date();
-    const adminTeams = new Set(memberships.filter((m) => m.role === "ADMIN").map((m) => m.teamId));
-    // The dates they're on a part that leads the set on (issues #520, #559): they edit those sets.
-    const events = eventDates.length
-      ? await this.prisma.client.teamEvent.findMany({ where: { id: { in: [...new Set(eventDates.map((date) => date.eventId))] } }, select: { id: true, parts: true } })
-      : [];
-    const leadingKeys = new Map(events.map((event) => [event.id, new Set(setLeadingKeys(storedParts(event.parts)))]));
-    const leading = eventDates.length
-      ? await this.prisma.client.teamEventAssignment.findMany({
-          where: { userId: user.id, status: { not: "DECLINED" }, OR: eventDates.map((date) => ({ eventId: date.eventId, date: date.date })) },
-          select: { eventId: true, date: true, partKey: true },
-        })
-      : [];
-    const leads = new Set(leading.filter((row) => leadingKeys.get(row.eventId)?.has(row.partKey)).map((row) => signupKey(row.eventId, row.date.toISOString().slice(0, 10))));
+    // Who edits it (issues #520, #578): its owner, its team's admins, and the people of the date's editing teams.
+    const access = await this.sets.accessAll(user, rows);
 
     return sortForDisplay(rows).map((set) => {
-      const isGuest = set.ownerUserId !== user.id && !(set.ownerTeamId && memberTeams.has(set.ownerTeamId));
+      const date = dateOf(set);
+      const isGuest = set.ownerUserId !== user.id && !(set.ownerTeamId && memberTeams.has(set.ownerTeamId)) && !set.eventDates.some((d) => memberTeams.has(d.event.teamId));
       return {
         ...summarize(set),
         itemCount: set._count.items,
-        canEdit:
-          user.isGlobalAdmin ||
-          set.ownerUserId === user.id ||
-          (!!set.ownerTeamId && adminTeams.has(set.ownerTeamId)) ||
-          (!!set.eventDateOf && leads.has(signupKey(set.eventDateOf.eventId, set.eventDateOf.date.toISOString().slice(0, 10)))),
+        canEdit: access.get(set.id)?.canEdit ?? false,
         isGuest,
-        ...(set.eventDateOf && {
-          signedUp: !!people.get(signupKey(set.eventDateOf.eventId, set.eventDateOf.date.toISOString().slice(0, 10)))?.includes(user.id),
-          past: isPastDate(set.eventDateOf.date.toISOString().slice(0, 10), now, set.eventDateOf.event.timeZone),
+        ...(date && {
+          signedUp: set.eventDates.some((d) => !!people.get(signupKey(d.eventId, d.date.toISOString().slice(0, 10)))?.includes(user.id)),
+          past: isPastDate(date.date.toISOString().slice(0, 10), now, date.event.timeZone),
         }),
       };
     });
@@ -222,7 +213,7 @@ export class SetlistsService {
         ownerTeamId: dto.teamId ?? null,
       },
       include: { ownerTeam: { select: { name: true } },
-        eventDateOf: { select: { id: true } }, ownerUser: { select: { displayName: true } } },
+        eventDates: { select: { id: true }, take: 1 }, ownerUser: { select: { displayName: true } } },
     });
     return { ...summarize(set), itemCount: 0, canEdit: true, isGuest: false };
   }
@@ -233,7 +224,7 @@ export class SetlistsService {
       where: { id: setlistId },
       include: {
         ownerTeam: { select: { name: true } },
-        eventDateOf: { select: { id: true } },
+        eventDates: { select: { id: true }, take: 1 },
         ownerUser: { select: { displayName: true } },
         items: { orderBy: { position: "asc" }, include: ITEM_INCLUDE },
       },
@@ -280,13 +271,19 @@ export class SetlistsService {
     const passages = new Map<string, SetItemPassage | null>();
     for (const item of set.items) if (item.kind === "PASSAGE") passages.set(item.id, await this.itemPassage(item, "list"));
 
+    // A date's set one only views (issue #578): one may ask to edit it.
+    const canAskToEdit = !access.canEdit && !access.isGuest && (await this.sets.datesOf(set.id)).length > 0;
+    const myEditRequest = await this.prisma.client.setEditRequest.findUnique({ where: { setlistId_userId: { setlistId: set.id, userId: user.id } }, select: { id: true, status: true } });
+
     return {
       ...summarize(set),
       itemCount: set.items.length,
       canEdit: access.canEdit,
-      // False for the date's host or music leader (issue #520): they edit it, but don't delete it or give it away.
+      // False for those who edit it through its date (issues #520, #578): they edit it, but don't delete it or give it away.
       canManage: access.canManage,
       isGuest: access.isGuest,
+      canAskToEdit,
+      myEditRequest,
       items: set.items.map((item) => {
         if (!hasSong(item)) return otherItem(item, passages.get(item.id) ?? null);
         const song = item.songVersion;
@@ -596,7 +593,7 @@ export class SetlistsService {
       where: { id: setlistId },
       include: {
         ownerTeam: { select: { name: true } },
-        eventDateOf: { select: { id: true } },
+        eventDates: { select: { id: true }, take: 1 },
         ownerUser: { select: { displayName: true } },
         items: { orderBy: { position: "asc" }, include: ITEM_INCLUDE },
       },
@@ -906,7 +903,7 @@ export function summarize(set: {
   ownerTeamId: string | null;
   ownerTeam?: { name: string } | null;
   ownerUser?: { displayName: string } | null;
-  eventDateOf?: { id: string } | null;
+  eventDates?: { id: string }[];
 }) {
   return {
     id: set.id,
@@ -917,7 +914,7 @@ export function summarize(set: {
     // Whose personal set it is, for guests.
     ownerName: set.ownerTeamId ? null : (set.ownerUser?.displayName ?? null),
     // Made for a date of the team's calendar (issue #235): shown with its date, "Morning service - 12 Oct".
-    fromEvent: !!set.eventDateOf,
+    fromEvent: (set.eventDates ?? []).length > 0,
   };
 }
 

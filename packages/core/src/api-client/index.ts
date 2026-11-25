@@ -68,7 +68,7 @@ import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { AddQuickSelectionSchema, AddSetlistItemSchema, OperatorPresetsRequest, OperatorTimerPreset, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
-import type { AnswerEventDateRequest, AssignPartRequest, VolunteerRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, MoveEventDateRequest, SetTeamEventDateAsksRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest } from "../requests/events.js";
+import type { AnswerEventDateRequest, AssignPartRequest, VolunteerRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, MoveEventDateRequest, SetTeamEventDateAsksRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationDateEditorsRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { AnalyseRecordingRequest, SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateOwnRoleRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateOwnRoleRequest, UpdateRoleRequest } from "../requests/roles.js";
@@ -365,8 +365,25 @@ export interface SetlistItem {
 
 export interface SetlistDetail extends SetlistSummary {
   items: SetlistItem[];
-  /** Deletes it or gives it to another owner (issue #520): false for the date's music leader, who only edits it. Left out: as canEdit. */
+  /** Deletes it or gives it to another owner (issue #520): false for those who edit it through its date, who only edit it. Left out: as canEdit. */
   canManage?: boolean;
+  /** A date's set the viewer only views (issue #578): they may ask to edit it. Left out by an older API. */
+  canAskToEdit?: boolean;
+  /** The viewer's ask to edit it (issue #578); null: none. */
+  myEditRequest?: { id: string; status: SetEditRequestStatus } | null;
+}
+
+export type SetEditRequestStatus = "PENDING" | "GRANTED" | "DECLINED";
+
+/** Someone asking to edit a date's set they only view (issue #578), for its editors. */
+export interface SetEditRequest {
+  id: string;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  status: SetEditRequestStatus;
+  createdAt: string;
+  decidedBy: string | null;
 }
 
 /** One song of a set, as anyone who can open the set sees it. */
@@ -1634,6 +1651,8 @@ export interface TeamEvent {
   typeId?: string | null;
   /** Whether its dates get a set (issue #523). */
   withSet?: boolean;
+  /** Whether its people on a date's line-up edit the date's set (issue #578); its admins always do. */
+  editsSet?: boolean;
   /** Asked to become its organisation's (issue #549), waiting for its admins; null: not asked. */
   transferRequestedAt?: string | null;
 }
@@ -1668,6 +1687,8 @@ export interface TeamEventType {
   callMinutes: number | null;
   parts: EventPart[];
   withSet: boolean;
+  /** An organisation's type (issue #578): the groups that edit its events' sets; empty: every group that uses Songverse. */
+  editingTeamIds?: string[];
   /** Where its events usually are (issue #559). */
   locationId?: string | null;
   /** How many of the team's events were made from it. */
@@ -1685,8 +1706,8 @@ export interface OrganizationEventNeed {
   parts: EventPart[];
   /** When the group is to be there (issue #240): minutes before the start. */
   callMinutes: number | null;
-  /** Whether the group's dates get a set (issue #523). */
-  withSet?: boolean;
+  /** Whether the group edits each date's set (issue #578): its admins and its people on the date's line-up. Every group views it. */
+  editsSet: boolean;
 }
 
 /** An organisation's event (issue #241): its host, its timing, the groups it needs. */
@@ -1704,6 +1725,8 @@ export interface OrganizationEvent {
   note: string | null;
   repeat: EventRepeat | null;
   host: { id: string; displayName: string } | null;
+  /** Whether each date has a set (issue #578): one for all its groups. */
+  withSet: boolean;
   needs: OrganizationEventNeed[];
   /** The viewer is one of its admins, or its host. */
   canManage: boolean;
@@ -1737,6 +1760,9 @@ export interface OrganizationEventDate {
     callAt: string | null;
     setlistId: string | null;
     songCount: number;
+    /** Whether it edits this date's set (issue #578); `dateEditsSet` is this date's exception (null: as usual). */
+    editsSet: boolean;
+    dateEditsSet: boolean | null;
     parts: EventPart[];
     /** For its admins and the event's host. */
     coverage: PartCoverage[] | null;
@@ -3296,6 +3322,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     deleteOrganizationEvent: (organizationId: string, eventId: string) => request<void>(`/organizations/${organizationId}/events/${eventId}`, { method: "DELETE" }),
     setOrganizationEventDateCancelled: (organizationId: string, eventId: string, date: string, cancelled: boolean) =>
       request<void>(`/organizations/${organizationId}/events/${eventId}/dates/${date}`, { method: "PATCH", body: JSON.stringify({ cancelled }) }),
+    /** Whether a group edits one date's set, against its usual choice (issue #578); editsSet null: as usual. */
+    setOrganizationDateEditors: (organizationId: string, eventId: string, date: string, data: OrganizationDateEditorsRequest) =>
+      request<void>(`/organizations/${organizationId}/events/${eventId}/dates/${date}/editors`, { method: "PUT", body: JSON.stringify(data) }),
     /** One date moved to another day for every team (issue #576). */
     moveOrganizationEventDate: (organizationId: string, eventId: string, date: string, data: MoveEventDateRequest) =>
       request<void>(`/organizations/${organizationId}/events/${eventId}/dates/${date}/move`, { method: "POST", body: JSON.stringify(data) }),
@@ -3683,6 +3712,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     createSetlist: (data: { name?: string; eventDate?: string; teamId?: string }) =>
       request<SetlistSummary>("/setlists", { method: "POST", body: JSON.stringify(data) }),
     getSetlist: (setlistId: string) => request<SetlistDetail>(`/setlists/${setlistId}`),
+    /** Ask to edit a date's set one only views (issue #578): its editors are told. */
+    askToEditSetlist: (setlistId: string) => request<{ id: string; status: SetEditRequestStatus }>(`/setlists/${setlistId}/edit-requests`, { method: "POST" }),
+    /** The asks to edit it, for those who edit it. */
+    listSetlistEditRequests: (setlistId: string) => request<SetEditRequest[]>(`/setlists/${setlistId}/edit-requests`),
+    decideSetlistEditRequest: (setlistId: string, requestId: string, grant: boolean) =>
+      request<SetEditRequest>(`/setlists/${setlistId}/edit-requests/${requestId}`, { method: "PUT", body: JSON.stringify({ grant }) }),
     /** Who can play on the date the set was made for (issue #520); 404 for a set not made for a calendar date. */
     getSetAvailability: (setlistId: string) => request<SetAvailability>(`/setlists/${setlistId}/availability`),
     /** What a date asks for besides its event's parts (issue #549): the instruments its music lead wants. */

@@ -881,6 +881,36 @@
           }
         },
         {
+          "name": "someone asks to edit a date's set (issue #578)",
+          "args": [
+            "SET_EDIT_REQUESTED",
+            {
+              "by": "Sam",
+              "set": "Morning service"
+            },
+            "en"
+          ],
+          "expected": {
+            "title": "Sam asks to edit Morning service",
+            "body": "Grant or decline it on the set"
+          }
+        },
+        {
+          "name": "an ask to edit granted, in French",
+          "args": [
+            "SET_EDIT_GRANTED",
+            {
+              "by": "Ana",
+              "set": "Culte du matin"
+            },
+            "fr"
+          ],
+          "expected": {
+            "title": "Vous pouvez modifier Culte du matin",
+            "body": "Ana a accepté votre demande"
+          }
+        },
+        {
           "name": "an announcement, in the reader's language (issue #536)",
           "args": [
             "ANNOUNCEMENT",
@@ -1159,6 +1189,18 @@
               "email": true,
               "push": true
             },
+            "SET_EDIT_REQUESTED": {
+              "email": true,
+              "push": true
+            },
+            "SET_EDIT_GRANTED": {
+              "email": true,
+              "push": true
+            },
+            "SET_EDIT_DECLINED": {
+              "email": true,
+              "push": true
+            },
             "TEAM_JOINED": {
               "email": true,
               "push": true
@@ -1345,6 +1387,18 @@
               "push": true
             },
             "SET_JOINED": {
+              "email": true,
+              "push": true
+            },
+            "SET_EDIT_REQUESTED": {
+              "email": true,
+              "push": true
+            },
+            "SET_EDIT_GRANTED": {
+              "email": true,
+              "push": true
+            },
+            "SET_EDIT_DECLINED": {
               "email": true,
               "push": true
             },
@@ -1542,6 +1596,18 @@
                 "push": true
               },
               "SET_JOINED": {
+                "email": true,
+                "push": true
+              },
+              "SET_EDIT_REQUESTED": {
+                "email": true,
+                "push": true
+              },
+              "SET_EDIT_GRANTED": {
+                "email": true,
+                "push": true
+              },
+              "SET_EDIT_DECLINED": {
                 "email": true,
                 "push": true
               },
@@ -1890,6 +1956,339 @@
             }
           ],
           "expected": []
+        }
+      ]
+    },
+    "setRight": {
+      "about": "What someone may do with a date's set (issue #578): every team it's made for views it (members, and whoever is on its line-up); in a team that edits it (the date's exception, else the event's choice), its admins and its people on the line-up edit it. A viewer granted their ask to edit edits it. Null: none of its teams'.",
+      "params": [
+        "viewer",
+        "teams"
+      ],
+      "cases": [
+        {
+          "name": "an admin of the team that edits it",
+          "args": [
+            {
+              "userId": "ana",
+              "teamRoles": {
+                "worship": "ADMIN"
+              }
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": []
+              }
+            ]
+          ],
+          "expected": "edit"
+        },
+        {
+          "name": "a member not on the line-up views",
+          "args": [
+            {
+              "userId": "lou",
+              "teamRoles": {
+                "worship": "MEMBER"
+              }
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": []
+              }
+            ]
+          ],
+          "expected": "view"
+        },
+        {
+          "name": "a member on the line-up edits",
+          "args": [
+            {
+              "userId": "lou",
+              "teamRoles": {
+                "worship": "MEMBER"
+              }
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": [
+                  {
+                    "userId": "lou",
+                    "status": "PENDING"
+                  }
+                ]
+              }
+            ]
+          ],
+          "expected": "edit"
+        },
+        {
+          "name": "declining doesn't count",
+          "args": [
+            {
+              "userId": "lou",
+              "teamRoles": {
+                "worship": "MEMBER"
+              }
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": [
+                  {
+                    "userId": "lou",
+                    "status": "DECLINED"
+                  }
+                ]
+              }
+            ]
+          ],
+          "expected": "view"
+        },
+        {
+          "name": "a guest on the line-up of a team that edits",
+          "args": [
+            {
+              "userId": "max",
+              "teamRoles": {}
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": [
+                  {
+                    "userId": "max",
+                    "status": "ACCEPTED"
+                  }
+                ]
+              }
+            ]
+          ],
+          "expected": "edit"
+        },
+        {
+          "name": "the Hosts team's host edits, the Welcome team views",
+          "args": [
+            {
+              "userId": "hal",
+              "teamRoles": {
+                "hosts": "MEMBER"
+              }
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": []
+              },
+              {
+                "teamId": "hosts",
+                "editsSet": true,
+                "lineup": [
+                  {
+                    "userId": "hal",
+                    "status": "ACCEPTED"
+                  }
+                ]
+              },
+              {
+                "teamId": "welcome",
+                "editsSet": false,
+                "lineup": []
+              }
+            ]
+          ],
+          "expected": "edit"
+        },
+        {
+          "name": "an admin of a team that only views",
+          "args": [
+            {
+              "userId": "wes",
+              "teamRoles": {
+                "welcome": "ADMIN"
+              }
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": []
+              },
+              {
+                "teamId": "welcome",
+                "editsSet": false,
+                "lineup": []
+              }
+            ]
+          ],
+          "expected": "view"
+        },
+        {
+          "name": "this date gives the team editing",
+          "args": [
+            {
+              "userId": "wes",
+              "teamRoles": {
+                "welcome": "ADMIN"
+              }
+            },
+            [
+              {
+                "teamId": "welcome",
+                "editsSet": false,
+                "dateEditsSet": true,
+                "lineup": []
+              }
+            ]
+          ],
+          "expected": "edit"
+        },
+        {
+          "name": "this date takes it away",
+          "args": [
+            {
+              "userId": "ana",
+              "teamRoles": {
+                "worship": "ADMIN"
+              }
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "dateEditsSet": false,
+                "lineup": []
+              }
+            ]
+          ],
+          "expected": "view"
+        },
+        {
+          "name": "a viewer granted their ask",
+          "args": [
+            {
+              "userId": "lou",
+              "teamRoles": {
+                "welcome": "MEMBER"
+              },
+              "granted": true
+            },
+            [
+              {
+                "teamId": "welcome",
+                "editsSet": false,
+                "lineup": []
+              }
+            ]
+          ],
+          "expected": "edit"
+        },
+        {
+          "name": "granted, but none of its teams'",
+          "args": [
+            {
+              "userId": "zoe",
+              "teamRoles": {
+                "other": "ADMIN"
+              },
+              "granted": true
+            },
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": []
+              }
+            ]
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "setEditors": {
+      "about": "Who edits a date's set through its teams (issue #578), told when someone asks to edit it: the admins of the teams that edit it and their people on the line-up, not declining. Once each.",
+      "params": [
+        "teams",
+        "admins"
+      ],
+      "cases": [
+        {
+          "name": "the editing teams' admins and line-up",
+          "args": [
+            [
+              {
+                "teamId": "worship",
+                "editsSet": true,
+                "lineup": [
+                  {
+                    "userId": "sam",
+                    "status": "ACCEPTED"
+                  },
+                  {
+                    "userId": "ana",
+                    "status": "PENDING"
+                  },
+                  {
+                    "userId": "max",
+                    "status": "DECLINED"
+                  },
+                  {
+                    "userId": null,
+                    "status": "ACCEPTED"
+                  }
+                ]
+              },
+              {
+                "teamId": "welcome",
+                "editsSet": false,
+                "lineup": [
+                  {
+                    "userId": "wes",
+                    "status": "ACCEPTED"
+                  }
+                ]
+              },
+              {
+                "teamId": "hosts",
+                "editsSet": false,
+                "dateEditsSet": true,
+                "lineup": [
+                  {
+                    "userId": "hal",
+                    "status": "ACCEPTED"
+                  }
+                ]
+              }
+            ],
+            {
+              "worship": [
+                "ana",
+                "bob"
+              ],
+              "welcome": [
+                "wes"
+              ],
+              "hosts": [
+                "hank"
+              ]
+            }
+          ],
+          "expected": [
+            "ana",
+            "bob",
+            "sam",
+            "hank",
+            "hal"
+          ]
         }
       ]
     },

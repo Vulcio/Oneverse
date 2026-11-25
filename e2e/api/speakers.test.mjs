@@ -54,14 +54,14 @@ try {
   check("other parts: a guest by name alone, no", r.status === 400 && r.body.message.join().includes("guestEmail"), JSON.stringify(r.body));
   r = await call(musician, "PUT", `${base}/answer`, { answer: "AVAILABLE", wishes: ["SPEAKER"] });
   check("a member may wish to speak: no role is needed", r.status === 200, JSON.stringify(r.body));
-  // An organisation's event (issue #523): a music group's part can go without a set - a meeting.
-  const meeting = (await call(planner, "POST", `/organizations/${org.id}/events`, { title: "Members' meeting", date: plus(5), startTime: "19:00", timeZone: "UTC", hostUserId: planner.id, needs: [{ teamId: music.id, withSet: false }] })).body;
-  check("an organisation's event: the music group's part without a set", meeting.needs?.[0]?.withSet === false, JSON.stringify(meeting));
+  // An organisation's event (issues #523, #578): it can go without a set - a meeting.
+  const meeting = (await call(planner, "POST", `/organizations/${org.id}/events`, { title: "Members' meeting", date: plus(5), startTime: "19:00", timeZone: "UTC", hostUserId: planner.id, withSet: false, needs: [{ teamId: music.id }] })).body;
+  check("an organisation's event without a set", meeting.withSet === false, JSON.stringify(meeting));
   let dates = (await call(planner, "GET", `/teams/${music.id}/event-dates?from=${plus(5)}&to=${plus(5)}`)).body;
   check("…its date has none", dates.length === 1 && dates[0].setlistId === null && dates[0].withSet === false, JSON.stringify(dates));
-  r = await call(planner, "PATCH", `/organizations/${org.id}/events/${meeting.id}`, { needs: [{ teamId: music.id }] });
+  r = await call(planner, "PATCH", `/organizations/${org.id}/events/${meeting.id}`, { withSet: true });
   dates = (await call(planner, "GET", `/teams/${music.id}/event-dates?from=${plus(5)}&to=${plus(5)}`)).body;
-  check("…and gets one when the need no longer says so", r.status === 200 && !!dates[0].setlistId, JSON.stringify(dates));
+  check("…and gets one when the event says so", r.status === 200 && !!dates[0].setlistId, JSON.stringify(dates));
   await call(admin, "DELETE", `/admin/organizations/${org.id}`);
 } finally {
   await call(admin, "DELETE", "/admin/organizations/settings");

@@ -24,6 +24,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 import { FieldError } from "@oneverse/ui/components/field";
 import { SetAvailabilityCard } from "@oneverse/planning/components/set-availability";
+import { AskToEditSet, SetEditRequestsCard } from "@oneverse/planning/components/set-edit-requests";
 
 export const Route = createFileRoute("/_protected/sets/$setlistId")({
   // Null when the set doesn't exist or isn't visible to this user (the API
@@ -173,7 +174,11 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
           {set.teamName ? t("sets.guestReadOnlyTeam", { team: set.teamName }) : t("sets.guestReadOnly", { name: set.ownerName ?? "" })}
         </p>
       ) : !set.canEdit ? (
-        <p className="text-sm text-muted-foreground">{t("sets.readOnly")}</p>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">{t("sets.readOnly")}</p>
+          {/* A date's set one only views (issue #578): ask those who edit it. */}
+          {set.canAskToEdit ? <AskToEditSet setlistId={set.id} request={set.myEditRequest} onAsked={async () => setSet(await apiClient.getSetlist(set.id))} /> : null}
+        </div>
       ) : null}
 
       {/* With room (issue #177): the set's songs, and beside them adding songs, sharing and its details. */}
@@ -205,6 +210,8 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
         <div className="flex flex-col gap-6">
           {/* Who can play on the date it was made for (issue #520). */}
           {set.fromEvent && set.teamId ? <SetAvailabilityCard setlistId={set.id} /> : null}
+          {/* Those asking to edit it (issue #578), for the people who edit it through its date. */}
+          {set.fromEvent ? <SetEditRequestsCard setlistId={set.id} /> : null}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">{t("sets.addSongs")}</CardTitle>

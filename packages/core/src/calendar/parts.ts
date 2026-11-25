@@ -193,6 +193,53 @@ export function setLeaders(lineup: readonly { userId: string | null; partKey: st
   return leading.map((one) => ({ userId: one.userId!, partKey: one.partKey })).sort((a, b) => keys.indexOf(a.partKey) - keys.indexOf(b.partKey));
 }
 
+/**
+ * One team's date that a set was made for (issue #578): a team's own event
+ * has one; an organisation's event one per group it needs, all pointing at
+ * the same set. `editsSet` is the event's choice for the team, `dateEditsSet`
+ * this date's exception (null or left out: the event's).
+ */
+export interface SetDateTeam {
+  teamId: string;
+  editsSet: boolean;
+  dateEditsSet?: boolean | null;
+  /** That team's line-up for the date. */
+  lineup: readonly { userId: string | null; status: AssignmentStatus }[];
+}
+
+/** Whether a team edits a date's set (issue #578): this date's exception, else its event's choice. */
+export function teamEditsSet(team: Pick<SetDateTeam, "editsSet" | "dateEditsSet">): boolean {
+  return team.dateEditsSet ?? team.editsSet;
+}
+
+/**
+ * What someone may do with a date's set (issue #578): every team it's made
+ * for views it - their members, and whoever is on one of their line-ups;
+ * in a team that edits it, its admins and its people on the line-up (not
+ * declining) edit it. Someone who views it and was granted their ask to edit
+ * edits it too. Null: none of its teams'.
+ */
+export function setRight(viewer: { userId: string; teamRoles: Readonly<Record<string, "ADMIN" | "MEMBER">>; granted?: boolean }, teams: readonly SetDateTeam[]): "edit" | "view" | null {
+  let right: "edit" | "view" | null = null;
+  for (const team of teams) {
+    const role = viewer.teamRoles[team.teamId];
+    const onLineup = team.lineup.some((place) => place.userId === viewer.userId && place.status !== "DECLINED");
+    if (teamEditsSet(team) && (role === "ADMIN" || onLineup)) return "edit";
+    if (role || onLineup) right = "view";
+  }
+  return right === "view" && viewer.granted ? "edit" : right;
+}
+
+/**
+ * Who edits a date's set through its teams (issue #578), to tell when
+ * someone asks to edit it: the admins of the teams that edit it (`admins`,
+ * by team) and their people on the line-up, not declining. Once each.
+ */
+export function setEditors(teams: readonly SetDateTeam[], admins: Readonly<Record<string, readonly string[]>>): string[] {
+  const editors = teams.filter(teamEditsSet).flatMap((team) => [...(admins[team.teamId] ?? []), ...team.lineup.filter((place) => place.status !== "DECLINED" && place.userId).map((place) => place.userId!)]);
+  return [...new Set(editors)];
+}
+
 /** Someone scheduled on a part for a date (issue #235, phase 7): asked, then accepted or declined. */
 export const ASSIGNMENT_STATUSES = ["PENDING", "ACCEPTED", "DECLINED"] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATUSES)[number];

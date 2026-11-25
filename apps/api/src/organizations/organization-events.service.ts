@@ -16,7 +16,7 @@ type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin">;
 
 const withGroups = {
   host: { select: { id: true, displayName: true } },
-  teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, withSet: true, team: { select: { name: true, color: true, avatarUrl: true, usesSongverse: true } } }, orderBy: { team: { name: "asc" } } },
+  teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, withSet: true, editsSet: true, team: { select: { name: true, color: true, avatarUrl: true, usesSongverse: true } } }, orderBy: { team: { name: "asc" } } },
 } as const;
 type Row = Prisma.OrganizationEventGetPayload<{ include: typeof withGroups }>;
 
@@ -73,7 +73,9 @@ export class OrganizationEventsService {
       note: event.note,
       repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null,
       host: event.host,
-      needs: event.teamEvents.map((one) => ({ teamId: one.teamId, teamName: one.team.name, color: one.team.color, avatarUrl: one.team.avatarUrl, teamEventId: one.id, parts: partsOf(one), callMinutes: one.callMinutes, withSet: one.withSet })),
+      // One set per date, for all its groups (issue #578); the groups that edit it.
+      withSet: event.withSet,
+      needs: event.teamEvents.map((one) => ({ teamId: one.teamId, teamName: one.team.name, color: one.team.color, avatarUrl: one.team.avatarUrl, teamEventId: one.id, parts: partsOf(one), callMinutes: one.callMinutes, editsSet: one.editsSet })),
       canManage: role === "ADMIN" || event.hostUserId === viewer.id,
     };
   }
@@ -82,6 +84,19 @@ export class OrganizationEventsService {
   private async checkNeeds(organizationId: string, needs: { teamId: string }[]) {
     const teams = await this.prisma.client.team.count({ where: { organizationId, id: { in: needs.map((need) => need.teamId) } } });
     if (teams !== needs.length) throw new BadRequestException(["needs must be groups of the organisation"]);
+  }
+
+  /**
+   * The groups it needs, each with whether it edits the dates' sets (left
+   * out: a group that uses Songverse does) - the first that edits them first,
+   * as it owns the sets (issue #578).
+   */
+  private async withEditors<T extends { teamId: string; editsSet?: boolean }>(needs: T[]) {
+    const teams = await this.prisma.client.team.findMany({ where: { id: { in: needs.map((need) => need.teamId) } }, select: { id: true, usesSongverse: true } });
+    const songverse = new Map(teams.map((team) => [team.id, team.usesSongverse]));
+    const out = needs.map((need) => ({ ...need, editsSet: need.editsSet ?? songverse.get(need.teamId) ?? true, usesSongverse: songverse.get(need.teamId) ?? true }));
+    const rank = (need: (typeof out)[number]) => (need.editsSet && need.usesSongverse ? 0 : need.usesSongverse ? 1 : 2);
+    return out.sort((a, b) => rank(a) - rank(b));
   }
 
   /** Its host: one of the organisation's members. */
@@ -166,6 +181,7 @@ export class OrganizationEventsService {
           repeatEveryWeeks: row.repeatEveryWeeks,
           repeatUntil: row.repeatUntil,
           hostUserId: asker ? row.transferRequestedByUserId : viewer.id,
+          withSet: row.withSet,
           createdByUserId: viewer.id,
         },
       });
@@ -204,11 +220,13 @@ export class OrganizationEventsService {
         repeatEveryWeeks: dto.repeat?.everyWeeks ?? null,
         repeatUntil: dto.repeat?.until ? day(dto.repeat.until) : null,
         hostUserId: dto.hostUserId,
+        withSet: dto.withSet ?? true,
         createdByUserId: viewer.id,
       },
     });
     try {
-      for (const need of dto.needs) await this.events.create(need.teamId, viewer.id, { ...this.timing(event), parts: need.parts, callMinutes: need.callMinutes, withSet: need.withSet }, event.id);
+      for (const need of await this.withEditors(dto.needs))
+        await this.events.create(need.teamId, viewer.id, { ...this.timing(event), parts: need.parts, callMinutes: need.callMinutes, withSet: event.withSet, editsSet: need.editsSet }, event.id);
     } catch (error) {
       // A group's part refused (one of its parts): none of it is kept.
       await this.prisma.client.organizationEvent.delete({ where: { id: event.id } });
@@ -265,6 +283,7 @@ export class OrganizationEventsService {
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
         hostUserId: dto.hostUserId,
+        withSet: dto.withSet,
       },
     });
     const timing = {
@@ -278,8 +297,8 @@ export class OrganizationEventsService {
       note: dto.note,
       repeat: dto.repeat,
     };
-    const timingChanged = Object.values(timing).some((value) => value !== undefined);
-    const needed = dto.needs ? new Map(dto.needs.map((need) => [need.teamId, need])) : null;
+    const timingChanged = Object.values(timing).some((value) => value !== undefined) || (dto.withSet !== undefined && dto.withSet !== before.withSet);
+    const needed = dto.needs ? new Map((await this.withEditors(dto.needs)).map((need) => [need.teamId, need])) : null;
     for (const part of before.teamEvents) {
       if (needed && !needed.has(part.teamId)) {
         await this.events.remove(part.teamId, part.id, viewer.id, true);
@@ -287,11 +306,12 @@ export class OrganizationEventsService {
       }
       const need = needed?.get(part.teamId);
       // A need's call time replaces the group's (none: no call time).
-      const asked = need ? { ...(need.parts ? { parts: need.parts } : {}), callMinutes: need.callMinutes ?? null, withSet: need.withSet ?? part.team.usesSongverse } : {};
-      if (timingChanged || need) await this.events.update(part.teamId, part.id, { ...timing, ...asked }, viewer.id, true);
+      const asked = need ? { ...(need.parts ? { parts: need.parts } : {}), callMinutes: need.callMinutes ?? null, editsSet: need.editsSet } : {};
+      if (timingChanged || need) await this.events.update(part.teamId, part.id, { ...timing, ...asked, withSet: after.withSet }, viewer.id, true);
     }
     for (const need of needed?.values() ?? []) {
-      if (!before.teamEvents.some((part) => part.teamId === need.teamId)) await this.events.create(need.teamId, viewer.id, { ...this.timing(after), parts: need.parts, callMinutes: need.callMinutes, withSet: need.withSet }, eventId);
+      if (!before.teamEvents.some((part) => part.teamId === need.teamId))
+        await this.events.create(need.teamId, viewer.id, { ...this.timing(after), parts: need.parts, callMinutes: need.callMinutes, withSet: after.withSet, editsSet: need.editsSet }, eventId);
     }
     if (after.hostUserId !== before.hostUserId) await this.tellHost(after, viewer.id);
     return this.summary(await this.find(organizationId, eventId), viewer, role);
@@ -312,6 +332,25 @@ export class OrganizationEventsService {
     const timing = { date: dateText(event.date), startTime: event.startTime, durationMinutes: event.durationMinutes, timeZone: event.timeZone, repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null };
     if (!eventFallsOn(timing, date)) throw new NotFoundException("The event isn't on that date");
     for (const part of event.teamEvents) await this.events.updateDate(part.teamId, part.id, date, { cancelled }, viewer.id, true);
+  }
+
+  /**
+   * Whether a group edits one date's set, against its usual choice (issue
+   * #578): an exception for that date, by the organisation's admins or the
+   * event's organiser. null goes back to the group's choice.
+   */
+  async setDateEditors(viewer: Viewer, organizationId: string, eventId: string, date: string, teamId: string, editsSet: boolean | null) {
+    const event = await this.find(organizationId, eventId);
+    await this.assertManager(viewer, organizationId, event);
+    const part = event.teamEvents.find((one) => one.teamId === teamId);
+    if (!part) throw new BadRequestException(["teamId must be one of the groups the event needs"]);
+    const timing = { date: dateText(event.date), startTime: event.startTime, durationMinutes: event.durationMinutes, timeZone: event.timeZone, repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null };
+    if (!eventFallsOn(timing, date)) throw new NotFoundException("The event isn't on that date");
+    await this.prisma.client.teamEventDate.upsert({
+      where: { eventId_date: { eventId: part.id, date: day(date) } },
+      create: { eventId: part.id, date: day(date), editsSet },
+      update: { editsSet },
+    });
   }
 
   /**
@@ -358,6 +397,8 @@ export class OrganizationEventsService {
             callAt: date.callAt,
             setlistId: date.setlistId,
             songCount: date.songCount,
+            editsSet: date.editsSet,
+            dateEditsSet: date.dateEditsSet,
             parts: date.parts,
             coverage: date.coverage,
             lineup: date.lineup.map((place) => ({ displayName: place.displayName, partKey: place.partKey, status: place.status })),

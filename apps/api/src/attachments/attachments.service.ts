@@ -406,7 +406,7 @@ export class AttachmentsService {
 const ATTACHMENT_INCLUDE = {
   uploadedBy: { select: { id: true, displayName: true, avatarUrl: true } },
   visibleToTeam: { select: { id: true, name: true } },
-  multitrackSetlist: { select: { id: true, name: true, eventDate: true, eventDateOf: { select: { id: true } } } },
+  multitrackSetlist: { select: { id: true, name: true, eventDate: true, eventDates: { select: { id: true }, take: 1 } } },
 } satisfies Prisma.AttachmentInclude;
 
 type AttachmentRow = Prisma.AttachmentGetPayload<{ include: typeof ATTACHMENT_INCLUDE }>;
@@ -478,7 +478,7 @@ function present(row: AttachmentRow, viewer: Viewer, canEditSong: boolean) {
     recordingAnalysis: readRecordingAnalysis(row.recordingAnalysis),
     original: originalStorageKey ? { mimeType: originalMimeType ?? "audio/flac", sizeBytes: originalSizeBytes } : null,
     // The set its multitrack was recorded for (issue #127), named as sets are: its date a calendar day.
-    multitrackSetlist: set ? { id: set.id, name: set.name, eventDate: set.eventDate ? set.eventDate.toISOString().slice(0, 10) : null, fromEvent: !!set.eventDateOf } : null,
+    multitrackSetlist: set ? { id: set.id, name: set.name, eventDate: set.eventDate ? set.eventDate.toISOString().slice(0, 10) : null, fromEvent: set.eventDates.length > 0 } : null,
     mine,
     canChange: viewer.isGlobalAdmin || canEditSong || mine,
     canChangeVisibility: viewer.isGlobalAdmin || mine || (row.uploadedByUserId === null && canEditSong),

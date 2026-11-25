@@ -39,6 +39,7 @@ export class EventTypesService {
       callMinutes: type.callMinutes,
       parts: partsOf(type),
       withSet: type.withSet,
+      editingTeamIds: type.editingTeamIds,
       locationId: type.locationId,
       eventCount: type._count.events,
     };
@@ -73,15 +74,25 @@ export class EventTypesService {
     }
   }
 
+  /** An organisation's type: the groups that edit its sets are its groups (issue #578). A team's own type has none. */
+  private async editingTeams(owner: EventTypeOwner, teamIds: string[] | undefined) {
+    if (teamIds === undefined) return undefined;
+    if ("teamId" in owner || teamIds.length === 0) return [];
+    const ids = [...new Set(teamIds)];
+    if ((await this.prisma.client.team.count({ where: { organizationId: owner.organizationId, id: { in: ids } } })) !== ids.length) throw new BadRequestException(["editingTeamIds must be groups of the organisation"]);
+    return ids;
+  }
+
   private partsOwner = (owner: EventTypeOwner) => ("teamId" in owner ? owner.teamId : owner);
 
   async create(owner: EventTypeOwner, dto: CreateTeamEventTypeRequest) {
     if ((await this.prisma.client.teamEventType.count({ where: owner })) >= EVENT_TYPES_LIMIT) throw new BadRequestException([`At most ${EVENT_TYPES_LIMIT} event types are kept`]);
     const parts = (await this.events.checkParts(dto.parts ?? undefined, this.partsOwner(owner))) ?? [];
     const location = dto.locationId ? await eventLocation(this.prisma, owner, dto.locationId) : null;
+    const editingTeamIds = (await this.editingTeams(owner, dto.editingTeamIds ?? undefined)) ?? [];
     const type = await this.saving(() =>
       this.prisma.client.teamEventType.create({
-        data: { ...owner, name: dto.name, startTime: dto.startTime ?? null, durationMinutes: dto.durationMinutes ?? null, callMinutes: dto.callMinutes ?? null, parts, withSet: dto.withSet ?? true, locationId: location?.id ?? null },
+        data: { ...owner, name: dto.name, startTime: dto.startTime ?? null, durationMinutes: dto.durationMinutes ?? null, callMinutes: dto.callMinutes ?? null, parts, withSet: dto.withSet ?? true, editingTeamIds, locationId: location?.id ?? null },
         include: withCount,
       }),
     );
@@ -92,10 +103,11 @@ export class EventTypesService {
     await this.find(owner, typeId);
     const parts = await this.events.checkParts(dto.parts, this.partsOwner(owner));
     const location = dto.locationId ? await eventLocation(this.prisma, owner, dto.locationId) : null;
+    const editingTeamIds = await this.editingTeams(owner, dto.editingTeamIds);
     const type = await this.saving(() =>
       this.prisma.client.teamEventType.update({
         where: { id: typeId },
-        data: { name: dto.name, startTime: dto.startTime, durationMinutes: dto.durationMinutes, callMinutes: dto.callMinutes, parts, withSet: dto.withSet, locationId: dto.locationId === undefined ? undefined : (location?.id ?? null) },
+        data: { name: dto.name, startTime: dto.startTime, durationMinutes: dto.durationMinutes, callMinutes: dto.callMinutes, parts, withSet: dto.withSet, editingTeamIds, locationId: dto.locationId === undefined ? undefined : (location?.id ?? null) },
         include: withCount,
       }),
     );

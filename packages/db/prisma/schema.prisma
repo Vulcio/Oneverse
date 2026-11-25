@@ -346,6 +346,8 @@ model User {
   addedSongLinks            SongLink[]               @relation("SongLinkAddedBy")
   ownedSetlists             Setlist[]                @relation("SetlistOwnerUser")
   guestSetlists             SetlistGuest[]
+  setEditRequests           SetEditRequest[] @relation("SetEditRequester")
+  setEditDecisions          SetEditRequest[] @relation("SetEditDecider")
   sharedSetlistItems        SetlistItem[]            @relation("SetlistItemSharedBy")
   ownershipRequests         SongOwnershipRequest[]
   contentTransfer           ContentTransfer?
@@ -1503,7 +1505,10 @@ model Setlist {
   // The screens showing it (issue #186).
   screens           Screen[]
   // The date of a team's event it was made for (issue #235).
-  eventDateOf       TeamEventDate?
+  // The dates it was made for (issue #578): one team's, or every group's of an organisation's event.
+  eventDates        TeamEventDate[]
+  // Who asked to edit it (issue #578).
+  editRequests      SetEditRequest[]
   // Its sessions run live (issue #247).
   liveSessions      LiveSession[]
 
@@ -1548,6 +1553,9 @@ model TeamEvent {
   typeId              String?
   // Whether its dates get a set (issue #523): false for a meeting, a prayer evening; a group that only plans has none anyway.
   withSet             Boolean   @default(true)
+  // Whether the team edits its dates' sets (issue #578): its admins and its people on a date's line-up.
+  // A team's own event: always; a group's part of an organisation's event: as the organisation chose. Every group views them.
+  editsSet            Boolean   @default(true)
   // Asked to become its organisation's event (issue #549), by one of the team's admins: an
   // organisation admin accepts (it becomes the team's part of a new organisation event) or declines.
   transferRequestedAt       DateTime?
@@ -1594,6 +1602,8 @@ model OrganizationEvent {
   repeatUntil      DateTime? @db.Date
   // Who's in charge of it.
   hostUserId       String?
+  // Whether its dates get a set (issue #578): one per date, the same for every group it needs.
+  withSet          Boolean   @default(true)
   createdByUserId  String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -1623,6 +1633,8 @@ model TeamEventType {
   // [{ part, position, name, count }], as TeamEvent.parts.
   parts           Json
   withSet         Boolean  @default(true)
+  // An organisation's type (issue #578): the groups that edit its events' sets; empty, every group that uses Songverse.
+  editingTeamIds  String[] @default([])
   // Where its events usually are (issue #559, from the organisations' presets it replaced).
   locationId      String?
   createdAt       DateTime @default(now())
@@ -1778,7 +1790,8 @@ model TeamEventDate {
   cancelled    Boolean   @default(false)
   startTime    String?
   title        String?
-  setlistId    String?   @unique
+  // Its set; an organisation's event (issue #578): the same set for every group's date that day.
+  setlistId    String?
   setCreatedAt DateTime?
   // When an admin told the people signed up that its set is ready (issue #235).
   setReadyAt   DateTime?
@@ -1787,11 +1800,14 @@ model TeamEventDate {
   asks         Json?
   // The day its series put it on, when it was moved to this one (issue #576): it keeps its answers, line-up and set.
   movedFrom    DateTime? @db.Date
+  // This date only (issue #578): whether the team edits its set, against its event's editsSet; null follows the event.
+  editsSet     Boolean?
 
   event   TeamEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   setlist Setlist?  @relation(fields: [setlistId], references: [id], onDelete: SetNull)
 
   @@unique([eventId, date])
+  @@index([setlistId])
 }
 
 // Someone scheduled on a part for one date of an event (issue #235, phase
@@ -1884,6 +1900,34 @@ model SetlistShareLink {
 
 // Someone who joined a set through its share link: can open the set and
 // every song in it, and keep private notes, but not change it.
+/**
+ * Someone who views a date's set asking to edit it (issue #578): the editors
+ * (the editing teams' admins and their people on that date's line-up) grant
+ * it - for this set, so this date - or decline.
+ */
+model SetEditRequest {
+  id              String              @id @default(cuid())
+  setlistId       String
+  userId          String
+  status          SetEditRequestStatus @default(PENDING)
+  decidedByUserId String?
+  createdAt       DateTime            @default(now())
+  decidedAt       DateTime?
+
+  setlist   Setlist @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  user      User    @relation("SetEditRequester", fields: [userId], references: [id], onDelete: Cascade)
+  decidedBy User?   @relation("SetEditDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([setlistId, userId])
+  @@index([userId])
+}
+
+enum SetEditRequestStatus {
+  PENDING
+  GRANTED
+  DECLINED
+}
+
 model SetlistGuest {
   id        String   @id @default(cuid())
   setlistId String

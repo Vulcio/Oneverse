@@ -1,6 +1,6 @@
 import { addDays, localDate, needsFromParts, partsFromNeeds, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type TeamEventType, type OrganizationEventTransfer, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Ban, CalendarArrowUp, CalendarDays, CircleCheck, MapPin, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { ArrowLeft, Ban, CalendarArrowUp, CalendarDays, CircleCheck, MapPin, MoreHorizontal, Pencil, PencilLine, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -8,11 +8,10 @@ import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { usePartLabel } from "../components/lineup";
 import { DEFAULT_START, firstDateAt, partBody, PartsEditor } from "../components/team-calendar";
-import { WithSetField } from "../components/event-types";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
@@ -51,6 +50,8 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
   const [dates, setDates] = useState<OrganizationEventDate[] | null>(null);
   const [editing, setEditing] = useState<OrganizationEvent | "new" | null>(null);
   const [moving, setMoving] = useState<OrganizationEventDate | null>(null);
+  // Who edits one date's set (issue #578).
+  const [editors, setEditors] = useState<OrganizationEventDate | null>(null);
   // Its dates, or each event once (issue #549): a series is changed as a whole from there.
   const [view, setView] = useState<"dates" | "events">("dates");
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +60,9 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
 
   const load = useCallback(async () => {
     const today = addDays(localDate(new Date(), browserZone()), -1);
-    setDates(await api.listOrganizationEventDates(organization.id, today, addDays(today, weeks * 7)));
+    const fresh = await api.listOrganizationEventDates(organization.id, today, addDays(today, weeks * 7));
+    setDates(fresh);
+    return fresh;
   }, [organization.id, weeks]);
   useEffect(() => {
     void load().catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
@@ -164,6 +167,12 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
                                 {t("teamCalendar.moveDate")}
                               </DropdownMenuItem>
                             )}
+                            {!date.cancelled && date.groups.some((group) => group.setlistId) ? (
+                              <DropdownMenuItem onClick={() => setEditors(date)} data-testid="org-date-editors">
+                                <PencilLine />
+                                {t("organizations.dateEditors")}
+                              </DropdownMenuItem>
+                            ) : null}
                             <DropdownMenuItem onClick={() => setEditing(event)} data-testid="org-edit-event">
                               <Pencil />
                               {event.repeat ? t("teamCalendar.editSeries") : t("organizations.editEvent")}
@@ -204,6 +213,12 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
                               </span>
                             ) : null}
                             {on > 0 ? <span className="text-xs text-muted-foreground">{t("organizations.onIt", { count: on })}</span> : null}
+                            {group.setlistId && !group.cancelled && group.editsSet ? (
+                              <Badge variant="outline" data-testid="org-group-edits-set">
+                                <PencilLine />
+                                {t("organizations.needEditsSet")}
+                              </Badge>
+                            ) : null}
                             {group.mine && group.setlistId && !group.cancelled && sets ? (
                               <HostLink href={sets.href(group.setlistId)} className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
                                 {t("teamCalendar.openSet")}
@@ -228,6 +243,18 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
         </CardContent>
       </Card>
 
+      {editors ? (
+        <DateEditorsDialog
+          date={editors}
+          title={`${editors.title}, ${dayFormat.format(new Date(`${editors.date}T12:00:00Z`))}`}
+          onChange={async (teamId, editsSet) => {
+            await api.setOrganizationDateEditors(organization.id, editors.eventId, editors.date, { teamId, editsSet });
+            const fresh = await load();
+            setEditors(fresh?.find((one) => one.eventId === editors.eventId && one.date === editors.date) ?? null);
+          }}
+          onClose={() => setEditors(null)}
+        />
+      ) : null}
       {moving ? (
         <MoveDateDialog
           date={moving.date}
@@ -261,6 +288,69 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
 }
 
 /** Its groups' events asking to become the organisation's (issue #549): accepted, each is the organisation's with that group's part as it was. */
+/**
+ * Who edits one date's set (issue #578): each team as usual, or against it
+ * for this date - a team that usually views it edits it, or the other way.
+ */
+function DateEditorsDialog({ date, title, onChange, onClose }: { date: OrganizationEventDate; title: string; onChange: (teamId: string, editsSet: boolean | null) => Promise<void>; onClose: () => void }) {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const change = async (teamId: string, editsSet: boolean | null) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await onChange(teamId, editsSet);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+    setBusy(false);
+  };
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md" data-testid="org-date-editors-dialog">
+        <DialogHeader>
+          <DialogTitle>{t("organizations.dateEditors")}</DialogTitle>
+          <DialogDescription>
+            {title}. {t("organizations.dateEditorsHint")}
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="flex flex-col gap-2">
+          {date.groups.map((group) => {
+            // Its usual choice: what it does without this date's exception.
+            const usual = group.dateEditsSet === null ? group.editsSet : !group.dateEditsSet;
+            return (
+              <li key={group.teamId} className="flex items-center justify-between gap-3 text-sm" data-editors-group={group.teamName}>
+                <span className="flex items-center gap-2 font-medium">
+                  <EntityAvatar name={group.teamName} color={group.color} avatarUrl={group.avatarUrl} size={20} />
+                  {group.teamName}
+                </span>
+                <NativeSelect
+                  compact
+                  value={group.dateEditsSet === null ? "" : group.dateEditsSet ? "edit" : "view"}
+                  disabled={busy}
+                  aria-label={t("organizations.dateEditors")}
+                  onChange={(e) => void change(group.teamId, e.target.value === "" ? null : e.target.value === "edit")}
+                  data-testid="org-date-editors-choice"
+                >
+                  <option value="">{usual ? t("organizations.dateEditorsUsualEdits") : t("organizations.dateEditorsUsualViews")}</option>
+                  {usual ? <option value="view">{t("organizations.dateEditorsViews")}</option> : <option value="edit">{t("organizations.dateEditorsEdits")}</option>}
+                </NativeSelect>
+              </li>
+            );
+          })}
+        </ul>
+        {error ? <FieldError>{error}</FieldError> : null}
+        <DialogFooter>
+          <Button type="button" onClick={onClose} data-testid="org-date-editors-done">
+            {t("organizations.dateEditorsDone")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TransfersCard({ organizationId, onDecided }: { organizationId: string; onDecided: () => Promise<void> }) {
   const { api } = usePlanning();
   const { t, i18n } = useTranslation();
@@ -417,7 +507,9 @@ function OrganizationEventDialog({
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
   const [hostUserId, setHostUserId] = useState(event?.host?.id ?? "");
   // Each group's parts, and when it's to be there (issue #240: minutes before; blank, none).
-  const [needs, setNeeds] = useState<{ teamId: string; parts: EventPart[]; call: string; withSet: boolean }[]>(event?.needs.map((need) => ({ teamId: need.teamId, parts: need.parts, call: need.callMinutes ? String(need.callMinutes) : "", withSet: need.withSet ?? true })) ?? []);
+  const [needs, setNeeds] = useState<{ teamId: string; parts: EventPart[]; call: string; editsSet: boolean }[]>(event?.needs.map((need) => ({ teamId: need.teamId, parts: need.parts, call: need.callMinutes ? String(need.callMinutes) : "", editsSet: need.editsSet ?? true })) ?? []);
+  // One set per date for all its teams (issue #578); each team edits it or views it.
+  const [withSet, setWithSet] = useState(event?.withSet ?? true);
   const [typeName, setTypeName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -434,9 +526,12 @@ function OrganizationEventDialog({
     setLocationId(typeLocation?.id ?? "");
     setPlace(typeLocation?.name ?? "");
     if (typeLocation) setTimeZone(typeLocation.timeZone);
-    setNeeds(needsFromParts(type.parts).filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts, call: type.callMinutes ? String(type.callMinutes) : "", withSet: type.withSet && teamOf(need.teamId)?.usesSongverse !== false })));
+    setWithSet(type.withSet);
+    // The type's teams that edit the set; none chosen, those that use Songverse.
+    const edits = (teamId: string) => ((type.editingTeamIds ?? []).length > 0 ? type.editingTeamIds!.includes(teamId) : teamOf(teamId)?.usesSongverse !== false);
+    setNeeds(needsFromParts(type.parts).filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts, call: type.callMinutes ? String(type.callMinutes) : "", editsSet: edits(need.teamId) })));
   };
-  const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}), withSet: need.withSet }));
+  const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}), editsSet: need.editsSet }));
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
@@ -454,8 +549,8 @@ function OrganizationEventDialog({
     run(() => {
       const timing = { title, date, startTime, durationMinutes: Number(duration), timeZone, note: note || null, repeat: everyWeeks ? { everyWeeks: Number(everyWeeks), until: until || null } : null };
       return event
-        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
-        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, hostUserId, needs: needsBody() });
+        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, withSet, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
+        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, hostUserId, withSet, needs: needsBody() });
     });
 
   return (
@@ -566,6 +661,16 @@ function OrganizationEventDialog({
               ))}
             </NativeSelect>
           </div>
+          {/* One set per date, for every team it needs (issue #578). */}
+          {sets ? (
+            <div className="col-span-2 flex flex-col gap-1">
+              <label htmlFor="org-event-with-set" className="flex items-center gap-2 text-sm font-medium">
+                <input id="org-event-with-set" type="checkbox" className="size-4" checked={withSet} onChange={(e) => setWithSet(e.target.checked)} data-testid="org-event-with-set" />
+                {t("organizations.withSet")}
+              </label>
+              <p className="text-xs text-muted-foreground">{t("organizations.withSetHint")}</p>
+            </div>
+          ) : null}
           {/* The groups it needs (issue #241), each with the parts it asks it for. */}
           <div className="col-span-2 flex flex-col gap-3" data-testid="org-event-needs">
             <div>
@@ -610,9 +715,20 @@ function OrganizationEventDialog({
                       data-testid="need-call"
                     />
                   </div>
-                  {/* A group's dates get a set unless the event needs none (issue #523); a group that only plans too (issue #531). */}
-                  {sets ? (
-                    <WithSetField id={`need-with-set-${need.teamId}`} checked={need.withSet} onChange={(withSet) => setNeeds(needs.map((one, at) => (at === index ? { ...one, withSet } : one)))} />
+                  {/* Whether it edits each date's set or only views it (issue #578). */}
+                  {sets && withSet ? (
+                    <label className="flex items-center gap-2 text-sm" htmlFor={`need-edits-set-${need.teamId}`}>
+                      <input
+                        id={`need-edits-set-${need.teamId}`}
+                        type="checkbox"
+                        className="size-4"
+                        checked={need.editsSet}
+                        onChange={(e) => setNeeds(needs.map((one, at) => (at === index ? { ...one, editsSet: e.target.checked } : one)))}
+                        data-testid="need-edits-set"
+                      />
+                      <span className="font-medium">{t("organizations.needEditsSet")}</span>
+                      <span className="text-xs text-muted-foreground">{t("organizations.needEditsSetHint")}</span>
+                    </label>
                   ) : null}
                 </div>
               );
@@ -622,7 +738,7 @@ function OrganizationEventDialog({
                 value=""
                 aria-label={t("organizations.addGroup")}
                 onChange={(e) => {
-                  if (e.target.value) setNeeds([...needs, { teamId: e.target.value, parts: [], call: "", withSet: teamOf(e.target.value)?.usesSongverse !== false }]);
+                  if (e.target.value) setNeeds([...needs, { teamId: e.target.value, parts: [], call: "", editsSet: teamOf(e.target.value)?.usesSongverse !== false }]);
                 }}
                 data-testid="org-event-add-group"
               >
@@ -653,7 +769,8 @@ function OrganizationEventDialog({
                     startTime,
                     durationMinutes: Number(duration),
                     ...(needs[0]?.call ? { callMinutes: Number(needs[0].call) } : {}),
-                    withSet: needs.some((need) => need.withSet),
+                    withSet,
+                    editingTeamIds: needs.filter((need) => need.editsSet).map((need) => need.teamId),
                     ...(locationId ? { locationId } : {}),
                     parts: partsFromNeeds(needsBody()),
                   }),

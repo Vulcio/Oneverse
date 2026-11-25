@@ -167,6 +167,8 @@ export class TeamEventsService {
       organizationEventId: event.organizationEventId,
       typeId: event.typeId,
       withSet: event.withSet,
+      // Whether its people on a date's line-up edit the date's set (issue #578).
+      editsSet: event.editsSet,
       // Asked to become its organisation's (issue #549), waiting for its admins.
       transferRequestedAt: event.transferRequestedAt?.toISOString() ?? null,
     };
@@ -299,6 +301,7 @@ export class TeamEventsService {
         typeId: (await this.checkType(teamId, dto.typeId)) ?? null,
         // Left out: a set for a Songverse team, none for a group that only plans (issue #531).
         withSet: dto.withSet ?? (await this.usesSongverse(teamId)),
+        editsSet: dto.editsSet ?? true,
         createdByUserId: userId,
       },
       include: withDates,
@@ -311,7 +314,7 @@ export class TeamEventsService {
   async update(teamId: string, eventId: string, dto: UpdateTeamEventDto, by: string | null = null, planned = false) {
     const before = await this.find(teamId, eventId);
     // The group's admins choose its parts, its call time and whether it has sets; the rest is the organisation's.
-    if (Object.keys(dto).some((key) => !["parts", "callMinutes", "withSet"].includes(key) && dto[key as keyof UpdateTeamEventDto] !== undefined)) this.notPlanned(before, planned);
+    if (Object.keys(dto).some((key) => !["parts", "callMinutes", "withSet", "editsSet"].includes(key) && dto[key as keyof UpdateTeamEventDto] !== undefined)) this.notPlanned(before, planned);
     const signedUp = await this.signedUp(eventId, localDate(new Date(), before.timeZone));
     const repeat = dto.repeat === undefined ? timingOf(before).repeat : dto.repeat;
     const date = dto.date ?? dateText(before.date);
@@ -335,6 +338,7 @@ export class TeamEventsService {
         parts: await this.checkParts(dto.parts, teamId),
         typeId: await this.checkType(teamId, dto.typeId),
         withSet: dto.withSet,
+        editsSet: dto.editsSet,
         ...(dto.rehearsalFor === undefined
           ? {}
           : dto.rehearsalFor === null
@@ -355,10 +359,8 @@ export class TeamEventsService {
     if (before.withSet && !after.withSet) {
       for (const row of after.dates) {
         if (dateText(row.date) < today || !row.setlist || row.setlist._count.items > 0) continue;
-        await this.prisma.client.$transaction([
-          this.prisma.client.setlist.delete({ where: { id: row.setlist.id } }),
-          this.prisma.client.teamEventDate.update({ where: { id: row.id }, data: { setCreatedAt: null } }),
-        ]);
+        await this.prisma.client.teamEventDate.update({ where: { id: row.id }, data: { setlistId: null, setCreatedAt: null } });
+        await this.releaseSets([row.setlist.id]);
       }
     }
     // Answers for coming dates it no longer falls on go too.
@@ -409,7 +411,8 @@ export class TeamEventsService {
     const today = localDate(new Date(), event.timeZone);
     const signedUp = await this.signedUp(eventId, today);
     const empty = event.dates.filter((row) => dateText(row.date) >= today && row.setlist && row.setlist._count.items === 0).map((row) => row.setlist!.id);
-    await this.prisma.client.$transaction([this.prisma.client.setlist.deleteMany({ where: { id: { in: empty } } }), this.prisma.client.teamEvent.delete({ where: { id: eventId } })]);
+    await this.prisma.client.teamEvent.delete({ where: { id: eventId } });
+    await this.releaseSets(empty);
     // Those signed up for a coming date of it are told, once each.
     const team = await this.teamName(teamId);
     const people = [...new Set(signedUp.map((one) => one.userId))];
@@ -421,10 +424,17 @@ export class TeamEventsService {
 
   /** A date's row and, while it has no songs, its set. */
   private async dropDate(rowId: string, setlist: { id: string; _count: { items: number } } | null) {
-    await this.prisma.client.$transaction([
-      ...(setlist && setlist._count.items === 0 ? [this.prisma.client.setlist.delete({ where: { id: setlist.id } })] : []),
-      this.prisma.client.teamEventDate.delete({ where: { id: rowId } }),
-    ]);
+    await this.prisma.client.teamEventDate.delete({ where: { id: rowId } });
+    if (setlist) await this.releaseSets([setlist.id]);
+  }
+
+  /**
+   * Empty sets no date leads to any more are deleted. An organisation's date
+   * has one set for all its groups (issue #578): it goes with the last of them.
+   */
+  private async releaseSets(setlistIds: readonly string[]) {
+    if (setlistIds.length === 0) return;
+    await this.prisma.client.setlist.deleteMany({ where: { id: { in: [...setlistIds] }, items: { none: {} }, eventDates: { none: {} } } });
   }
 
   /** Coming dates' sets named after their date's title or the event's. */
@@ -471,6 +481,9 @@ export class TeamEventsService {
       callAt: callAt(date.startsAt, event.callMinutes),
       repeats: !!event.repeatEveryWeeks,
       withSet: event.withSet,
+      // Whether the team edits this date's set (issue #578), and this date's exception (null: as usual).
+      editsSet: row?.editsSet ?? event.editsSet,
+      dateEditsSet: row?.editsSet ?? null,
       setlistId: row?.setlist?.id ?? null,
       songCount: row?.setlist?._count.items ?? 0,
       // When an admin said its set is ready (issue #235).
@@ -498,8 +511,9 @@ export class TeamEventsService {
       : await this.prisma.client.teamEventDate.create({ data: { eventId, date: day(date), ...data }, include: withDates.dates.include });
     if (row.cancelled && row.setlist && row.setlist._count.items === 0) {
       // Cleared, so the set comes back if the date does.
-      await this.prisma.client.setlist.delete({ where: { id: row.setlist.id } });
-      row = await this.prisma.client.teamEventDate.update({ where: { id: row.id }, data: { setCreatedAt: null }, include: withDates.dates.include });
+      const gone = row.setlist.id;
+      row = await this.prisma.client.teamEventDate.update({ where: { id: row.id }, data: { setlistId: null, setCreatedAt: null }, include: withDates.dates.include });
+      await this.releaseSets([gone]);
     } else if (row.setlist) {
       await this.prisma.client.setlist.update({ where: { id: row.setlist.id }, data: { name: row.title || event.title } });
     }
@@ -614,14 +628,36 @@ export class TeamEventsService {
     // An event without sets (issue #523): its dates have none. A group that only plans has them too (issue #531): sets aren't only songs.
     if (!event.withSet) return null;
     return this.prisma.client.$transaction(async (tx) => {
-      const set = await tx.setlist.create({ data: { ownerTeamId: event.teamId, name: row?.title || event.title, eventDate: day(date) } });
+      // An organisation's date: one set for all its groups (issue #578), owned by the first that edits it.
+      const shared = event.organizationEventId ? await this.sharedSet(tx, event.organizationEventId, event.id, date) : null;
+      const setlistId =
+        shared?.setlistId ??
+        (await tx.setlist.create({ data: { ownerTeamId: shared?.ownerTeamId ?? event.teamId, name: row?.title || event.title, eventDate: day(date) } })).id;
       await tx.teamEventDate.upsert({
         where: { eventId_date: { eventId: event.id, date: day(date) } },
-        create: { eventId: event.id, date: day(date), setlistId: set.id, setCreatedAt: new Date() },
-        update: { setlistId: set.id, setCreatedAt: new Date() },
+        create: { eventId: event.id, date: day(date), setlistId, setCreatedAt: new Date() },
+        update: { setlistId, setCreatedAt: new Date() },
       });
-      return set.id;
+      return setlistId;
     });
+  }
+
+  /**
+   * The set another group of the organisation's event has for the date, or
+   * which group owns a new one: the first that edits it and uses Songverse,
+   * else the first that uses Songverse (issue #578; ADR 0004, sets stay a team's).
+   */
+  private async sharedSet(tx: Prisma.TransactionClient, organizationEventId: string, eventId: string, date: string) {
+    const groups = await tx.teamEvent.findMany({
+      where: { organizationEventId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, teamId: true, editsSet: true, team: { select: { usesSongverse: true } }, dates: { where: { date: day(date) }, select: { setlistId: true, editsSet: true } } },
+    });
+    const linked = groups.find((group) => group.id !== eventId && group.dates[0]?.setlistId);
+    if (linked) return { setlistId: linked.dates[0]!.setlistId!, ownerTeamId: null };
+    const owner =
+      groups.find((group) => group.team.usesSongverse && (group.dates[0]?.editsSet ?? group.editsSet)) ?? groups.find((group) => group.team.usesSongverse);
+    return { setlistId: null, ownerTeamId: owner?.teamId ?? null };
   }
 
   /** The sets of an event's dates from today to its team's `setsAheadWeeks` ahead. Returns how many were made. */

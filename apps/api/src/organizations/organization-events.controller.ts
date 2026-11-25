@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { CreateTeamEventTypeDto, MoveEventDateDto, TeamEventDatesQueryDto, UpdateTeamEventTypeDto } from "../team-events/dto/team-events.dto.js";
-import { CreateOrganizationEventDto, UpdateOrganizationEventDateDto, UpdateOrganizationEventDto } from "./dto/organization-events.dto.js";
+import { dateParam } from "../team-events/team-events.controller.js";
+import { CreateOrganizationEventDto, OrganizationDateEditorsDto, UpdateOrganizationEventDateDto, UpdateOrganizationEventDto } from "./dto/organization-events.dto.js";
 import { OrganizationEventsService } from "./organization-events.service.js";
 
 /** An organisation's events, their dates and its event types (issues #241, #528). */
@@ -51,6 +52,13 @@ export class OrganizationEventsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   moveDate(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: MoveEventDateDto) {
     return this.events.moveDate(user, organizationId, eventId, date, dto.to);
+  }
+
+  /** Whether a group edits one date's set, against its usual choice (issue #578), by its admins or its organiser. */
+  @Put("events/:eventId/dates/:date/editors")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  setDateEditors(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: OrganizationDateEditorsDto) {
+    return this.events.setDateEditors(user, organizationId, eventId, dateParam(date), dto.teamId, dto.editsSet);
   }
 
   /** Its groups' events asking to become the organisation's (issue #549): its admins accept or decline them. */

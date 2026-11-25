@@ -19,6 +19,7 @@ What changed in each version, newest first. When your server is updated, its adm
 - Event types for a team's calendar and an organisation's groups, events without a set, required parts and open places anyone can take.
 - Groups that only plan can have sets too.
 - Each date has its own page, the same in Songverse, Plan and Oneverse, where its notifications lead (see [A date's page](/teams/#a-dates-page)); a date can be moved to another day with its answers, line-up and set.
+- An event's date has one set, for every team it needs: the teams that edit it change it (their admins and their people on the date's line-up), the others view it and can **Ask to edit** (see [Who edits a date's set](/sets/#who-edits-a-dates-set)).
 - Oneverse has a home: sign in there and see your apps, your next dates to answer, open places, news, your teams and your organisation's links (see [Oneverse's home](/getting-started/#oneverses-home)).
 - Planiverse is now [Oneverse Plan](/plan/), at plan.oneverse.top: same app, same pages, under the Oneverse name. Old planiverse.top links lead there.
 

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { EventAnswer } from "./event-answer";
-import { EventTypesDialog, WithSetField } from "./event-types";
+import { EditsSetField, EventTypesDialog, WithSetField } from "./event-types";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
@@ -870,6 +870,8 @@ function EventDialog({
   // Its type (issue #523), and whether its dates get a set.
   const [typeId, setTypeId] = useState(event?.typeId ?? "");
   const [withSet, setWithSet] = useState(event?.withSet ?? setsByDefault);
+  // Whether its people on a date's line-up edit the date's set (issue #578).
+  const [editsSet, setEditsSet] = useState(event?.editsSet ?? true);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -928,10 +930,11 @@ function EventDialog({
           parts: parts.map(partBody),
           typeId: typeId || null,
           withSet,
+          editsSet,
           ...(event?.rehearsalFor ? { rehearsalFor: null } : {}),
         };
     try {
-      if (event && planned) await api.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody), callMinutes: call ? Number(call) : null, withSet });
+      if (event && planned) await api.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody), callMinutes: call ? Number(call) : null });
       else if (event) await api.updateTeamEvent(teamId, event.id, body);
       else await api.createTeamEvent(teamId, { ...body, typeId: typeId || undefined });
       await onSaved();
@@ -1067,7 +1070,9 @@ function EventDialog({
             <Input id="event-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} data-testid="event-call" />
             <p className="text-xs text-muted-foreground">{t("teamCalendar.callMinutesHint")}</p>
           </div>
-          {makesSets && !parentEvent ? <WithSetField id="event-with-set" checked={withSet} onChange={setWithSet} /> : null}
+          {/* An organisation's event has one set per date, chosen there with who edits it (issue #578). */}
+          {makesSets && !parentEvent && !planned ? <WithSetField id="event-with-set" checked={withSet} onChange={setWithSet} /> : null}
+          {makesSets && !parentEvent && !planned && withSet ? <EditsSetField id="event-edits-set" checked={editsSet} onChange={setEditsSet} /> : null}
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} />}
         </form>
         {error ? <FieldError>{error}</FieldError> : null}

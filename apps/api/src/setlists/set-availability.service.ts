@@ -25,11 +25,15 @@ export class SetAvailabilityService {
   async forSet(user: AuthenticatedUser, setlistId: string): Promise<SetAvailability> {
     const { set, access } = await this.sets.findViewable(user, setlistId);
     if (!access.canEdit) throw new ForbiddenException("Only those who can edit the set see who can play");
-    const row = await this.prisma.client.teamEventDate.findUnique({
+    // An organisation's date has one set for all its groups (issue #578): who can play in the
+    // group one is an admin of, else in the group that owns the set.
+    const rows = await this.prisma.client.teamEventDate.findMany({
       where: { setlistId },
       select: { eventId: true, date: true, title: true, asks: true, event: { select: { teamId: true, title: true, parts: true } } },
     });
-    if (!row || !set.ownerTeamId || row.event.teamId !== set.ownerTeamId) throw new NotFoundException("The set wasn't made for a date of the team's calendar");
+    const adminOf = rows.length > 1 ? await this.prisma.client.teamMembership.findMany({ where: { userId: user.id, role: "ADMIN", teamId: { in: rows.map((r) => r.event.teamId) } }, select: { teamId: true } }) : [];
+    const row = rows.find((r) => adminOf.some((m) => m.teamId === r.event.teamId)) ?? rows.find((r) => r.event.teamId === set.ownerTeamId) ?? rows[0];
+    if (!row || !set.ownerTeamId) throw new NotFoundException("The set wasn't made for a date of the team's calendar");
     const date = dateText(row.date);
     const teamId = row.event.teamId;
     const [members, lineup] = await Promise.all([

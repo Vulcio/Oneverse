@@ -16,6 +16,8 @@ import { SetlistSharingService } from "./setlist-sharing.service.js";
 import { SetlistsService } from "./setlists.service.js";
 import { SongOwnershipService } from "./song-ownership.service.js";
 import { SetAvailabilityService } from "./set-availability.service.js";
+import { SetEditRequestsService } from "./set-edit-requests.service.js";
+import { DecideSetEditRequestDto } from "./dto/setlist.dto.js";
 
 /** Item-changing endpoints return the whole updated set, so the client never has to re-fetch. */
 @ApiTags("setlists")
@@ -27,6 +29,7 @@ export class SetlistsController {
     private readonly sharing: SetlistSharingService,
     private readonly ownership: SongOwnershipService,
     private readonly availabilityOf: SetAvailabilityService,
+    private readonly editRequests: SetEditRequestsService,
   ) {}
 
   @Get()
@@ -53,6 +56,23 @@ export class SetlistsController {
   @Get(":setlistId/availability")
   availability(@SignedIn() user: AuthenticatedUser, @Param("setlistId") setlistId: string) {
     return this.availabilityOf.forSet(user, setlistId);
+  }
+
+  /** Asking to edit a date's set one only views (issue #578): those who edit it are told. */
+  @Post(":setlistId/edit-requests")
+  askToEdit(@SignedIn() user: AuthenticatedUser, @Param("setlistId") setlistId: string) {
+    return this.editRequests.ask(user, setlistId);
+  }
+
+  /** The asks to edit it, for those who edit it through its date (issue #578). */
+  @Get(":setlistId/edit-requests")
+  editRequestsOf(@SignedIn() user: AuthenticatedUser, @Param("setlistId") setlistId: string) {
+    return this.editRequests.list(user, setlistId);
+  }
+
+  @Put(":setlistId/edit-requests/:requestId")
+  decideEditRequest(@SignedIn() user: AuthenticatedUser, @Param("setlistId") setlistId: string, @Param("requestId") requestId: string, @Body() dto: DecideSetEditRequestDto) {
+    return this.editRequests.decide(user, setlistId, requestId, dto.grant);
   }
 
   @Get(":setlistId")

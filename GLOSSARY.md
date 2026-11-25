@@ -139,7 +139,15 @@ Something a team or an organisation holds on a date: a service, a rehearsal, a m
 _Avoid_: service (as a term), occurrence
 
 **Event date**:
-One occurrence of an event, with its answers, its line-up and maybe its set.
+One occurrence of an event, with its answers, its line-up and maybe its set - one set for all the teams the event needs.
+
+**Editing team**:
+A team of an event whose admins and people on a date's line-up edit that date's set; the event's other teams view it. One date can make a viewing team an editing team.
+_Avoid_: set team, owner team (the set still belongs to one team)
+
+**Ask to edit**:
+Someone who views a date's set asks its editors to let them edit it, for that date; they grant or decline.
+_Avoid_: access request
 
 **Event type**:
 A kind of event a team or an organisation holds (Service, Rehearsal, Meeting), with its required teams and positions.
@@ -154,7 +162,7 @@ Who is on for an event date, in which position.
 _Avoid_: rota, roster, assignment (in what people read)
 
 **Set leader**:
-Someone filling a position that leads its event date's set (Music, Host, as its event type says); with the team's admins, the only ones who edit that set.
+Someone filling a position that leads its event date's set (Music, Host, as its event type says), named as its leader; editing the set is the editing teams' line-up's (issue #578), not only the leaders'.
 _Avoid_: music leader (as a fixed job), set owner
 
 **Suggestion**:

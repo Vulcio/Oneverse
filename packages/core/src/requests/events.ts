@@ -57,6 +57,7 @@ export const CreateTeamEventSchema = z.strictObject({
   rehearsalFor: optional(RehearsalForSchema).describe("A rehearsal tied to another event (issue #235): its dates follow that event's"),
   typeId: optional(z.string().trim().min(1).max(64)).describe("The team's event type it's made from (issue #523), kept for reference: the other fields are sent as they are"),
   withSet: optional(z.boolean()).describe("Whether its dates get a set (issue #523); left out, true for a team that uses Songverse and false for a group that only plans (issue #531)"),
+  editsSet: optional(z.boolean()).describe("Whether the team's admins and its people on a date's line-up edit the date's set (issue #578); true when left out. false: only its admins"),
 });
 export type CreateTeamEventRequest = z.input<typeof CreateTeamEventSchema>;
 
@@ -76,6 +77,7 @@ export const UpdateTeamEventSchema = z.strictObject({
   rehearsalFor: RehearsalForSchema.nullable().optional().describe("null: an event of its own"),
   typeId: z.string().trim().min(1).max(64).nullable().optional().describe("null: no type"),
   withSet: z.boolean().optional().describe("false: coming empty sets are deleted (sets with songs stay); true: they're made"),
+  editsSet: z.boolean().optional().describe("Whether its people on a date's line-up edit the date's set (issue #578)"),
 });
 export type UpdateTeamEventRequest = z.input<typeof UpdateTeamEventSchema>;
 
@@ -87,6 +89,7 @@ export const CreateTeamEventTypeSchema = z.strictObject({
   callMinutes: optional(callMinutes),
   parts: optional(eventParts),
   withSet: optional(z.boolean()).describe("Whether its events' dates get a set; true when left out"),
+  editingTeamIds: optional(z.array(z.string().trim().min(1).max(64)).max(30)).describe("An organisation's type (issue #578): the groups that edit its events' sets. Left out or empty: every group that uses Songverse"),
   locationId: optional(z.string().trim().min(1).max(64)).describe("Where its events usually are (issue #559): one of its owner's locations"),
 });
 export type CreateTeamEventTypeRequest = z.input<typeof CreateTeamEventTypeSchema>;
@@ -99,6 +102,7 @@ export const UpdateTeamEventTypeSchema = z.strictObject({
   callMinutes: callMinutes.nullable().optional(),
   parts: eventParts.optional(),
   withSet: z.boolean().optional(),
+  editingTeamIds: z.array(z.string().trim().min(1).max(64)).max(30).optional(),
   locationId: z.string().trim().min(1).max(64).nullable().optional(),
 });
 export type UpdateTeamEventTypeRequest = z.input<typeof UpdateTeamEventTypeSchema>;
@@ -233,7 +237,7 @@ const NeedSchema = z.strictObject({
   teamId: z.string().trim().min(1).max(64),
   parts: optional(eventParts),
   callMinutes: optional(callMinutes).describe("When the group is to be there: minutes before it starts"),
-  withSet: optional(z.boolean()).describe("Whether the group's dates get a set (issue #523): false for a meeting. Left out: true for a group that uses Songverse, false for one that only plans (issue #531)"),
+  editsSet: optional(z.boolean()).describe("Whether the group edits the set of each date (issue #578): its admins and its people on the date's line-up. Left out: true for a group that uses Songverse, false for one that only plans. Every group needed views it"),
 });
 const needs = z
   .array(NeedSchema)
@@ -254,6 +258,7 @@ export const CreateOrganizationEventSchema = z.strictObject({
   note: optional(z.string().trim().max(1000)),
   repeat: optional(RepeatSchema).describe("Left out: a one-off"),
   hostUserId: z.string().trim().min(1).max(64).describe("Who's in charge of it: one of the organisation's members"),
+  withSet: optional(z.boolean()).describe("Whether each date has a set (issue #578): one for all the groups it needs. true when left out"),
   needs,
 });
 export type CreateOrganizationEventRequest = z.input<typeof CreateOrganizationEventSchema>;
@@ -270,9 +275,23 @@ export const UpdateOrganizationEventSchema = z.strictObject({
   note: clearableText(1000),
   repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
   hostUserId: z.string().trim().min(1).max(64).optional(),
+  withSet: z.boolean().optional().describe("false: coming empty sets are deleted (sets with songs stay)"),
   needs: needs.optional(),
 });
 export type UpdateOrganizationEventRequest = z.input<typeof UpdateOrganizationEventSchema>;
+
+/** PUT /organizations/:id/events/:eventId/dates/:date/editors: whether a group edits that date's set, against its usual choice (issue #578). null: as usual. */
+export const OrganizationDateEditorsSchema = z.strictObject({
+  teamId: z.string().trim().min(1).max(64),
+  editsSet: z.boolean().nullable(),
+});
+export type OrganizationDateEditorsRequest = z.input<typeof OrganizationDateEditorsSchema>;
+
+/** PUT /setlists/:id/edit-requests/:requestId: an ask to edit a date's set granted or declined (issue #578). */
+export const DecideSetEditRequestSchema = z.strictObject({
+  grant: z.boolean(),
+});
+export type DecideSetEditRequestRequest = z.input<typeof DecideSetEditRequestSchema>;
 
 /** A date of an organisation's event cancelled, or back, for every group it needs. */
 export const UpdateOrganizationEventDateSchema = z.strictObject({

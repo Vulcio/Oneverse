@@ -60,6 +60,11 @@ export const NOTIFICATION_KINDS = [
   "SONG_OFFERED",
   // Someone joins a set of one's through its link (to its owner, or its team's admins).
   "SET_JOINED",
+  // Someone who views a date's set asks to edit it (issue #578, to those who edit it): grant or decline.
+  "SET_EDIT_REQUESTED",
+  // One's ask to edit a date's set is granted, or declined (to the one who asked).
+  "SET_EDIT_GRANTED",
+  "SET_EDIT_DECLINED",
   // Someone joins a team one runs through its invite link (to its admins).
   "TEAM_JOINED",
   // One is made an admin of a team, or a member again.

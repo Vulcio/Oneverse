@@ -47,7 +47,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, notificationUrl, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, setLeadingKeys, needsFromParts, partsFromNeeds, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant, canMoveDate } from "../calendar/index.js";
+import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, setLeadingKeys, setRight, setEditors, needsFromParts, partsFromNeeds, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant, canMoveDate } from "../calendar/index.js";
 import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
@@ -2873,6 +2873,8 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a place offered", args: ["SWAP_OFFERED", { event: "Morning service", date: "2026-10-18", team: "Worship team", part: "BACKING_VOCALS", by: "Sam" }, "en"] },
           { name: "a part with its own name", args: ["SCHEDULE_DECLINED", { event: "Morning service", date: "2026-10-18", team: "Worship team", partName: "Slides", by: "Sam" }, "en"] },
           { name: "the set is ready", args: ["SET_READY", { event: "Morning service", date: "2026-10-18", team: "Worship team", count: 6 }, "en"] },
+          { name: "someone asks to edit a date's set (issue #578)", args: ["SET_EDIT_REQUESTED", { by: "Sam", set: "Morning service" }, "en"] },
+          { name: "an ask to edit granted, in French", args: ["SET_EDIT_GRANTED", { by: "Ana", set: "Culte du matin" }, "fr"] },
           {
             name: "an announcement, in the reader's language (issue #536)",
             args: ["ANNOUNCEMENT", { texts: { en: { title: "What's new in version 0.10.0", body: "See what changed." }, fr: { title: "Les nouveautés de la version 0.10.0", body: "Découvrez ce qui a changé." } } }, "fr"] },
@@ -2949,6 +2951,52 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the date's parts, hosting too (issue #559)", args: [[{ part: "DRUMS", count: 1 }, { part: "HOST", count: 1 }, { name: "Greeter", count: 2 }], { instruments: ["PIANO"], techRoles: [] }] },
           { name: "no parts: what they play", args: [[], { instruments: ["PIANO", "LEAD_VOCALS"], techRoles: ["MUSIC_LEADER"] }] },
           { name: "no parts, nothing listed", args: [[], { instruments: [], techRoles: [] }] },
+        ],
+      },
+      setRight: {
+        about: "What someone may do with a date's set (issue #578): every team it's made for views it (members, and whoever is on its line-up); in a team that edits it (the date's exception, else the event's choice), its admins and its people on the line-up edit it. A viewer granted their ask to edit edits it. Null: none of its teams'.",
+        params: ["viewer", "teams"],
+        run: setRight,
+        cases: [
+          { name: "an admin of the team that edits it", args: [{ userId: "ana", teamRoles: { worship: "ADMIN" } }, [{ teamId: "worship", editsSet: true, lineup: [] }]] },
+          { name: "a member not on the line-up views", args: [{ userId: "lou", teamRoles: { worship: "MEMBER" } }, [{ teamId: "worship", editsSet: true, lineup: [] }]] },
+          { name: "a member on the line-up edits", args: [{ userId: "lou", teamRoles: { worship: "MEMBER" } }, [{ teamId: "worship", editsSet: true, lineup: [{ userId: "lou", status: "PENDING" }] }]] },
+          { name: "declining doesn't count", args: [{ userId: "lou", teamRoles: { worship: "MEMBER" } }, [{ teamId: "worship", editsSet: true, lineup: [{ userId: "lou", status: "DECLINED" }] }]] },
+          { name: "a guest on the line-up of a team that edits", args: [{ userId: "max", teamRoles: {} }, [{ teamId: "worship", editsSet: true, lineup: [{ userId: "max", status: "ACCEPTED" }] }]] },
+          {
+            name: "the Hosts team's host edits, the Welcome team views",
+            args: [
+              { userId: "hal", teamRoles: { hosts: "MEMBER" } },
+              [
+                { teamId: "worship", editsSet: true, lineup: [] },
+                { teamId: "hosts", editsSet: true, lineup: [{ userId: "hal", status: "ACCEPTED" }] },
+                { teamId: "welcome", editsSet: false, lineup: [] },
+              ],
+            ],
+          },
+          { name: "an admin of a team that only views", args: [{ userId: "wes", teamRoles: { welcome: "ADMIN" } }, [{ teamId: "worship", editsSet: true, lineup: [] }, { teamId: "welcome", editsSet: false, lineup: [] }]] },
+          { name: "this date gives the team editing", args: [{ userId: "wes", teamRoles: { welcome: "ADMIN" } }, [{ teamId: "welcome", editsSet: false, dateEditsSet: true, lineup: [] }]] },
+          { name: "this date takes it away", args: [{ userId: "ana", teamRoles: { worship: "ADMIN" } }, [{ teamId: "worship", editsSet: true, dateEditsSet: false, lineup: [] }]] },
+          { name: "a viewer granted their ask", args: [{ userId: "lou", teamRoles: { welcome: "MEMBER" }, granted: true }, [{ teamId: "welcome", editsSet: false, lineup: [] }]] },
+          { name: "granted, but none of its teams'", args: [{ userId: "zoe", teamRoles: { other: "ADMIN" }, granted: true }, [{ teamId: "worship", editsSet: true, lineup: [] }]] },
+        ],
+      },
+      setEditors: {
+        about: "Who edits a date's set through its teams (issue #578), told when someone asks to edit it: the admins of the teams that edit it and their people on the line-up, not declining. Once each.",
+        params: ["teams", "admins"],
+        run: setEditors,
+        cases: [
+          {
+            name: "the editing teams' admins and line-up",
+            args: [
+              [
+                { teamId: "worship", editsSet: true, lineup: [{ userId: "sam", status: "ACCEPTED" }, { userId: "ana", status: "PENDING" }, { userId: "max", status: "DECLINED" }, { userId: null, status: "ACCEPTED" }] },
+                { teamId: "welcome", editsSet: false, lineup: [{ userId: "wes", status: "ACCEPTED" }] },
+                { teamId: "hosts", editsSet: false, dateEditsSet: true, lineup: [{ userId: "hal", status: "ACCEPTED" }] },
+              ],
+              { worship: ["ana", "bob"], welcome: ["wes"], hosts: ["hank"] },
+            ],
+          },
         ],
       },
       setLeaders: {
