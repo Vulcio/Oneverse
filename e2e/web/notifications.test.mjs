@@ -45,9 +45,10 @@ try {
     await badge(2);
   });
 
-  await step("pressing one opens My calendar and marks it read", async () => {
+  await step("pressing one opens the date's page (issue #575) and marks it read", async () => {
     await page.locator('[data-notification="EVENT_DATE_CHANGED"]').click();
-    await page.waitForURL(/\/calendar$/);
+    await page.waitForURL(/\/events\/[^/]+\/\d{4}-\d\d-\d\d$/);
+    await page.getByTestId("event-date-page").waitFor();
     await page.getByTestId("notification-count").filter({ hasText: "1" }).waitFor();
   });
 
