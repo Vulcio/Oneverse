@@ -794,6 +794,21 @@ export interface SongNotes {
   places: NotePlaceChoice[];
 }
 
+/** One of Oneverse's apps (issue #552): its hub, Plan, Songverse and the screens' console. */
+export type AppKey = "oneverse" | "plan" | "songverse" | "screen";
+
+/**
+ * An app someone can open (issue #552): deployed (its address set on the
+ * API), and allowed by their roles. The hub's tiles and every app's
+ * switcher read the same list, in this order: Oneverse, Plan, Songverse,
+ * Screen.
+ */
+export interface AppLink {
+  app: AppKey;
+  /** Its address, without a trailing slash. */
+  url: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -3189,6 +3204,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     }) =>
       request<UserProfile>("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
     getMyStorage: () => request<StorageUsage>("/users/me/storage"),
+    /** The apps they can open (issue #552). */
+    listMyApps: () => request<AppLink[]>("/users/me/apps"),
     /** Archives of what you, a team or an organisation own (issue #351), and whether one's made weekly. */
     listArchives: (owner: ArchiveOwnerRef) => request<{ weekly: boolean; archives: ContentArchive[] }>(`/archives?${new URLSearchParams(owner as Record<string, string>)}`),
     getArchive: (archiveId: string) => request<ContentArchive>(`/archives/${encodeURIComponent(archiveId)}`),

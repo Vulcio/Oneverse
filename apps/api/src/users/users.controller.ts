@@ -23,6 +23,7 @@ import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { WhileAwaitingApproval } from "../common/decorators/while-awaiting-approval.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { AppLinkResponseDto } from "./dto/app-link.dto.js";
 import { StorageUsageResponseDto } from "./dto/storage-usage.dto.js";
 import { UpdateUserDto } from "./dto/update-user.dto.js";
 import { UserResponseDto } from "./dto/user-response.dto.js";
@@ -59,6 +60,13 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async skipProfilePrompt(@SignedIn() user: AuthenticatedUser): Promise<void> {
     await this.usersService.skipProfilePrompt(user.id);
+  }
+
+  /** The apps they can open (issue #552): the hub's tiles and every app's switcher. */
+  @Get("me/apps")
+  @ApiOkResponse({ type: AppLinkResponseDto, isArray: true })
+  apps(@SignedIn() user: AuthenticatedUser) {
+    return this.usersService.listApps(user);
   }
 
   @Get("me/storage")

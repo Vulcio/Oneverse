@@ -1,5 +1,5 @@
 // Oneverse's home (issue #538): where one lands after signing in at Oneverse.
-// The apps one can open, one's next dates answered right there, the places
+// The apps one can open (the switcher's list, issue #552), one's next dates answered right there, the places
 // another group opened to one's own (issue #528) taken from there, the news
 // (announcements, issue #536), one's teams opening in the app they're
 // planned in, the organisation brand's links (members only), and the
@@ -50,11 +50,10 @@ try {
     await page.getByRole("heading", { name: "Hello, Home anne" }).waitFor();
   });
 
-  await step("the apps: Plan and Songverse; not the screens' console for a group that only plans", async () => {
+  await step("the apps: Plan only for someone whose groups only plan (issue #552)", async () => {
     const plan = await page.getByTestId("home-app-plan").getAttribute("href");
-    const songverse = await page.getByTestId("home-app-songverse").getAttribute("href");
     check("Plan opens its calendar", plan === `${PLANIVERSE}/calendar`, plan);
-    check("Songverse opens", songverse === WEB, songverse);
+    check("no Songverse tile", (await page.getByTestId("home-app-songverse").count()) === 0);
     check("no Screen tile", (await page.getByTestId("home-app-screen").count()) === 0);
   });
 
@@ -105,6 +104,8 @@ try {
     await page.reload();
     const href = await page.getByTestId("home-app-screen").getAttribute("href");
     check("Screen opens its console", href === `${SCREEN}/operate`, href);
+    const songverse = await page.getByTestId("home-app-songverse").getAttribute("href");
+    check("and Songverse", songverse === WEB, songverse);
   });
 
   // Members only: someone outside sees none of the organisation's brands.
