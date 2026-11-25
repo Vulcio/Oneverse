@@ -128,7 +128,6 @@ export class RemindersService {
       // A rehearsal (issue #235, phase 7): its event's dates, days before; those signed up for that date, its set.
       const parent = event.rehearsalForId ? events.find((one) => one.id === event.rehearsalForId) : null;
       if (event.rehearsalForId && !parent) continue;
-      const rows = new Map((parent ?? event).dates.map((row) => [dateText(row.date), row]));
       // The day before covers today and tomorrow everywhere: from yesterday to two days ahead in UTC.
       const from = addDays(utcToday, -1);
       const to = addDays(utcToday, 2);
@@ -144,7 +143,6 @@ export class RemindersService {
         }
         const of = { eventId: parent?.id ?? event.id, date: date.forDate };
         const people = ((await signedUpFor(this.prisma.client, [of])).get(signupKey(of.eventId, of.date)) ?? []).map((userId) => ({ userId }));
-        const setlist = rows.get(date.forDate)?.setlist;
         const call = callAt(date.startsAt, event.callMinutes);
         dayBefore += await this.notifications.notify(
           people.map(({ userId }) => ({

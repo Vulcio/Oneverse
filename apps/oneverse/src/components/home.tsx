@@ -1,5 +1,5 @@
-import { addDays, localDate, partKey, type AppNotification, type Brand, type MyEventDate, type OpenPlace, type OrganizationSummary, type TeamSummary } from "@oneverse/core";
-import { CalendarDays, ChevronRight, Globe, MapPin, MessageCircle, Monitor, Music, Settings } from "lucide-react";
+import { addDays, localDate, type AppNotification, type Brand, type MyEventDate, type OpenPlace, type OrganizationSummary, type TeamSummary } from "@oneverse/core";
+import { CalendarDays, ChevronRight, Globe, MessageCircle, Monitor, Music, Settings } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { EventDateRow } from "@oneverse/planning/components/event-date-row";
