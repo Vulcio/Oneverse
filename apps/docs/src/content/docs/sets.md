@@ -158,6 +158,14 @@ For the beats to line up by ear, use wired headphones or the device's speaker: B
 
 If a device isn't in time with the others, add `?debug=sync` to the address on it: a box at the top left shows what it knows of its clocks (its offset to Songverse's, how long a message takes there and back, whether its audio output's own timing is used, how far its beat has been moved back into place). It stays on in that tab until its **×**. Send those numbers along with the device and browser.
 
+## A set's running order
+
+For those who plan a service without playing it - a host, a pastor - a set also opens in the Oneverse app (where you sign in) as its running order: its songs, texts and passages in order, with nothing to practise or play. [Oneverse Plan](/plan/), the Oneverse app's home and a date's page open a date's set there, even on a server without Songverse.
+
+If you edit the set, **Add a song** finds one in your library, your teams' songs and the catalogue; **Add text or an announcement** and **Add a passage** add the others, as in Songverse. **Move up**, **Move down** and **Remove** change the order. If you only view a date's set, **Ask to edit** asks those who edit it (see [Organisations](/organizations/)).
+
+The running order and the set in Songverse are the same set: a change in one shows in the other while both are open, without reloading. **Open in Songverse**, at the top, opens it there to practise, change a song's key or arrangement, or play it live.
+
 ## Sharing a set with guests
 
 Under **Share**, **Create a share link** and send it to whoever should see the set - a guest musician, say. Anyone signed in who opens it can read every song in the set, even ones not in their library, and keep their own notes. They can't change it.

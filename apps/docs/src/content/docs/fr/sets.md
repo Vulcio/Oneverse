@@ -158,6 +158,14 @@ Pour que les temps tombent ensemble à l'oreille, utilisez un casque filaire ou 
 
 Si un appareil n'est pas en rythme avec les autres, ajoutez `?debug=sync` à l'adresse sur celui-ci : un encadré en haut à gauche montre ce qu'il sait de ses horloges (son écart avec celle de Songverse, le temps d'un aller-retour, si le minutage de sa sortie audio est utilisé, de combien son temps a été recalé). Il reste affiché dans cet onglet jusqu'à sa **×**. Envoyez ces chiffres avec le nom de l'appareil et du navigateur.
 
+## Le déroulé d'une liste
+
+Pour ceux qui préparent un culte sans y jouer - un animateur, un pasteur - une liste s'ouvre aussi dans l'app Oneverse (là où l'on se connecte) sous forme de déroulé : ses chants, textes et passages dans l'ordre, sans rien à travailler ni à jouer. [Oneverse Plan](/fr/plan/), l'accueil de l'app Oneverse et la page d'une date y ouvrent la liste d'une date, même sur un serveur sans Songverse.
+
+Si vous modifiez la liste, **Ajouter un chant** en trouve un dans votre bibliothèque, les chants de vos équipes et le catalogue ; **Ajouter un texte ou une annonce** et **Ajouter un passage** ajoutent le reste, comme dans Songverse. **Monter**, **Descendre** et **Retirer** changent l'ordre. Si vous ne faites que voir la liste d'une date, **Demander à modifier** le demande à ceux qui la modifient (voir [Organisations](/fr/organizations/)).
+
+Le déroulé et la liste dans Songverse sont la même liste : un changement dans l'un apparaît dans l'autre tant que les deux sont ouverts, sans recharger. **Ouvrir dans Songverse**, en haut, l'y ouvre pour la travailler, changer la tonalité ou l'arrangement d'un chant, ou la jouer en live.
+
 ## Partager une liste avec des invités
 
 Sous **Partager**, **Créer un lien de partage** et envoyez-le à qui doit voir la liste - un musicien invité, par exemple. Toute personne connectée qui l'ouvre peut lire chaque chant de la liste, même ceux qui ne sont pas dans sa bibliothèque, et garder ses propres notes. Elle ne peut pas la modifier.

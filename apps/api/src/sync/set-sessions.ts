@@ -117,9 +117,22 @@ export class SetSessions {
     for (const connection of mine) await this.refreshScreen(connection, screen);
   }
 
-  /** A set changed (issue #200, announced by SetlistsService): the people in it here are told, to read it again. */
+  /** A set changed (issue #200, announced by SetlistsService): the people in it here, and those watching it (issue #521), are told, to read it again. */
   setChanged(setId: string) {
-    for (const connection of this.hub.connections()) if (connection.setId === setId && connection.user) this.hub.send(connection, { type: "set-changed", setId });
+    for (const connection of this.hub.connections()) if ((connection.setId === setId || connection.watchingSet === setId) && connection.user) this.hub.send(connection, { type: "set-changed", setId });
+  }
+
+  /** Watching a set without joining it (issue #521): only one the person can open. null stops. */
+  async watchSet(connection: Connection, setId: unknown) {
+    if (setId === null) {
+      connection.watchingSet = null;
+      return;
+    }
+    const set = typeof setId === "string" ? await this.prisma.client.setlist.findUnique({ where: { id: setId }, select: { id: true, ownerUserId: true, ownerTeamId: true } }) : null;
+    const access = set ? await this.access.access(connection.user!, set) : null;
+    if (!set || !access?.canView) return this.hub.send(connection, { type: "error", code: "not-found", message: "Set not found" });
+    connection.watchingSet = set.id;
+    this.hub.send(connection, { type: "watching-set", setId: set.id });
   }
 
   /** A screen asked to show a pairing code again (issue #284): its connections here are told. */

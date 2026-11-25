@@ -2,6 +2,7 @@ import { ApiError, keptSetDetail, onlineOrKept, type SetlistDetail, type Setlist
 import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Mic, MonitorPlay, RotateCcw } from "lucide-react";
+import { watchSet } from "@oneverse/app/set-watch";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
@@ -76,7 +77,7 @@ function SetOrLive({ loaded }: { loaded: SetlistDetail }) {
 function SetPage({ loaded }: { loaded: SetlistDetail }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { session, teams } = Route.useRouteContext();
+  const { session, teams, offline } = Route.useRouteContext();
   const [set, setSet] = useState<SetlistDetail>(loaded);
   const [error, setError] = useState<string | null>(null);
   // Where it got to in Live (issue #153): Live picks up there.
@@ -87,6 +88,11 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
 
   // Re-sync after navigating to another set or a router.invalidate().
   useEffect(() => setSet(loaded), [loaded]);
+  // Changed elsewhere - its running order in the Oneverse app (issue #521), another device - read again, Sync play or not.
+  useEffect(() => {
+    if (offline) return;
+    return watchSet(set.id, () => void apiClient.getSetlist(set.id).then(setSet, () => {}));
+  }, [set.id, offline]);
 
   /** Every item mutation returns the updated set. */
   async function apply(change: Promise<SetlistDetail>, rollback?: SetlistDetail) {

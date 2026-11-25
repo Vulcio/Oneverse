@@ -21,7 +21,7 @@ import { apiClient } from "#/lib/api-client";
 import { useMode } from "#/lib/mode";
 import type { SetProgress } from "#/lib/set-progress";
 import { setItemTitle, transposeLabel } from "#/lib/setlists";
-import { TextItemDialog } from "#/components/set-text-item";
+import { TextItemDialog } from "@oneverse/planning/components/set-text-dialog";
 import { PassageItemDialog } from "#/components/set-passage-item";
 import { templateName } from "#/components/passage-template-select";
 import { NativeSelect } from "@oneverse/ui/components/native-select";

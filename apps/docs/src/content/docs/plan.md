@@ -18,10 +18,10 @@ It's the same account as Songverse's, your Oneverse account: Oneverse Plan sends
 - **Organisations**: the ones you're in, their teams, members and events, as in Songverse (see [Organisations](/organizations/)).
 - A team's page: its calendar, members and positions, and for its admins the same tools as in Songverse - events, answers asked for, the line-up, invite links.
 
-A date with a set shows it - a team that only plans has sets too, for the Bible passages, slides and the catalogue's songs its date shows: **Open set** opens it in Songverse, where sets are filled. **Plan the set**, on a date that has none yet, makes it and opens it there.
+A date with a set shows it - a team that only plans has sets too, for the Bible passages, slides and the catalogue's songs its date shows: **Open set** opens its [running order](/sets/#a-sets-running-order) in the Oneverse app, with or without Songverse: its songs, texts and passages, to add and move if you edit it. **Plan the set**, on a date that has none yet, makes it and opens it there.
 
 An invite link to an organisation or a team, opened on Oneverse Plan, joins you there.
 
 ## Notifications
 
-The bell beside your picture lists your notifications, as in Songverse. **Account settings** also chooses how each kind reaches you, and turns them on for the device you're on. Notifications about a team that only plans, or an event you host, are Oneverse Plan's: their emails open Oneverse Plan, and they go to the devices you turned on in Oneverse Plan (to your others if there are none). The rest are Songverse's: pressing one about a song, a set or your people opens it in Songverse. **See all** opens the **Notifications** page.
+The bell beside your picture lists your notifications, as in Songverse. **Account settings** also chooses how each kind reaches you, and turns them on for the device you're on. Notifications about a team that only plans, or an event you host, are Oneverse Plan's: their emails open Oneverse Plan, and they go to the devices you turned on in Oneverse Plan (to your others if there are none). The rest are Songverse's: pressing one about a song or your people opens it in Songverse, and one about a set its running order in the Oneverse app. **See all** opens the **Notifications** page.

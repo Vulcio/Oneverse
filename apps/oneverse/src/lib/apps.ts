@@ -1,4 +1,5 @@
 import { publicEnvValue } from "@oneverse/app/public-env";
+import { watchSet } from "@oneverse/app/set-watch";
 import type { PlanningHost } from "@oneverse/planning/host";
 import { apiClient } from "#/lib/api-client";
 
@@ -23,8 +24,8 @@ export function appAddresses() {
 }
 
 /** The paths Plan has (as planiverse's planning-host.ts): a notification's path that isn't one opens in Songverse. */
-/** The home's own pages a notification opens here (issue #575): a date's. */
-const HOME_PATHS = /^\/events\//;
+/** The home's own pages a notification opens here: a date's (issue #575), a set's running order (issue #521). */
+const HOME_PATHS = /^\/(events\/|sets\/[^/?#]+($|[?#]))/;
 
 const PLAN_PATHS = /^\/(calendar|teams|organizations|account|notifications)(\/|$|[?#])/;
 
@@ -53,7 +54,9 @@ export function planningHost(): PlanningHost {
       notificationSettings: plan ? `${plan}/account#notifications` : `${songverse}/dashboard#notifications`,
       notification: (url) => (/^https?:\/\//.test(url) || HOME_PATHS.test(url) ? url : `${PLAN_PATHS.test(url) ? planning : songverse}${url}`),
     },
-    sets: { href: (setlistId) => `${songverse}/sets/${setlistId}`, canMake: false },
+    // A set opens here, as its running order (issue #521), and plays in Songverse.
+    sets: { href: (setlistId) => `/sets/${setlistId}`, canMake: false, songverse: (setlistId) => `${songverse}/sets/${setlistId}` },
+    watchSet,
     // No service worker here: a device gets them from Plan or Songverse.
     devicePush: false,
   };

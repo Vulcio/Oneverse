@@ -64,7 +64,7 @@ try {
     await page.waitForURL(`${ONEVERSE}${path}`);
     await page.getByTestId("event-date-title").filter({ hasText: `Sunday ${stamp}` }).waitFor();
     // Its set opens in Songverse.
-    check("its set in Songverse", ((await page.getByTestId("event-date-open-set").getAttribute("href")) ?? "").startsWith(`${WEB}/sets/`));
+    check("its set, as its running order here (issue #521)", ((await page.getByTestId("event-date-open-set").getAttribute("href")) ?? "").startsWith("/sets/"));
   });
 
   await step("a date that isn't on one's calendar says so", async () => {

@@ -482,6 +482,11 @@ export type SyncClientMessage =
    */
   | { type: "watch"; songs: { songVersionId: string; setlistId?: string }[] }
   /**
+   * Told when a set changes (issue #521) without joining it - a running order
+   * open in the Oneverse app or Songverse: set-changed comes for it. null stops.
+   */
+  | { type: "watch-set"; setId: string | null }
+  /**
    * What this device is doing in a song it watches (issue #27): editing it,
    * or replying to one of its notes; null song: nothing. Its watchers see it.
    */
@@ -581,6 +586,8 @@ export type SyncServerMessage =
    * the signal carries nothing.
    */
   | { type: "set-changed"; setId: string }
+  /** Watching a set without joining it (issue #521): it says when it changes. */
+  | { type: "watching-set"; setId: string }
   /** One's notifications changed (one came, or was read elsewhere): the bell reads its count again (issue #27). */
   | { type: "notifications" }
   /** A watched song's notes changed (added, edited, resolved, deleted, replied to): read them again - with one's own rights, the signal carries nothing. */

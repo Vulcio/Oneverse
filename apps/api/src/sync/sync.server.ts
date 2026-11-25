@@ -205,6 +205,8 @@ export class SyncServer implements OnModuleDestroy {
         return this.sets.end(connection);
       case "watch":
         return this.songs.watch(connection, message.songs);
+      case "watch-set":
+        return this.sets.watchSet(connection, message.setId);
       case "presence":
         return this.songs.presence(connection, message);
       case "doc-join":

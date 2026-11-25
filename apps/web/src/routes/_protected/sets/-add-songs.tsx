@@ -6,7 +6,7 @@ import { apiClient } from "#/lib/api-client";
 import { artistNames } from "#/lib/artists";
 import type { FoundSong } from "#/lib/song-search";
 import { SongPicker } from "#/components/song-picker";
-import { TextItemDialog } from "#/components/set-text-item";
+import { TextItemDialog } from "@oneverse/planning/components/set-text-dialog";
 import { PassageItemDialog } from "#/components/set-passage-item";
 import { useAddSongToSet } from "#/components/set-team-access";
 import { FieldError } from "@oneverse/ui/components/field";
