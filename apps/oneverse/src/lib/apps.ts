@@ -25,7 +25,7 @@ export function appAddresses() {
 
 /** The paths Plan has (as planiverse's planning-host.ts): a notification's path that isn't one opens in Songverse. */
 /** The home's own pages a notification opens here: a date's (issue #575), a set's running order (issue #521). */
-const HOME_PATHS = /^\/(events\/|sets\/[^/?#]+($|[?#]))/;
+const HOME_PATHS = /^\/(events\/|teams(\/|$|[?#])|sets\/[^/?#]+($|[?#]))/;
 
 const PLAN_PATHS = /^\/(calendar|teams|organizations|account|notifications)(\/|$|[?#])/;
 
@@ -42,9 +42,14 @@ export function planningHost(): PlanningHost {
     api: apiClient,
     links: {
       home: "/",
-      teams: `${planning}/teams`,
+      // Teams are managed here (issue #550).
+      teams: "/teams",
       organizations: `${planning}/organizations`,
-      team: (teamId) => `${planning}/teams/${teamId}`,
+      team: (teamId) => `/teams/${teamId}`,
+      // A calendar is Plan's Calendar section, where Plan is deployed.
+      ...(plan ? { calendar: (of: string) => (of === "me" ? `${plan}/calendar` : `${plan}/calendar?of=${encodeURIComponent(of)}`) } : {}),
+      // A team's events and event types are made in Plan where it's deployed (issue #551), here otherwise.
+      manageEvents: (of) => (plan ? `${plan}/calendar?of=${encodeURIComponent(of)}&tab=events` : null),
       organization: (organizationId) => `${planning}/organizations/${organizationId}`,
       organizationEvents: (organizationId) => `${planning}/organizations/${organizationId}/events`,
       // A date's page is the home's own (issue #575), as in Plan and Songverse.

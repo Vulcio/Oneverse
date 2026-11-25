@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { WhileAwaitingApproval } from "../common/decorators/while-awaiting-approval.decorator.js";
 import { letInByInvitation } from "../organizations/organization-signup.js";
@@ -24,6 +24,7 @@ import { CreateTeamDto } from "./dto/create-team.dto.js";
 import { ListTeamsQueryDto } from "./dto/list-teams-query.dto.js";
 import { InviteLinkResponseDto } from "./dto/invite-link-response.dto.js";
 import { TeamMemberResponseDto } from "./dto/team-member-response.dto.js";
+import { TeamInvitationDto } from "./dto/team-invitation.dto.js";
 import { TeamResponseDto } from "./dto/team-response.dto.js";
 import { UpdateMemberRoleDto } from "./dto/update-member-role.dto.js";
 import { UpdateTeamDto } from "./dto/update-team.dto.js";
@@ -142,6 +143,15 @@ export class TeamsController {
     @Body() dto: CreateInviteLinkDto,
   ): ReturnType<TeamsService["createInviteLink"]> {
     return this.teamsService.createInviteLink(teamId, dto);
+  }
+
+  @Post(":teamId/invitations")
+  @UseGuards(TeamAdminGuard)
+  @RateLimit("heavy")
+  @ApiOperation({ summary: "Invites someone by email", description: "Issue #550: an email with a link to join, for one use, two weeks; it waits among the invite links (with its `email`) until used. Again for the same address: sent again, renewed." })
+  @ApiCreatedResponse({ type: InviteLinkResponseDto })
+  invite(@Param("teamId") teamId: string, @Body() dto: TeamInvitationDto, @SignedIn() user: AuthenticatedUser): ReturnType<TeamsService["invite"]> {
+    return this.teamsService.invite(teamId, user.id, dto);
   }
 
   @Delete(":teamId/invite-links/:linkId")

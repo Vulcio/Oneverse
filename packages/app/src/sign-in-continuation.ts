@@ -6,7 +6,8 @@ import { getApiUrl, publicEnvValue } from "./public-env";
  * - the OAuth provider's (an app's sign-in, `client_id` and its signature):
  *   back to the provider, which sends them on to the app;
  * - `return` (an app's sign-in with an invitation's `pass`): that address,
- *   only when it's one of the apps' (SONGVERSE_URL, PLANIVERSE_URL);
+ *   only when it's one of the apps' (SONGVERSE_URL, PLANIVERSE_URL), or a
+ *   path of Oneverse's own (an invite link opened here, issue #550);
  * - else Oneverse's home (issue #538).
  */
 export function signInContinuation(search: Record<string, unknown>): string {
@@ -18,7 +19,7 @@ export function signInContinuation(search: Record<string, unknown>): string {
     return `${getApiUrl()}/api/auth/oauth2/authorize?${query}`;
   }
   const back = query.get("return");
-  if (back && isAppAddress(back)) return back;
+  if (back && (isAppAddress(back) || /^\/(?!\/)/.test(back))) return back;
   return "/";
 }
 

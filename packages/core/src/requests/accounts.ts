@@ -229,6 +229,8 @@ export const CreateTeamSchema = z.strictObject({
   name: z.string().min(2).max(100),
   slug: optional(z.string().regex(/^[a-z0-9-]+$/, "slug must be lowercase letters, numbers, and hyphens")),
   description: optional(z.string().max(500)),
+  color: z.enum(ENTITY_COLORS).optional().describe("Its colour (issue #161); left out: one derived from its name"),
+  parentId: optional(z.string().min(1).max(40)).describe("Its main team (issue #550): a team in no organisation, that the user runs; for an organisation's groups, POST /organizations/:id/groups"),
 });
 
 /** PATCH /teams/:id (its admins): a field left out keeps its value. */
@@ -248,6 +250,12 @@ export const CreateInviteLinkSchema = z.strictObject({
   role: optional(z.enum(TEAM_ROLES)),
   expiresInDays: optional(z.number().int().min(1).max(365)),
   maxUses: optional(z.number().int().min(1)),
+});
+
+/** POST /teams/:id/invitations (issue #550): an email with a link to join, for one use, two weeks. */
+export const TeamInvitationSchema = z.strictObject({
+  email: z.string().trim().toLowerCase().max(320).pipe(z.email()),
+  role: optional(z.enum(TEAM_ROLES)),
 });
 
 /** Ask someone to connect: by their email, or (someone from your teams) their user id. */

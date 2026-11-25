@@ -42,7 +42,7 @@ Quand vous vous connectez vous-même sur Oneverse (pas depuis une application), 
 - **Vos prochaines dates** : les dates à venir de vos équipes, auxquelles vous répondez sur place - Je m'inscris, Si besoin, Pas disponible - comme dans [Mon calendrier](/fr/teams/#calendrier) ; le titre d'une date ouvre [sa page](/fr/teams/#la-page-dune-date). **Ouvrir le calendrier** les montre toutes.
 - **Postes ouverts** : les parties qu'un autre groupe de votre organisation a ouvertes au vôtre (voir [Organisations](/fr/organizations/)), à prendre d'ici.
 - **Nouvelles** : les annonces qui vous ont été envoyées - de votre organisation, de vos équipes, de votre serveur. **Toutes les notifications** ouvre le reste. La cloche en haut liste tout, de toutes les applications.
-- **Vos équipes** : chacune s'ouvre là où elle est planifiée - Songverse pour une équipe qui a des chants, Oneverse Plan pour un groupe qui ne fait que planifier.
+- **Vos équipes** : chacune ouvre sa page ici, où ses administrateurs la gèrent ; **Toutes vos équipes** (ou **Équipes** en haut) les liste toutes et en crée une nouvelle (voir [Équipes](/fr/teams/#créer-une-équipe-et-inviter)).
 - **Suivre** : le site web, les réseaux sociaux et les groupes WhatsApp de votre organisation, tirés de sa marque (voir [Marques](/fr/brands/)). Seuls ses membres les voient.
 - **Réglages** : votre profil, votre photo, votre langue et vos clés d'accès (**Paramètres du compte**, aussi en haut), et la façon dont les notifications vous parviennent.
 

@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
 import { SongPicker } from "#/components/song-picker";
 import { LanguageSelect } from "#/components/language-select";
-import { AppearanceCard } from "#/components/appearance-card";
+import { AppearanceCard } from "@oneverse/planning/components/appearance-card";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
@@ -410,7 +410,7 @@ function SongbookDetail() {
           </Card>
           {/* Its colour and picture (issue #161). */}
           {canEdit ? (
-            <AppearanceCard
+            <AppearanceCard api={apiClient}
               owner="songbooks"
               id={songbook.id}
               name={songbook.name}

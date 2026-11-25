@@ -42,7 +42,7 @@ Signing in at Oneverse yourself (not from an app) lands you on its home, at the 
 - **Your next dates**: the coming dates of your teams, answered right there - Sign up, If needed, Can't make it - as in [My calendar](/teams/#calendar); a date's title opens [its page](/teams/#a-dates-page). **Open the calendar** shows them all.
 - **Open places**: parts another group of your organisation opened to yours (see [Organisations](/organizations/)), taken from here.
 - **News**: the announcements you were sent - your organisation's, your teams', your server's. **All notifications** opens the rest. The bell at the top lists everything, from every app.
-- **Your teams**: each opens where it's planned - Songverse for a team with songs, Oneverse Plan for a group that only plans.
+- **Your teams**: each opens its page here, where its admins manage it; **All your teams** (or **Teams** at the top) lists them all and makes a new one (see [Teams](/teams/#creating-a-team-and-inviting-people)).
 - **Follow**: your organisation's website, social networks and WhatsApp groups, from its brand (see [Brands](/brands/)). Only its members see them.
 - **Settings**: your profile, picture, language and passkeys (**Account settings**, also at the top), and how notifications reach you.
 

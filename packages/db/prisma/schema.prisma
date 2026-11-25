@@ -959,6 +959,8 @@ model TeamInviteLink {
   expiresAt DateTime?
   usedCount Int       @default(0)
   maxUses   Int? // null = unlimited
+  // An invitation by email (issue #550): sent to this address, for one use.
+  email     String?
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 

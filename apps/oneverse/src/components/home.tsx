@@ -2,6 +2,7 @@ import { addDays, localDate, type AppLink, type AppNotification, type Brand, typ
 import { ChevronRight, Globe, MessageCircle, Settings } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import { EventDateRow } from "@oneverse/planning/components/event-date-row";
 import { usePartLabel } from "@oneverse/planning/components/lineup";
 import { NotificationList } from "@oneverse/planning/components/notification-list";
@@ -204,35 +205,34 @@ function News() {
   );
 }
 
-/** One's teams and groups, each opening where it's planned: Songverse for one with songs, Plan for a group that only plans. */
+/** One's teams and groups, each opening its page here (issue #550); all of them, and a new one, on Teams. */
 function Teams({ teams }: { teams: TeamSummary[] }) {
   const { t } = useTranslation();
-  const { songverse, plan } = appAddresses();
   return (
     <Card data-testid="home-teams">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle>{t("hub.teams")}</CardTitle>
+        <Link to="/teams" className="text-sm text-muted-foreground hover:text-primary" data-testid="home-all-teams">
+          {t("hub.allTeams")}
+        </Link>
       </CardHeader>
       <CardContent>
         {teams.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("hub.noTeams")}</p>
         ) : (
           <ul className="flex flex-col divide-y">
-            {teams.map((team) => {
-              const inPlan = team.usesSongverse === false && !!plan;
-              return (
-                <li key={team.id}>
-                  <a href={`${inPlan ? plan : songverse}/teams/${team.id}`} className="flex items-center gap-3 py-2 text-sm hover:text-primary" data-testid="home-team">
-                    <EntityAvatar name={team.name} color={team.color} avatarUrl={team.avatarUrl} size={28} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">{team.name}</span>
-                      <span className="block text-xs text-muted-foreground">{t("hub.openIn", { app: inPlan ? "Plan" : "Songverse" })}</span>
-                    </span>
-                    <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-                  </a>
-                </li>
-              );
-            })}
+            {teams.map((team) => (
+              <li key={team.id}>
+                <Link to="/teams/$teamId" params={{ teamId: team.id }} className="flex items-center gap-3 py-2 text-sm hover:text-primary" data-testid="home-team">
+                  <EntityAvatar name={team.name} color={team.color} avatarUrl={team.avatarUrl} size={28} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{team.name}</span>
+                    {team.organization ? <span className="block truncate text-xs text-muted-foreground">{team.organization.name}</span> : null}
+                  </span>
+                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                </Link>
+              </li>
+            ))}
           </ul>
         )}
       </CardContent>

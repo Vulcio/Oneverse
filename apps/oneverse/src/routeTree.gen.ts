@@ -15,7 +15,10 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
+import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as ProtectedSetsSetlistIdRouteImport } from './routes/_protected/sets/$setlistId'
+import { Route as ProtectedTeamsIndexRouteImport } from './routes/_protected/teams/index'
+import { Route as ProtectedTeamsTeamIdRouteImport } from './routes/_protected/teams/$teamId'
 import { Route as ProtectedEventsEventIdDateRouteImport } from './routes/_protected/events/$eventId.$date'
 
 const ProtectedRoute = ProtectedRouteImport.update({
@@ -47,9 +50,24 @@ const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const JoinTokenRoute = JoinTokenRouteImport.update({
+  id: '/join/$token',
+  path: '/join/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedSetsSetlistIdRoute = ProtectedSetsSetlistIdRouteImport.update({
   id: '/sets/$setlistId',
   path: '/sets/$setlistId',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedTeamsIndexRoute = ProtectedTeamsIndexRouteImport.update({
+  id: '/teams/',
+  path: '/teams/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedTeamsTeamIdRoute = ProtectedTeamsTeamIdRouteImport.update({
+  id: '/teams/$teamId',
+  path: '/teams/$teamId',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedEventsEventIdDateRoute =
@@ -65,7 +83,10 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/account': typeof ProtectedAccountRoute
+  '/join/$token': typeof JoinTokenRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
+  '/teams/': typeof ProtectedTeamsIndexRoute
   '/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
 export interface FileRoutesByTo {
@@ -73,8 +94,11 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/account': typeof ProtectedAccountRoute
+  '/join/$token': typeof JoinTokenRoute
   '/': typeof ProtectedIndexRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
+  '/teams': typeof ProtectedTeamsIndexRoute
   '/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
 export interface FileRoutesById {
@@ -84,8 +108,11 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/_protected/account': typeof ProtectedAccountRoute
+  '/join/$token': typeof JoinTokenRoute
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/_protected/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
+  '/_protected/teams/': typeof ProtectedTeamsIndexRoute
   '/_protected/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
 export interface FileRouteTypes {
@@ -96,7 +123,10 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/account'
+    | '/join/$token'
     | '/sets/$setlistId'
+    | '/teams/$teamId'
+    | '/teams/'
     | '/events/$eventId/$date'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -104,8 +134,11 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/account'
+    | '/join/$token'
     | '/'
     | '/sets/$setlistId'
+    | '/teams/$teamId'
+    | '/teams'
     | '/events/$eventId/$date'
   id:
     | '__root__'
@@ -114,8 +147,11 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-out'
     | '/_protected/account'
+    | '/join/$token'
     | '/_protected/'
     | '/_protected/sets/$setlistId'
+    | '/_protected/teams/$teamId'
+    | '/_protected/teams/'
     | '/_protected/events/$eventId/$date'
   fileRoutesById: FileRoutesById
 }
@@ -124,6 +160,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SignOutRoute: typeof SignOutRoute
+  JoinTokenRoute: typeof JoinTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -170,11 +207,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAccountRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/join/$token': {
+      id: '/join/$token'
+      path: '/join/$token'
+      fullPath: '/join/$token'
+      preLoaderRoute: typeof JoinTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_protected/sets/$setlistId': {
       id: '/_protected/sets/$setlistId'
       path: '/sets/$setlistId'
       fullPath: '/sets/$setlistId'
       preLoaderRoute: typeof ProtectedSetsSetlistIdRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/teams/': {
+      id: '/_protected/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof ProtectedTeamsIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/teams/$teamId': {
+      id: '/_protected/teams/$teamId'
+      path: '/teams/$teamId'
+      fullPath: '/teams/$teamId'
+      preLoaderRoute: typeof ProtectedTeamsTeamIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/events/$eventId/$date': {
@@ -191,6 +249,8 @@ interface ProtectedRouteChildren {
   ProtectedAccountRoute: typeof ProtectedAccountRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedSetsSetlistIdRoute: typeof ProtectedSetsSetlistIdRoute
+  ProtectedTeamsTeamIdRoute: typeof ProtectedTeamsTeamIdRoute
+  ProtectedTeamsIndexRoute: typeof ProtectedTeamsIndexRoute
   ProtectedEventsEventIdDateRoute: typeof ProtectedEventsEventIdDateRoute
 }
 
@@ -198,6 +258,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountRoute: ProtectedAccountRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedSetsSetlistIdRoute: ProtectedSetsSetlistIdRoute,
+  ProtectedTeamsTeamIdRoute: ProtectedTeamsTeamIdRoute,
+  ProtectedTeamsIndexRoute: ProtectedTeamsIndexRoute,
   ProtectedEventsEventIdDateRoute: ProtectedEventsEventIdDateRoute,
 }
 
@@ -210,6 +272,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SignOutRoute: SignOutRoute,
+  JoinTokenRoute: JoinTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

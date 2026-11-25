@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { LogOut, UserRound } from "lucide-react";
+import { LogOut, UserRound, UsersRound } from "lucide-react";
 import { NotificationBell } from "@oneverse/planning/components/notification-bell";
 import { authClient } from "@oneverse/app/auth-client";
 import { AppSwitcher } from "@oneverse/app/components/app-switcher";
@@ -9,7 +9,7 @@ import { apiClient } from "#/lib/api-client";
 import { Button } from "@oneverse/ui/components/button";
 import { OneverseBrand } from "#/components/brand";
 
-/** Oneverse's name, leading home (issue #538); the other apps (issue #552), the bell, the account, light or dark (issue #422), and signing out. */
+/** Oneverse's name, leading home (issue #538); the other apps (issue #552), one's teams (issue #550), the bell, the account, light or dark (issue #422), and signing out. */
 export function AppHeader({ awaitingApproval = false }: { awaitingApproval?: boolean }) {
   const { t } = useTranslation();
   return (
@@ -22,6 +22,12 @@ export function AppHeader({ awaitingApproval = false }: { awaitingApproval?: boo
         {/* Waiting for their organisation's approval (issue #533): nothing to be told of here yet. */}
         {awaitingApproval ? null : <AppSwitcher current="oneverse" api={apiClient} />}
         {awaitingApproval ? null : <NotificationBell />}
+        {awaitingApproval ? null : (
+          <Button variant="ghost" size="sm" aria-label={t("nav.teams")} render={<Link to="/teams" data-testid="teams-link" />}>
+            <UsersRound />
+            <span className="hidden sm:inline">{t("nav.teams")}</span>
+          </Button>
+        )}
         <Button variant="ghost" size="sm" aria-label={t("nav.account")} render={<Link to="/account" data-testid="account-link" />}>
           <UserRound />
           <span className="hidden sm:inline">{t("nav.account")}</span>

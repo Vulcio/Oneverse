@@ -9,4 +9,5 @@ export class InviteLinkResponseDto {
   @ApiProperty({ required: false, nullable: true }) expiresAt!: Date | null;
   @ApiProperty() usedCount!: number;
   @ApiProperty({ required: false, nullable: true }) maxUses!: number | null;
+  @ApiProperty({ required: false, nullable: true, description: "Sent to this address (issue #550)" }) email!: string | null;
 }

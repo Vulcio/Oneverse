@@ -83,6 +83,8 @@ import type { ScreenReport, ScreenTier } from "../screens/reports.js";
 import type {
   CreateCatalogSchema,
   CreateInviteLinkSchema,
+  CreateTeamSchema,
+  TeamInvitationSchema,
   ImportSongbookFromCatalogSchema,
   SaveAuthConfigSchema,
   SendTestEmailSchema,
@@ -2085,6 +2087,8 @@ export interface TeamInviteLink {
   expiresAt: string | null;
   usedCount: number;
   maxUses: number | null;
+  /** Sent to this address (issue #550): an invitation by email, waiting until used. */
+  email?: string | null;
 }
 
 export type CreateInviteLinkInput = z.input<typeof CreateInviteLinkSchema>;
@@ -3238,7 +3242,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<void>(`/transfers/${encodeURIComponent(token)}/claim`, { method: "POST" }),
     /** Songverse's teams; with `all`, an organisation's groups that only plan too (issue #241). */
     listTeams: (all = false) => request<TeamSummary[]>(all ? "/teams?all=true" : "/teams"),
-    createTeam: (data: { name: string; slug?: string; description?: string }) =>
+    createTeam: (data: z.input<typeof CreateTeamSchema>) =>
       request<TeamSummary>("/teams", {
         method: "POST",
         body: JSON.stringify(data),
@@ -3268,6 +3272,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<TeamInviteLink>(`/teams/${teamId}/invite-links`, { method: "POST", body: JSON.stringify(data) }),
     revokeTeamInviteLink: (teamId: string, linkId: string) =>
       request<void>(`/teams/${teamId}/invite-links/${linkId}`, { method: "DELETE" }),
+    /** An invitation by email (issue #550): a link for one use, sent to the address; it waits in the invite links (`email`) until used. */
+    inviteToTeam: (teamId: string, data: z.input<typeof TeamInvitationSchema>) =>
+      request<TeamInviteLink>(`/teams/${teamId}/invitations`, { method: "POST", body: JSON.stringify(data) }),
     /** The organisation a team is part of (issue #241), or null for none. */
     setTeamOrganization: (teamId: string, organizationId: string | null) =>
       request<TeamSummary>(`/teams/${teamId}/organization`, { method: "PUT", body: JSON.stringify({ organizationId }) }),

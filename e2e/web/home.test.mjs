@@ -1,8 +1,8 @@
 // Oneverse's home (issue #538): where one lands after signing in at Oneverse.
 // The apps one can open (the switcher's list, issue #552), one's next dates answered right there, the places
 // another group opened to one's own (issue #528) taken from there, the news
-// (announcements, issue #536), one's teams opening in the app they're
-// planned in, the organisation brand's links (members only), and the
+// (announcements, issue #536), one's teams opening their page here
+// (issue #550), the organisation brand's links (members only), and the
 // settings. With two organisations, one chosen at the top.
 import { chromium } from "playwright";
 import { ONEVERSE, PLANIVERSE, SCREEN, WEB, api, call, check, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
@@ -61,7 +61,7 @@ try {
     await page.getByTestId("home-organization").selectOption(org.id);
     const team = page.getByTestId("home-team").filter({ hasText: `Kids ${stamp}` });
     await team.waitFor();
-    check("a group that only plans opens in Plan", (await team.getAttribute("href")) === `${PLANIVERSE}/teams/${kids.id}`, await team.getAttribute("href"));
+    check("a team opens its page here (issue #550)", (await team.getAttribute("href")) === `/teams/${kids.id}`, await team.getAttribute("href"));
     await page.getByTestId("home-news").getByText(`Rehearsals start ${stamp}`).waitFor();
     const follow = page.getByTestId("home-follow");
     await follow.getByRole("link", { name: "Instagram" }).waitFor();

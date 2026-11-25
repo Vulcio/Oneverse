@@ -1,4 +1,6 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { sendTeamInvitation } from "../auth/email.js";
+import { oneverseUrl, songverseUrl } from "../common/utils/web-apps.js";
 import { customInstrumentIds } from "../instruments/instruments.service.js";
 import { orderInstruments, orderTechRoles, slugify, type TeamRoleValue } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
@@ -10,6 +12,7 @@ import { destroySong } from "../song-versions/song-bin.service.js";
 import { leaveTeams } from "./leave-teams.js";
 import type { CreateInviteLinkDto } from "./dto/create-invite-link.dto.js";
 import type { CreateTeamDto } from "./dto/create-team.dto.js";
+import type { TeamInvitationDto } from "./dto/team-invitation.dto.js";
 import type { UpdateTeamDto } from "./dto/update-team.dto.js";
 
 /** The organisation a team is part of (issue #241). */
@@ -70,13 +73,17 @@ export class TeamsService {
   }
 
   async create(userId: string, dto: CreateTeamDto) {
-    const slug = dto.slug ?? slugify(dto.name);
+    // Under a main team (issue #550): one in no organisation, that they run.
+    if (dto.parentId) await this.checkMainTeam(userId, dto.parentId, null);
+    const slug = dto.slug ?? (await this.freeSlug(dto.name));
     const team = await this.prisma.client.team
       .create({
         data: {
           name: dto.name,
           slug,
           description: dto.description,
+          color: dto.color ?? null,
+          parentId: dto.parentId ?? null,
           memberships: {
             create: { userId, role: "ADMIN" },
           },
@@ -96,7 +103,55 @@ export class TeamsService {
       currentUserRole: "ADMIN" as const,
       color: team.color,
       avatarUrl: team.avatarUrl,
+      parentId: team.parentId,
     };
+  }
+
+  /** A free slug from a team's name. */
+  private async freeSlug(name: string) {
+    const base = slugify(name) || "team";
+    const taken = new Set((await this.prisma.client.team.findMany({ where: { slug: { startsWith: base } }, select: { slug: true } })).map((t) => t.slug));
+    let slug = base;
+    for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`;
+    return slug;
+  }
+
+  /**
+   * The main team a team in no organisation goes under (issue #550): one in
+   * no organisation either, that the user runs, not the team itself nor one
+   * under it. Members aren't shared.
+   */
+  async checkMainTeam(userId: string, parentId: string, teamId: string | null) {
+    const parent = await this.prisma.client.team.findUnique({ where: { id: parentId }, select: { organizationId: true, memberships: { where: { userId, role: "ADMIN" }, select: { userId: true } } } });
+    if (!parent || parent.memberships.length === 0) throw new BadRequestException(["parentId must be a team you run"]);
+    if (parent.organizationId) throw new BadRequestException(["parentId must be a team in no organisation: an organisation's groups go under one of its groups"]);
+    for (let at: string | null = parentId; at; ) {
+      if (at === teamId) throw new BadRequestException(["parentId can't be the team itself or one under it"]);
+      at = (await this.prisma.client.team.findUnique({ where: { id: at }, select: { parentId: true } }))?.parentId ?? null;
+    }
+  }
+
+  /**
+   * An invitation by email (issue #550): a link for one use, two weeks, sent
+   * to the address; it waits among the team's invite links until used. Asked
+   * again for the same address, the waiting one is sent again, renewed.
+   */
+  async invite(teamId: string, inviterId: string, dto: TeamInvitationDto) {
+    const email = dto.email.toLowerCase();
+    const member = await this.prisma.client.teamMembership.findFirst({ where: { teamId, user: { email: { equals: email, mode: "insensitive" } } }, select: { userId: true } });
+    if (member) throw new ConflictException("They're already in the team");
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    const waiting = await this.prisma.client.teamInviteLink.findFirst({ where: { teamId, email, usedCount: 0 } });
+    const link = waiting
+      ? await this.prisma.client.teamInviteLink.update({ where: { id: waiting.id }, data: { expiresAt, role: dto.role ?? waiting.role } })
+      : await this.prisma.client.teamInviteLink.create({ data: { teamId, email, role: dto.role ?? "MEMBER", maxUses: 1, expiresAt } });
+    const [team, inviter] = await Promise.all([
+      this.prisma.client.team.findUniqueOrThrow({ where: { id: teamId }, select: { name: true } }),
+      this.prisma.client.user.findUnique({ where: { id: inviterId }, select: { displayName: true } }),
+    ]);
+    // Opened in Oneverse, where teams are managed (issue #550), or Songverse without it.
+    await sendTeamInvitation(email, `${oneverseUrl() ?? songverseUrl()}/join/${link.token}`, team.name, inviter?.displayName ?? null);
+    return link;
   }
 
   /** Its name, description and colour (issue #161), by its admins. */
@@ -258,6 +313,20 @@ export class TeamsService {
       include: { team: true },
     });
     if (!link) throw new NotFoundException("Invite link not found or revoked");
+    // Already in it - or joined a moment ago by the same link opened twice (a page and its sign-in): the team, not an error.
+    const member = async () => {
+      const existing = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId: link.teamId, userId } } });
+      return existing && {
+        id: link.team.id,
+        name: link.team.name,
+        slug: link.team.slug,
+        description: link.team.description,
+        currentUserRole: existing.role,
+      };
+    };
+    const already = await member();
+    if (already) return already;
+
     if (link.expiresAt && link.expiresAt < new Date()) {
       throw new ForbiddenException("This invite link has expired");
     }
@@ -265,27 +334,21 @@ export class TeamsService {
       throw new ForbiddenException("This invite link has reached its usage limit");
     }
 
-    const existing = await this.prisma.client.teamMembership.findUnique({
-      where: { teamId_userId: { teamId: link.teamId, userId } },
-    });
-    if (existing) {
-      return {
-        id: link.team.id,
-        name: link.team.name,
-        slug: link.team.slug,
-        description: link.team.description,
-        currentUserRole: existing.role,
-      };
+    try {
+      await this.prisma.client.$transaction(async (tx) => {
+        await tx.teamMembership.create({ data: { teamId: link.teamId, userId, role: link.role } });
+        await tx.teamInviteLink.update({ where: { id: link.id }, data: { usedCount: { increment: 1 } } });
+        // A team's members are its organisation's too (issue #241).
+        await joinTeamOrganization(tx, link.teamId, [userId]);
+        // Joining a team asks again what they play or do, if they haven't said (issue #109).
+        await tx.user.updateMany({ where: { id: userId, instruments: { isEmpty: true }, techRoles: { isEmpty: true } }, data: { profilePromptSkippedAt: null } });
+      });
+    } catch (error) {
+      // The same person joining by two requests at once: the other one did.
+      const raced = error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002" ? await member() : null;
+      if (raced) return raced;
+      throw error;
     }
-
-    await this.prisma.client.$transaction(async (tx) => {
-      await tx.teamMembership.create({ data: { teamId: link.teamId, userId, role: link.role } });
-      await tx.teamInviteLink.update({ where: { id: link.id }, data: { usedCount: { increment: 1 } } });
-      // A team's members are its organisation's too (issue #241).
-      await joinTeamOrganization(tx, link.teamId, [userId]);
-      // Joining a team asks again what they play or do, if they haven't said (issue #109).
-      await tx.user.updateMany({ where: { id: userId, instruments: { isEmpty: true }, techRoles: { isEmpty: true } }, data: { profilePromptSkippedAt: null } });
-    });
     // Its admins told who joined (issue #149).
     const [admins, joiner] = await Promise.all([
       this.prisma.client.teamMembership.findMany({ where: { teamId: link.teamId, role: "ADMIN" }, select: { userId: true } }),

@@ -19,7 +19,9 @@ import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Input } from "@oneverse/ui/components/input";
 import { CalendarDays, Pencil } from "lucide-react";
 import { AnnouncementsCard, type AnnouncementsActions } from "../components/announcements-card";
+import { AppearanceCard } from "../components/appearance-card";
 import { CalendarFeedCard } from "../components/calendar-feed-card";
+import { InvitationsCard, NewTeamForm } from "../components/team-manage";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
 import { GroupCard, MemberPositions, PositionsCard, TeamOrganizationCard } from "../components/team-cards";
@@ -323,7 +325,23 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
       {/* Beside its members (issue #177): its look and its invite links, for its admins. */}
       <div className="flex flex-col gap-6">
 
-      {/* The app's own, for its admins (Songverse's: its colour and picture, issue #161). */}
+      {/* Its look (issue #161) and description, in every app (issue #550). */}
+      {isAdmin ? (
+        <AppearanceCard
+          api={api}
+          owner="teams"
+          id={team.id}
+          name={team.name}
+          color={team.color}
+          avatarUrl={team.avatarUrl}
+          onColor={(color) => api.updateTeam(team.id, { color })}
+          description={team.description}
+          onDescription={(description) => api.updateTeam(team.id, { description })}
+          onChanged={refresh}
+        />
+      ) : null}
+
+      {/* The app's own, for its admins (Songverse's: its brands, archives, Sonic server). */}
       {isAdmin ? adminCards : null}
 
       {/* Its calendar link (issue #240): all its dates, for a shared calendar or a website. */}
@@ -338,14 +356,18 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
       {isAdmin && organization ? <GroupCard team={team} organization={organization} onChanged={refresh} onError={setError} /> : null}
       {/* A group under it, made by its admins (issue #245). */}
       {isAdmin && organization ? <NewGroupForm organizationId={organization.id} groups={organization.teams} under={{ id: team.id, name: team.name }} onError={setError} /> : null}
+      {/* In no organisation, a sub-team under it (issue #550): its own members. */}
+      {isAdmin && !team.organization ? <NewSubTeam under={{ id: team.id, name: team.name }} /> : null}
 
       {/* The organisation it's part of (issue #241): its admins choose among those they run. */}
       {isAdmin && organizations && organizations.mode !== "NONE" ? <TeamOrganizationCard teamId={team.id} current={team.organization ?? null} organizations={organizations.organizations} onChanged={refresh} onError={setError} /> : null}
 
+      {/* Invitations by email (issue #550), and those waiting. */}
+      {isAdmin ? <InvitationsCard teamId={team.id} invitations={inviteLinks} onChanged={refresh} onError={setError} /> : null}
       {isAdmin ? (
         <InviteLinksCard
           name={team.name}
-          links={inviteLinks}
+          links={inviteLinks.filter((link) => !link.email)}
           description={t("teams.inviteLinksDescription")}
           path={(token) => `/join/${token}`}
           onCreate={(data) => api.createTeamInviteLink(team.id, data)}
@@ -377,4 +399,26 @@ function TeamAnnouncements({ teamId }: { teamId: string }) {
     [api, teamId],
   );
   return <AnnouncementsCard actions={actions} languages={[i18n.language.startsWith("fr") ? "fr" : "en"]} title={t("announcements.teamTitle")} description={t("announcements.teamDescription")} />;
+}
+
+/** A sub-team of a team in no organisation (issue #550), opened once made. */
+function NewSubTeam({ under }: { under: { id: string; name: string } }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  if (!open)
+    return (
+      <Button variant="outline" size="sm" className="self-start" onClick={() => setOpen(true)} data-testid="team-new-sub-team">
+        {t("teams.newSubTeam")}
+      </Button>
+    );
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{t("teams.newSubTeam")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <NewTeamForm under={under} onCancel={() => setOpen(false)} />
+      </CardContent>
+    </Card>
+  );
 }

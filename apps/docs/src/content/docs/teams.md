@@ -123,15 +123,19 @@ Next to each name, the team shows what they play or do (see [Roles](/account/#ro
 
 ## Creating a team and inviting people
 
-**Create team** from the Dashboard's **Teams** card; you're its first admin.
+Your teams are all on **Teams** in [Oneverse](/getting-started/#oneverses-home), the top of its page: each organisation with its groups, then main teams with their sub-teams under them, then your other teams. Each opens its page there, where its admins manage it: its colour, picture and description, its members, invitations, and deleting it. What only Songverse has - brands, archives, the stem separation server, songs played often, the Bible - is on its page in Songverse (**Open in Songverse**).
 
-To invite people, create an **invite link**: choose the role they get when they join, when it expires and how many times it can be used, then **Copy link** and send it. Anyone who opens it and signs in joins the team. **Revoke** a link to stop it working.
+**New team** makes one, and you're its first admin: give it a name, maybe a description and a colour, and choose where it goes under **Inside** - **On its own**, in an organisation you're an admin of (as one of its groups), or under a main team you're an admin of, as its sub-team. A main team's admins also have **New sub-team** on its page. In Songverse, **Create team** on the Dashboard's **Teams** card still makes one on its own.
+
+To invite someone by email, use **Invite by email** on the team's page: their address and the role they get, then **Send invitation**. They're sent a link that works once, for two weeks; someone without an account creates one with it, even when sign-up is by invitation only. Until they join, the invitation waits on the card: **Send again**, or **Revoke** it.
+
+Or create an **invite link** for many people: choose the role they get when they join, when it expires and how many times it can be used, then **Copy link** and send it. Anyone who opens it and signs in joins the team. **Revoke** a link to stop it working.
 
 On a server with organisations, a team can be part of one - its church or club: under **Organisation**, its admins choose one they're an admin of (see [Organisations](/organizations/#putting-a-team-in-it)).
 
 ## Colour and picture
 
-A team's admins give it a **Colour** and a picture on its page, in **Colour and picture**: the picture (**Add a picture**, cropped square) or the team's initials on its colour show beside its name in the sidebar and in lists, for everyone who sees it. **From its name** picks a colour from the team's name.
+A team's admins give it a **Colour**, a picture and a description on its page in Oneverse, in **Colour and picture**: the picture (**Add a picture**, cropped square) or the team's initials on its colour show beside its name in the sidebar and in lists, for everyone who sees it. **From its name** picks a colour from the team's name.
 
 ## Stem separation server
 

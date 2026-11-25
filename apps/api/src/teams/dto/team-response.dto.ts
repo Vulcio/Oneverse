@@ -10,4 +10,5 @@ export class TeamResponseDto {
   currentUserRole!: (typeof TEAM_ROLES)[number];
   @ApiProperty({ nullable: true, type: String, description: "Its colour (issue #161); null: one derived from its name" }) color!: string | null;
   @ApiProperty({ nullable: true, type: String, description: "Its picture" }) avatarUrl!: string | null;
+  @ApiProperty({ nullable: true, type: String, required: false, description: "Its main team, outside an organisation (issue #550)" }) parentId?: string | null;
 }

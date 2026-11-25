@@ -123,9 +123,13 @@ Celui qui fait le changement n'en est pas prévenu. Elles peuvent aussi arriver 
 
 ## Créer une équipe et inviter
 
-**Créer une équipe** depuis la carte **Équipes** du tableau de bord ; vous en êtes le premier administrateur.
+Toutes vos équipes sont sous **Équipes** dans [Oneverse](/fr/getting-started/#laccueil-doneverse), en haut de sa page : chaque organisation avec ses groupes, puis les équipes principales avec leurs sous-équipes, puis vos autres équipes. Chacune ouvre sa page là-bas, où ses administrateurs la gèrent : sa couleur, son image et sa description, ses membres, les invitations, et la supprimer. Ce que seul Songverse a - marques, archives, serveur de séparation en pistes, chants joués souvent, Bible - est sur sa page dans Songverse (**Ouvrir dans Songverse**).
 
-Pour inviter, créez un **lien d'invitation** : choisissez le rôle donné en rejoignant, quand il expire et combien de fois il peut servir, puis **Copier le lien** et envoyez-le. Toute personne qui l'ouvre et se connecte rejoint l'équipe. **Révoquer** un lien l'arrête.
+**Nouvelle équipe** en crée une, dont vous êtes le premier administrateur : donnez-lui un nom, peut-être une description et une couleur, et choisissez où elle va sous **Dans** - **À part**, dans une organisation dont vous êtes administrateur (comme l'un de ses groupes), ou sous une équipe principale dont vous êtes administrateur, comme sa sous-équipe. Les administrateurs d'une équipe principale ont aussi **Nouvelle sous-équipe** sur sa page. Dans Songverse, **Créer une équipe** sur la carte **Équipes** du tableau de bord en crée toujours une à part.
+
+Pour inviter quelqu'un par e-mail, utilisez **Inviter par e-mail** sur la page de l'équipe : son adresse et le rôle donné, puis **Envoyer l'invitation**. On lui envoie un lien qui sert une fois, pendant deux semaines ; une personne sans compte en crée un avec, même quand l'inscription se fait sur invitation. En attendant qu'elle rejoigne, l'invitation reste sur la carte : **Renvoyer**, ou **Révoquer**.
+
+Ou créez un **lien d'invitation** pour plusieurs personnes : choisissez le rôle donné en rejoignant, quand il expire et combien de fois il peut servir, puis **Copier le lien** et envoyez-le. Toute personne qui l'ouvre et se connecte rejoint l'équipe. **Révoquer** un lien l'arrête.
 
 Sur un serveur qui a des organisations, une équipe peut faire partie de l'une d'elles - son église ou son club : sous **Organisation**, ses administrateurs en choisissent une dont ils sont administrateurs (voir [Organisations](/fr/organizations/#y-mettre-une-équipe)).
 

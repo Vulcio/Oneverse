@@ -79,8 +79,9 @@ export class GroupsService {
   async update(viewer: Viewer, teamId: string, dto: UpdateGroupDto) {
     const team = await this.prisma.client.team.findUniqueOrThrow({ where: { id: teamId }, select: { organizationId: true } });
     if (dto.parentId) {
-      if (!team.organizationId) throw new BadRequestException(["parentId needs the team to be part of an organisation"]);
-      await this.checkParent(team.organizationId, dto.parentId, teamId);
+      // In no organisation, under a main team they run (issue #550); else a group of the same organisation.
+      if (!team.organizationId) await this.teams.checkMainTeam(viewer.id, dto.parentId, teamId);
+      else await this.checkParent(team.organizationId, dto.parentId, teamId);
     }
     if (dto.usesSongverse === false) {
       // Songs, songbooks and arrangements belong to Songverse's teams: moved or deleted first. Its sets stay (issue #531).

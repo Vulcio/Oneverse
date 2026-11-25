@@ -130,6 +130,21 @@ export async function sendSignupInvitation(to: string, url: string, inviterName:
   });
 }
 
+/** An invitation to join a team (issue #550): signing up with it works even when sign-up is by invitation only. */
+export async function sendTeamInvitation(to: string, url: string, team: string, inviterName: string | null): Promise<void> {
+  const who = inviterName ? `${inviterName} invited you` : "You're invited";
+  await sendEmail({
+    to,
+    subject: `${who} to join ${team}`,
+    text: `${who} to join ${team} on Oneverse, to plan and play together:\n\n${url}\n\nSign in, or create an account, and you're in the team. The link works once, for two weeks. If you weren't expecting it, you can ignore this email.`,
+    html: `
+      <p>${escapeHtml(who)} to join <strong>${escapeHtml(team)}</strong> on Oneverse, to plan and play together.</p>
+      <p><a href="${url}">Join ${escapeHtml(team)}</a></p>
+      <p style="color:#666;font-size:13px">Sign in, or create an account, and you're in the team. The link works once, for two weeks. If you weren't expecting it, you can ignore this email.</p>
+    `,
+  });
+}
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }
