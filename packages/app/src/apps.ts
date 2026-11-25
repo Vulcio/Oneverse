@@ -10,18 +10,21 @@ const CONSOLE_SET = /^\/operate\/([^/]+)/;
  * Where switching to `to` from `pathname` lands (issue #552): the same place
  * where the other app has it - a team, an organisation, a date, the
  * calendar between Plan and Songverse, a date from the home, a set between
- * Songverse and the screens' console - otherwise the app's home.
+ * Songverse, the home's running order (issue #521) and the screens' console
+ * - otherwise the app's home.
  */
 export function appPath(to: AppKey, pathname: string): string {
   const set = SET.exec(pathname)?.[1] ?? CONSOLE_SET.exec(pathname)?.[1];
   switch (to) {
     case "oneverse":
+      // A set: its running order (issue #521).
+      if (set) return `/sets/${set}`;
       return DATE.test(pathname) ? pathname : "/";
     case "plan":
       return PLANNING.test(pathname) || DATE.test(pathname) ? pathname : "/calendar";
     case "songverse":
       if (PLANNING.test(pathname) || DATE.test(pathname)) return pathname;
-      return set && CONSOLE_SET.test(pathname) ? `/sets/${set}` : "/";
+      return set ? `/sets/${set}` : "/";
     case "screen":
       return set && SET.test(pathname) ? `/operate/${set}` : "/operate";
   }
