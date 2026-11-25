@@ -188,6 +188,9 @@ try {
   });
 
   await step("Live: Next scrolls on into the stacked song, which becomes the one playing", async () => {
+    // In the set's live session (issue #561), the chords just saved come back as the set changed, and
+    // the page reads it again: once that's done, so the scroll isn't cut short by it.
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("live-next").click();
     await page.waitForFunction((item) => location.pathname.endsWith(`/live/${item}`), secondItem);
     await page.locator(`[data-testid="live-song"][data-item="${secondItem}"][data-current]`).waitFor();
