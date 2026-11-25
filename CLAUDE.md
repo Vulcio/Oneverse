@@ -18,7 +18,7 @@ Older code keeps its names (ADR 0002), and some read like another glossary word:
 `SongVersion` (related songs share one `Work`), a version is `Arrangement` (its arrangement is
 `Arrangement.instrumentation`), a set is `Setlist`, a team
 inside an organisation is a `Team` ("group" in old text), a template is `ScreenTheme`, a preset is
-`ScreenPart`, a pairing is a `Screen` row, a live session is `LiveSession` (`SyncSession` on the wire).
+`ScreenPart`, a pairing is a `Screen` row, a live session is `LiveSession` (`SyncSession` on the wire), a position is an event `part`, an organisation event's organiser is `OrganizationEvent.hostUserId`.
 
 ## Issues first
 

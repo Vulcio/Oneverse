@@ -3,7 +3,7 @@ title: Organisations
 description: A church, a club or a school whose teams plan together, on a server that has organisations.
 ---
 
-An organisation is the church, club or school your teams are part of: the music team, the welcome team, the tech team… It's where they plan together - who hosts each event, which teams each one needs - in Songverse, or in [Oneverse Plan](/plan/), the planning on its own, where the server has it. Songverse works without any: a server has organisations only if its admins turned them on (see [Admin](/admin/#organisations)), and until then you won't see them.
+An organisation is the church, club or school your teams are part of: the music team, the welcome team, the tech team… It's where they plan together - who organises each event, which teams each one needs - in Songverse, or in [Oneverse Plan](/plan/), the planning on its own, where the server has it. Songverse works without any: a server has organisations only if its admins turned them on (see [Admin](/admin/#organisations)), and until then you won't see them.
 
 ## Where to find them
 
@@ -44,7 +44,7 @@ The cross puts it away; **Show the setup checklist**, under **Details**, brings 
 
 ![An organisation's page, for its admin](../../assets/screenshots/en/organization.jpg)
 
-It starts with its **Calendar**: the next dates of its events, each with its host, its place and the teams it needs, **Places to fill** where a team is short; **Open the calendar** opens them all (see [Events](/organizations/#events)).
+It starts with its **Calendar**: the next dates of its events, each with its organiser, its place and the teams it needs, **Places to fill** where a team is short; **Open the calendar** opens them all (see [Events](/organizations/#events)).
 
 Everyone in it sees its **Teams** - each under the one it's in, those that don't use Songverse marked **Only plans**, yours marked **Your team** and opening its page - and its **Members**.
 
@@ -81,7 +81,7 @@ A team's admins make teams under it too: **New sub-team** on its page, with a **
 
 Being in a team doesn't put you in the team above it: each team has its own members.
 
-**Roles it fills**, on a team's page, says which roles it takes at the organisation's events: Worship fills **Music**; Tech fills **Media operator**, **Audio operator** and **Lights**. A role an event asks for is then open to that team's members as soon as it's added, shown as **Music · Worship**, and to the members of the teams under it: Media, Sound and Lights under Tech. With no team filling a role, the admins choose who as before.
+**Positions it fills**, on a team's page, says which positions it takes at the organisation's events: Worship fills **Music**; Tech fills **Media operator**, **Audio operator** and **Lights**. A position an event asks for is then open to that team's members as soon as it's added, shown as **Music · Worship**, and to the members of the teams under it: Media, Sound and Lights under Tech. With no team filling a position, the admins choose who as before.
 
 **Offers wait for an admin**, on a team's page, has its members' offers checked: when one of them takes an open place through it, they're on the line-up as **Waiting for an admin** until an admin of the event's team or of the organisation chooses **Confirm** in the line-up (or takes them off it). The admins are told, and so is the one who offered once it's confirmed.
 
@@ -93,27 +93,27 @@ Besides the instruments and roles people list for themselves, each team has **Po
 
 Beside each member's name, the team's positions show: tick the ones you cover by clicking them. The team's admins can tick them for anyone; others see only the ones each member covers.
 
-An event of the team asks for them under **Parts needed**: **Add a part** lists **This team's positions** first (see [Parts needed](/teams/#parts-needed)). A position is covered by the members who ticked it, and its name follows when it's renamed; a position an event still asks for can't be removed.
+An event of the team asks for them under **Positions needed**: **Add a position** lists **This team's positions** first (see [Positions needed](/teams/#positions-needed)). A position is covered by the members who ticked it, and its name follows when it's renamed; a position an event still asks for can't be removed.
 
 ## Events
 
-An organisation's events need several of its teams: a Sunday service needs the music team's drums and bass, two greeters from the welcome team, someone on the sound desk. On the organisation's page, **Calendar** opens its coming dates (**Show more** for later ones), each with its host and every team it needs. **Events**, beside **Dates**, lists each event once - how it repeats, its host and its teams - with **Edit the series** to change one as a whole.
+An organisation's events need several of its teams: a Sunday service needs the music team's drums and bass, two greeters from the welcome team, someone on the sound desk. On the organisation's page, **Calendar** opens its coming dates (**Show more** for later ones), each with its organiser and every team it needs. **Events**, beside **Dates**, lists each event once - how it repeats, its organiser and its teams - with **Edit the series** to change one as a whole.
 
 ![An organisation's events, with each team's coverage](../../assets/screenshots/en/organization-events.jpg)
 
-Its admins make one with **New event**: its **Title**, first date, start time, length, time zone, **Repeats** and **Place (optional)** as for a team's event, its **Host** - one of the organisation's members, who's told - and under **Teams needed**, **Add a team** for each, with the parts it asks of it (its positions, instruments, roles or names; see [Parts needed](/teams/#parts-needed)) and, if you like, its **Call time (minutes before)**: the musicians an hour early, the welcome team a quarter of an hour. Each team's part has **Make a set for each date**, on by default for a team that uses Songverse and off for one that only plans: turn it off for a meeting, and that team's dates get no set. **Save event** puts the event on each team's calendar: the team's admins fill its line-up as for any of its events, a team's date gets its set when it asks for one, and those signed up get their reminders.
+Its admins make one with **New event**: its **Title**, first date, start time, length, time zone, **Repeats** and **Place (optional)** as for a team's event, its **Organiser** - one of the organisation's members, who's told - and under **Teams needed**, **Add a team** for each, with the positions it asks of it (its own positions, instruments, roles or names; see [Positions needed](/teams/#positions-needed)) and, if you like, its **Call time (minutes before)**: the musicians an hour early, the welcome team a quarter of an hour. Each team's part has **Make a set for each date**, on by default for a team that uses Songverse and off for one that only plans: turn it off for a meeting, and that team's dates get no set. **Save event** puts the event on each team's calendar: the team's admins fill its line-up as for any of its events, a team's date gets its set when it asks for one, and those signed up get their reminders.
 
-- On a team's calendar, the event is marked **Planned by** the organisation (and its host). Its date, time and place are set on the organisation's Events; the team's admins choose only what it needs from them, under **Parts needed**, and its call time.
-- On the organisation's Events, its admins and the event's host see how each team's parts are covered (**Short: Drums**, or **All set**), change the event with **Edit the series** (**Edit event** for one that doesn't repeat), and **Cancel this date** - or restore it - for every team at once. Others see the teams and how many are on each.
-- Only the admins choose another host (who's told), and **Delete event**, for every team. A team removed from **Teams needed** loses its part; a team taken out of the organisation keeps it, as its own event.
+- On a team's calendar, the event is marked **Planned by** the organisation (and its organiser). Its date, time and place are set on the organisation's Events; the team's admins choose only what it needs from them, under **Positions needed**, and its call time.
+- On the organisation's Events, its admins and the event's organiser see how each team's positions are covered (**Short: Drums**, or **All set**), change the event with **Edit the series** (**Edit event** for one that doesn't repeat), and **Cancel this date** - or restore it - for every team at once. Others see the teams and how many are on each.
+- Only the admins choose another organiser (who's told), and **Delete event**, for every team. A team removed from **Teams needed** loses its part; a team taken out of the organisation keeps it, as its own event.
 
-A team's admins can move one of its events to the organisation (see [Calendar](/teams/#calendar)). It waits at the top of the calendar, for the organisation's admins, under **Asked to join the calendar**: **Accept** makes it the organisation's event, with the same timing, hosted by whoever asked, and the team's part of it as it was - its dates, answers, line-ups and sets; **Decline** leaves it the team's. Whoever asked is told either way.
+A team's admins can move one of its events to the organisation (see [Calendar](/teams/#calendar)). It waits at the top of the calendar, for the organisation's admins, under **Asked to join the calendar**: **Accept** makes it the organisation's event, with the same timing, organised by whoever asked, and the team's part of it as it was - its dates, answers, line-ups and sets; **Decline** leaves it the team's. Whoever asked is told either way.
 
-An event can start from one of the organisation's [event types](/organizations/#event-types): **New event** fills its title, time, location and teams from the one picked in **Event type** - each of the type's parts goes to the team it comes **From**, as what the event asks of that team (a part from no team is left for you to add). **Save as event type**, under an **Event type's name**, keeps an event's teams and parts as a new type, each part from the team it was asked of.
+An event can start from one of the organisation's [event types](/organizations/#event-types): **New event** fills its title, time, location and teams from the one picked in **Event type** - each of the type's positions goes to the team it comes **From**, as what the event asks of that team (a position from no team is left for you to add). **Save as event type**, under an **Event type's name**, keeps an event's teams and positions as a new type, each position from the team it was asked of.
 
 ### Event types
 
-**Event types**, at the top of the organisation's page, keeps the kinds of events all its teams hold - a service, a prayer night, a meeting - for its admins: each with its usual timing and **Location**, its parts (which are required, and which places are open to the team the event is in or to other teams; see [Parts needed](/teams/#parts-needed)) and **Make a set for each date**. They're offered to every team: on a team's calendar, **Event types** lists them, marked with the organisation's name, and **New event** picks from them like the team's own. An event made from one can still ask for more parts. Only the organisation's admins change or delete them; the team's admins can still keep types of their own.
+**Event types**, at the top of the organisation's page, keeps the kinds of events all its teams hold - a service, a prayer night, a meeting - for its admins: each with its usual timing and **Location**, its positions (which are required, and which places are open to the team the event is in or to other teams; see [Positions needed](/teams/#positions-needed)) and **Make a set for each date**. They're offered to every team: on a team's calendar, **Event types** lists them, marked with the organisation's name, and **New event** picks from them like the team's own. An event made from one can still ask for more positions. Only the organisation's admins change or delete them; the team's admins can still keep types of their own.
 
 ## Locations
 

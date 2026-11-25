@@ -11,11 +11,11 @@ Choose **Sets** > **New set**:
 
 - **Date** (optional) - unless you give it a name, the set is called by its date.
 - **Name** (optional) - "Sunday service", "Youth night".
-- **Owner** - **Just me**, or a team you're an admin of. A team set is seen by the team's members and changed by its admins - and, for a set made for a date of the team's calendar, by that date's **Host** and **Music leader** on its line-up (see [Line-up](/teams/#line-up)).
+- **Owner** - **Just me**, or a team you're an admin of. A team set is seen by the team's members and changed by its admins - and, for a set made for a date of the team's calendar, by whoever on that date's line-up fills a position that **Leads the set** (unless the event says otherwise, **Host** and **Music**) (see [Line-up](/teams/#line-up)).
 
 ### Who can play
 
-A set made for a date of the team's calendar shows, to those who can change it, **Who can play** that date: the team's members under **Sign up**, **If needed**, **Can't make it** (with **Away** for days away) and **No answer**, each with the parts they'd like to play and their place on the line-up. The date's **Host** and **Music leader** are named at the top when it has them. Not every date needs a host: only when the event asks for one (in **Parts needed**) and nobody is on the line-up for it yet does it say so, with who would like to be. Notes are shown to the team's admins only. **Open the calendar** goes to the team's calendar.
+A set made for a date of the team's calendar shows, to those who can change it, **Who can play** that date: the team's members under **Sign up**, **If needed**, **Can't make it** (with **Away** for days away) and **No answer**, each with the positions they'd like to play and their place on the line-up. The date's **Host** and **Music** are named at the top when it has them. Not every date needs a host: only when the event asks for one (in **Positions needed**) and nobody is on the line-up for it yet does it say so, with who would like to be. Notes are shown to the team's admins only. **Open the calendar** goes to the team's calendar.
 
 **Instruments for this date**, at the top, lists what the band needs that date, each with who's on it ("Drums 1/1: Sam"). Whoever is on the date's **Music** - and the team's admins - **Ask for instruments** (or **Change** them): the instruments, the team's positions or a name, each with how many, then **Save**. They're open to whoever the event's **Music** is open to - its team, Worship say: its members find each place beside the date and under **Open places** on **My calendar**, and sign up for it. An instrument no longer asked for takes its places with it.
 

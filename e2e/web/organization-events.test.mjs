@@ -53,7 +53,7 @@ try {
     await dialog().getByTestId("org-event-save").click();
     await dialog().waitFor({ state: "hidden" });
     const row = page.locator("[data-org-event-date]").first();
-    await row.getByText("Hosted by Orgev web host").waitFor();
+    await row.getByText("Organised by Orgev web host").waitFor();
     await row.locator(`[data-org-group="${music.id}"]`).getByTestId("org-group-short").getByText("Music").waitFor();
     await row.locator(`[data-org-group="${welcome.id}"]`).getByTestId("org-group-short").getByText("Greeter").waitFor();
   });

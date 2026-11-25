@@ -145,6 +145,10 @@ One occurrence of an event, with its answers, its line-up and maybe its set.
 A kind of event a team or an organisation holds (Service, Rehearsal, Meeting), with its required teams and positions.
 _Avoid_: event preset, template (for this)
 
+**Organiser**:
+The member who runs an organisation's event: they're told about it and see how its teams are covered. Not a position: the Host position is someone else's job at the event.
+_Avoid_: host (for this), owner, coordinator
+
 **Line-up**:
 Who is on for an event date, in which position.
 _Avoid_: rota, roster, assignment (in what people read)
