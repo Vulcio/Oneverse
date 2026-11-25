@@ -2,7 +2,9 @@
 // keys; Account > Notifications turns this device on (the browser's
 // subscription stood in for, pointing at lib/fake-push.mjs - headless
 // Chromium can't reach Google's push service), lists it, sends a test
-// that arrives, sets quiet hours, and turns it off.
+// that arrives, sets quiet hours, and turns it off. The bell (issue #568)
+// offers to turn it on here, links to the settings, and "Not now" stops
+// asking on this device; Getting started puts notifications first.
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, sql, stepper, user } from "../lib/harness.mjs";
 import { startFakePush } from "../lib/fake-push.mjs";
@@ -83,6 +85,51 @@ try {
     await page.getByTestId("push-off").click();
     await page.getByTestId("push-on").waitFor();
     await page.getByText("No device gets notifications yet.").waitFor();
+  });
+
+  await step("bell: Get them on this device too, turned on there; gone once on", async () => {
+    await page.goto(`${WEB}/sets`);
+    await page.getByTestId("notification-bell").click();
+    const row = page.getByTestId("notification-list").getByTestId("push-here");
+    await row.getByText("Get them on this device too").waitFor();
+    await row.getByTestId("push-here-on").click();
+    await row.waitFor({ state: "detached" });
+    const devices = await api(member, "GET", "/users/me/push-subscriptions");
+    if (devices.length !== 1 || devices[0].endpoint !== dev.endpoint) throw new Error(JSON.stringify(devices));
+  });
+
+  await step("bell: Notification settings opens the card", async () => {
+    await page.getByTestId("notification-settings-link").click();
+    await page.waitForURL(/\/dashboard#notifications$/);
+    await page.getByTestId("notification-settings").getByTestId("push-off").waitFor();
+  });
+
+  await step("bell: Not now stops asking on this device, after a reload too", async () => {
+    await page.getByTestId("push-off").click();
+    await page.getByTestId("push-on").waitFor();
+    await page.getByTestId("notification-bell").click();
+    const row = page.getByTestId("push-here");
+    await row.getByTestId("push-here-later").click();
+    await row.waitFor({ state: "detached" });
+    await page.reload();
+    await page.getByTestId("notification-bell").click();
+    await page.getByTestId("notification-list").getByTestId("notification-see-all").waitFor();
+    // Given the row the time it would take to show.
+    await page.waitForTimeout(1000);
+    if (await page.getByTestId("push-here").count()) throw new Error("Not now should hide it on this device");
+    await page.keyboard.press("Escape");
+  });
+
+  await step("Getting started: notifications first, turned on in place", async () => {
+    await page.goto(`${WEB}/library`);
+    const card = page.getByTestId("getting-started");
+    await card.locator('[data-step="notifications"]').waitFor();
+    const steps = await card.locator("[data-step]").evaluateAll((items) => items.map((item) => item.getAttribute("data-step")));
+    if (steps.join() !== "notifications,song,team,set") throw new Error(steps.join());
+    await card.getByTestId("getting-started-push").click();
+    await card.locator('[data-step="notifications"][data-done="true"]').waitFor();
+    const devices = await api(member, "GET", "/users/me/push-subscriptions");
+    if (devices.length !== 1) throw new Error(JSON.stringify(devices));
   });
 } finally {
   await browser.close();

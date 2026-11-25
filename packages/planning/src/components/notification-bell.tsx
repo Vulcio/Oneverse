@@ -1,11 +1,12 @@
 import type { AppNotification } from "@oneverse/core";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, BellOff, CheckCheck, Settings, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
 import { HostLink, usePlanning } from "../host";
 import { NotificationList } from "./notification-list";
+import { hidePushPrompt, usePushDevice, usePushPromptHidden } from "../use-push-device";
 import { Empty } from "@oneverse/ui/components/empty";
 
 /** How often the badge asks for the unread count while the page is shown. */
@@ -24,6 +25,8 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [more, setMore] = useState(false);
+  // The server's push key, asked for when the menu first opens (undefined until then).
+  const [pushKey, setPushKey] = useState<string | null | undefined>(undefined);
 
   const refreshCount = useCallback(() => {
     if (document.visibilityState !== "visible") return;
@@ -45,6 +48,11 @@ export function NotificationBell() {
 
   // The same number on the installed app's icon (issue #407), and none once they're read.
   useEffect(() => showUnreadOnIcon(unread), [unread]);
+
+  useEffect(() => {
+    if (!open || pushKey !== undefined) return;
+    api.getMyNotificationPreferences().then((preferences) => setPushKey(preferences.pushKey), () => {});
+  }, [open, pushKey, api]);
 
   useEffect(() => {
     if (!open) return;
@@ -81,6 +89,7 @@ export function NotificationBell() {
             {t("notifications.markAllRead")}
           </Button>
         </div>
+        <PushHereRow pushKey={pushKey} />
         <div className="max-h-96 overflow-y-auto">
           {items === null ? null : items.length === 0 ? (
             <Empty className="py-6">{t("notifications.empty")}</Empty>
@@ -103,14 +112,68 @@ export function NotificationBell() {
             </Button>
           ) : null}
         </div>
-        {/* Everything, in pages (issue #149). */}
-        <div className="border-t px-3 py-2 text-center">
+        {/* Everything, in pages (issue #149); how they reach one (issue #568). */}
+        <div className="flex items-center justify-between gap-2 border-t px-3 py-2">
+          <HostLink href={links.notificationSettings} className="flex items-center gap-1.5 text-sm underline-offset-2 hover:underline [&_svg]:size-4" onClick={() => setOpen(false)} data-testid="notification-settings-link">
+            <Settings />
+            {t("notifications.settingsLink")}
+          </HostLink>
           <HostLink href={links.notifications} className="text-sm text-primary underline-offset-2 hover:underline" onClick={() => setOpen(false)} data-testid="notification-see-all">
             {t("notifications.seeAll")}
           </HostLink>
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/**
+ * "Get them on this device too" (issue #568), above the list while this
+ * device could get notifications but doesn't: turned on here at once, or
+ * hidden on this device by "Not now". Blocked in the browser, it says so
+ * instead (only the person can allow them again). Nothing when they're on
+ * here, or can't be.
+ */
+function PushHereRow({ pushKey }: { pushKey: string | null | undefined }) {
+  const { links } = usePlanning();
+  const { t } = useTranslation();
+  const hidden = usePushPromptHidden();
+  const push = usePushDevice(pushKey, pushKey !== undefined && !hidden);
+  if (hidden || (push.state !== "off" && push.state !== "denied")) return null;
+  if (push.state === "denied") {
+    return (
+      <div className="m-2 flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground [&_svg]:mt-0.5 [&_svg]:size-3.5 [&_svg]:shrink-0" data-testid="push-here-denied">
+        <BellOff />
+        <span>
+          {t("notifications.pushDenied")}{" "}
+          <HostLink href={links.notificationSettings} className="text-foreground underline underline-offset-2">
+            {t("notifications.settingsLink")}
+          </HostLink>
+          {" · "}
+          <button type="button" className="text-foreground underline underline-offset-2" onClick={hidePushPrompt}>
+            {t("notifications.pushPromptHide")}
+          </button>
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="m-2 flex items-start gap-2.5 rounded-md bg-muted px-3 py-2.5 [&>svg]:mt-0.5 [&>svg]:size-4 [&>svg]:shrink-0" data-testid="push-here">
+      <Smartphone />
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-sm font-medium">{t("notifications.pushPromptTitle")}</span>
+        <span className="text-xs text-muted-foreground">{t("notifications.pushPromptHint")}</span>
+        {push.error ? <span className="text-xs text-destructive">{push.error}</span> : null}
+        <div className="mt-1.5 flex gap-1.5">
+          <Button size="sm" className="h-7" disabled={push.busy} onClick={() => void push.turnOn()} data-testid="push-here-on">
+            {t("notifications.pushPromptOn")}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7" onClick={hidePushPrompt} data-testid="push-here-later">
+            {t("notifications.pushPromptLater")}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 

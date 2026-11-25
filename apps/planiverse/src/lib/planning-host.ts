@@ -26,6 +26,7 @@ export function planningHost(): PlanningHost {
       organization: (organizationId) => `/organizations/${organizationId}`,
       organizationEvents: (organizationId) => `/organizations/${organizationId}/events`,
       notifications: "/notifications",
+      notificationSettings: "/account#notifications",
       // Its own pages here; the rest (a set, a song, People) in Songverse - or My calendar without it.
       notification: (url) => (PLANIVERSE_PATHS.test(url) ? url : songverse ? `${songverse}${url}` : "/calendar"),
     },
