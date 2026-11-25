@@ -1,6 +1,6 @@
-import { addDays, localDate, type AppNotification, type Brand, type MyEventDate, type OpenPlace, type OrganizationSummary, type TeamSummary } from "@oneverse/core";
-import { CalendarDays, ChevronRight, Globe, MessageCircle, Monitor, Music, Settings } from "lucide-react";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { addDays, localDate, type AppLink, type AppNotification, type Brand, type MyEventDate, type OpenPlace, type OrganizationSummary, type TeamSummary } from "@oneverse/core";
+import { ChevronRight, Globe, MessageCircle, Settings } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EventDateRow } from "@oneverse/planning/components/event-date-row";
 import { usePartLabel } from "@oneverse/planning/components/lineup";
@@ -15,6 +15,8 @@ import { FieldError } from "@oneverse/ui/components/field";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { createDeviceStore } from "@oneverse/ui/lib/device-store";
 import { cn } from "@oneverse/ui/lib/utils";
+import { appHref } from "@oneverse/app/apps";
+import { APP_LOOKS, useAppName } from "@oneverse/app/components/app-switcher";
 import { appAddresses } from "#/lib/apps";
 
 /** How far ahead the home looks for one's dates and open places, and how many of each it shows. */
@@ -34,7 +36,7 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * With organisations, one at a time (chosen at the top); without any, the
  * same for one's own teams.
  */
-export function HomePage({ name, isGlobalAdmin, organizations, teams }: { name: string; isGlobalAdmin: boolean; organizations: OrganizationSummary[]; teams: TeamSummary[] }) {
+export function HomePage({ name, organizations, teams, apps }: { name: string; organizations: OrganizationSummary[]; teams: TeamSummary[]; apps: AppLink[] }) {
   const { t } = useTranslation();
   const chosen = chosenOrganization.use();
   const organization = organizations.find((one) => one.id === chosen) ?? organizations[0] ?? null;
@@ -59,7 +61,7 @@ export function HomePage({ name, isGlobalAdmin, organizations, teams }: { name: 
           </span>
         ) : null}
       </div>
-      <AppTiles canOperate={isGlobalAdmin || teams.some((team) => team.usesSongverse !== false)} />
+      <AppTiles apps={apps.filter((link) => link.app !== "oneverse")} />
       <div className="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
           <Planning />
@@ -75,26 +77,27 @@ export function HomePage({ name, isGlobalAdmin, organizations, teams }: { name: 
   );
 }
 
-/** The apps one can open (issue #538): those deployed, the screens' console for those who run them. */
-function AppTiles({ canOperate }: { canOperate: boolean }) {
+/** The apps one can open (issue #538): the switcher's list (issue #552), at their homes. */
+function AppTiles({ apps }: { apps: AppLink[] }) {
   const { t } = useTranslation();
-  const { songverse, plan, screen } = appAddresses();
-  const tiles: { key: string; name: string; text: string; href: string; icon: ReactNode; tint: string }[] = [
-    ...(plan ? [{ key: "plan", name: "Plan", text: t("hub.planText"), href: `${plan}/calendar`, icon: <CalendarDays />, tint: "bg-teal-500/10 text-teal-700 dark:text-teal-300" }] : []),
-    { key: "songverse", name: "Songverse", text: t("hub.songverseText"), href: songverse, icon: <Music />, tint: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300" },
-    ...(screen && canOperate ? [{ key: "screen", name: t("hub.screen"), text: t("hub.screenText"), href: `${screen}/operate`, icon: <Monitor />, tint: "bg-orange-500/10 text-orange-700 dark:text-orange-300" }] : []),
-  ];
+  const name = useAppName();
+  const text: Record<string, string> = { plan: t("hub.planText"), songverse: t("hub.songverseText"), screen: t("hub.screenText") };
   return (
     <nav aria-label={t("hub.apps")} className="grid grid-cols-2 gap-3 @2xl:grid-cols-3">
-      {tiles.map((tile) => (
-        <a key={tile.key} href={tile.href} className="flex items-center gap-3 rounded-xl border bg-card p-4 transition-colors hover:border-foreground/30" data-testid={`home-app-${tile.key}`}>
-          <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:size-5", tile.tint)}>{tile.icon}</span>
-          <span className="min-w-0">
-            <span className="block font-semibold">{tile.name}</span>
-            <span className="hidden truncate text-sm text-muted-foreground @xl:block">{tile.text}</span>
-          </span>
-        </a>
-      ))}
+      {apps.map((link) => {
+        const { icon: Icon, tint } = APP_LOOKS[link.app];
+        return (
+          <a key={link.app} href={appHref(link, "/")} className="flex items-center gap-3 rounded-xl border bg-card p-4 transition-colors hover:border-foreground/30" data-testid={`home-app-${link.app}`}>
+            <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:size-5", tint)}>
+              <Icon />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-semibold">{name(link.app)}</span>
+              <span className="hidden truncate text-sm text-muted-foreground @xl:block">{text[link.app]}</span>
+            </span>
+          </a>
+        );
+      })}
     </nav>
   );
 }

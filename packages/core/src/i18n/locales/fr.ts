@@ -3228,6 +3228,7 @@ const fr: typeof en = {
   },
   // L'accueil d'Oneverse (issue #538) : là où l'on arrive une fois connecté.
   hub: {
+    switchApp: "Changer d'application",
     title: "Accueil",
     hello: "Bonjour, {{name}}",
     organization: "Organisation",
@@ -4223,6 +4224,7 @@ const fr: typeof en = {
     sets: "Listes de chants",
     songbooks: "Recueils",
     teams: "Équipes",
+    apps: "Applications",
     upcomingSets: "Listes à venir",
     searching: "Recherche…",
     noResults: "Aucun résultat pour « {{query}} »",

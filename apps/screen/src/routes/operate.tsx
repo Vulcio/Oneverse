@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import { createI18n, loadLocale } from "@oneverse/app/i18n";
 import { getSession } from "@oneverse/app/server-auth";
+import { AppSwitcher } from "@oneverse/app/components/app-switcher";
 import { Button } from "@oneverse/ui/components/button";
+import { apiClient } from "#/lib/api-client";
 
 /**
  * The operator's console (issue #305), at screen.oneverse.top/operate: signed
@@ -46,6 +48,8 @@ function Header({ name }: { name: string }) {
           {t("screens.operator.pickTitle")}
         </Link>
         <span className="truncate text-sm text-muted-foreground">{name}</span>
+        {/* The other apps (issue #552). */}
+        <AppSwitcher current="screen" api={apiClient} />
         <Button
           variant="ghost"
           size="icon"

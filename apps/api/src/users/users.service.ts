@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { INSTRUMENTS, mergeDisplaySettings, orderInstruments, orderTechRoles, type SavedDisplaySettings } from "@oneverse/core";
+import { INSTRUMENTS, type AppLink, mergeDisplaySettings, orderInstruments, orderTechRoles, type SavedDisplaySettings } from "@oneverse/core";
 import type { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { ImageService } from "../images/image.service.js";
@@ -8,6 +8,7 @@ import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import { detectAvatarImageType } from "./avatar-image.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
+import { oneverseUrl, planiverseUrl, screenUrl, songverseUrl } from "../common/utils/web-apps.js";
 import { customInstrumentIds } from "../instruments/instruments.service.js";
 import type { UpdateUserDto } from "./dto/update-user.dto.js";
 
@@ -75,6 +76,30 @@ export class UsersService {
     const user = await this.prisma.client.user.findUnique({ where: { id: userId }, select: SELECT });
     if (!user) throw new NotFoundException("User not found");
     return this.withRoles(toProfile(user, await customInstrumentIds(this.prisma.client)));
+  }
+
+  /**
+   * The apps they can open (issue #552), for the hub's tiles and every app's
+   * switcher: those deployed (their address set here), Oneverse and Plan for
+   * everyone; Songverse unless every team they're in only plans; the
+   * screens' console with Songverse (a set's editors present it) or a role
+   * that runs screens, on any team. A global admin, all of them.
+   */
+  async listApps(user: { id: string; isGlobalAdmin: boolean }): Promise<AppLink[]> {
+    const db = this.prisma.client;
+    const [teams, operates] = await Promise.all([
+      db.team.findMany({ where: { memberships: { some: { userId: user.id } } }, select: { usesSongverse: true } }),
+      db.roleAssignment.count({ where: { role: { canOperateScreens: true }, OR: [{ userId: user.id }, { team: { memberships: { some: { userId: user.id } } } }] } }),
+    ]);
+    const songverse = user.isGlobalAdmin || teams.length === 0 || teams.some((team) => team.usesSongverse);
+    const screen = songverse || operates > 0;
+    const addresses: [AppLink["app"], string | null, boolean][] = [
+      ["oneverse", oneverseUrl(), true],
+      ["plan", planiverseUrl(), true],
+      ["songverse", songverseUrl(), songverse],
+      ["screen", screenUrl(), screen],
+    ];
+    return addresses.flatMap(([app, url, shown]) => (url && shown ? [{ app, url }] : []));
   }
 
   /** "What do you play or do?" skipped (issue #109): asked again in a while. */

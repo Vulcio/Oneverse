@@ -3,11 +3,13 @@ import { useTranslation } from "react-i18next";
 import { LogOut, UserRound } from "lucide-react";
 import { NotificationBell } from "@oneverse/planning/components/notification-bell";
 import { authClient } from "@oneverse/app/auth-client";
+import { AppSwitcher } from "@oneverse/app/components/app-switcher";
 import { ThemeSwitch } from "@oneverse/app/components/theme-switch";
+import { apiClient } from "#/lib/api-client";
 import { Button } from "@oneverse/ui/components/button";
 import { OneverseBrand } from "#/components/brand";
 
-/** Oneverse's name, leading home (issue #538); the bell, the account, light or dark (issue #422), and signing out. */
+/** Oneverse's name, leading home (issue #538); the other apps (issue #552), the bell, the account, light or dark (issue #422), and signing out. */
 export function AppHeader({ awaitingApproval = false }: { awaitingApproval?: boolean }) {
   const { t } = useTranslation();
   return (
@@ -18,6 +20,7 @@ export function AppHeader({ awaitingApproval = false }: { awaitingApproval?: boo
         </Link>
         <div className="flex items-center gap-2">
         {/* Waiting for their organisation's approval (issue #533): nothing to be told of here yet. */}
+        {awaitingApproval ? null : <AppSwitcher current="oneverse" api={apiClient} />}
         {awaitingApproval ? null : <NotificationBell />}
         <Button variant="ghost" size="sm" aria-label={t("nav.account")} render={<Link to="/account" data-testid="account-link" />}>
           <UserRound />

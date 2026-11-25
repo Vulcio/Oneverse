@@ -3225,6 +3225,7 @@ const en = {
   },
   // Oneverse's home (issue #538): where one lands after signing in.
   hub: {
+    switchApp: "Switch app",
     title: "Home",
     hello: "Hello, {{name}}",
     organization: "Organisation",
@@ -4221,6 +4222,7 @@ const en = {
     sets: "Sets",
     songbooks: "Songbooks",
     teams: "Teams",
+    apps: "Apps",
     upcomingSets: "Sets coming up",
     searching: "Searching…",
     noResults: "Nothing found for “{{query}}”",

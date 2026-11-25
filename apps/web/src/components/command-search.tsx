@@ -1,8 +1,10 @@
 import { foldSearchWords, formatSongbookReference, partialEntryDigits, SONGBOOK_HIT_LIMITS, type LyricsMatch, type SongbookEntryHit } from "@oneverse/core";
 import { useNavigate, useRouteContext, useRouter, useRouterState } from "@tanstack/react-router";
-import { BookOpen, Hash, ListEnd, ListMusic, ListPlus, Music, Quote, Search, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, Hash, LayoutGrid, ListEnd, ListMusic, ListPlus, Music, Quote, Search, Users, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { appHref } from "@oneverse/app/apps";
+import { useAppName, useApps } from "@oneverse/app/components/app-switcher";
 import { apiClient } from "#/lib/api-client";
 import { useInLyrics } from "#/lib/lyrics-search";
 import { useSongSearch } from "#/lib/song-search";
@@ -18,7 +20,7 @@ const OTHER_LIMIT = 5;
 // Songbook references beside a song: the first two, then "+2".
 const SHOWN_REFERENCES = 2;
 
-type Kind = "entries" | "entriesPrefix" | "entriesContains" | "songs" | "lyrics" | "sets" | "songbooks" | "teams";
+type Kind = "entries" | "entriesPrefix" | "entriesContains" | "songs" | "lyrics" | "sets" | "songbooks" | "teams" | "apps";
 interface Result {
   kind: Kind;
   id: string;
@@ -34,7 +36,7 @@ interface Result {
   /** Found in the lyrics: the line, shown under the title. */
   lyrics?: LyricsMatch;
 }
-const ICONS: Record<Kind, LucideIcon> = { entries: Hash, entriesPrefix: Hash, entriesContains: Hash, songs: Music, lyrics: Quote, sets: ListMusic, songbooks: BookOpen, teams: Users };
+const ICONS: Record<Kind, LucideIcon> = { entries: Hash, entriesPrefix: Hash, entriesContains: Hash, songs: Music, lyrics: Quote, sets: ListMusic, songbooks: BookOpen, teams: Users, apps: LayoutGrid };
 
 
 /**
@@ -117,6 +119,9 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
   const router = useRouter();
   const { mode } = useMode();
   const { setlists, songbooks, teams } = useRouteContext({ from: "/_protected" });
+  // The other apps (issue #552), by their names: the switcher's, from the keyboard.
+  const apps = useApps(apiClient);
+  const appName = useAppName();
   // Live, in a set they can change: its songs can be added to it from here (issue #199).
   const inSet = useRouterState({ select: (s) => /^\/sets\/([^/]+)\/live\/([^/]+)/.exec(s.location.pathname) });
   const liveSet = mode === "live" && inSet ? setlists.find((set) => set.id === inSet[1] && set.canEdit) : undefined;
@@ -230,9 +235,20 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
               open: go(() => void navigate({ to: "/teams/$teamId", params: { teamId: team.id } })),
             }))
         : []),
+      ...(q
+        ? (apps ?? [])
+            .filter((link) => link.app !== "songverse" && matches(appName(link.app)))
+            .map((link) => ({
+              kind: "apps" as const,
+              id: link.app,
+              label: appName(link.app),
+              detail: null,
+              open: go(() => window.location.assign(appHref(link, router.state.location.pathname))),
+            }))
+        : []),
     ];
     return byKind;
-  }, [entries, songs, lyrics, setlists, songbooks, teams, q, mode, t, i18n.language, navigate, router, onDone, liveSet, playingItemId]);
+  }, [entries, songs, lyrics, setlists, songbooks, teams, apps, appName, q, mode, t, i18n.language, navigate, router, onDone, liveSet, playingItemId]);
 
   function onKeyDown(event: ReactKeyboardEvent) {
     // Alt+L: in the lyrics too, or not (by the key's place: a Mac's Option+L types "¬").
@@ -241,7 +257,7 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
     event.preventDefault();
   }
 
-  const groups = (["entries", "entriesPrefix", "entriesContains", "songs", "lyrics", "sets", "songbooks", "teams"] as const)
+  const groups = (["entries", "entriesPrefix", "entriesContains", "songs", "lyrics", "sets", "songbooks", "teams", "apps"] as const)
     .map((kind) => ({ kind, items: results.filter((result) => result.kind === kind) }))
     .filter((group) => group.items.length > 0);
 

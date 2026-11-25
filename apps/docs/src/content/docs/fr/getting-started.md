@@ -38,7 +38,7 @@ Vous vous connectez sur Oneverse, puis revenez dans l'application ouverte. Une f
 
 Quand vous vous connectez vous-même sur Oneverse (pas depuis une application), vous arrivez sur son accueil, à l'adresse où vous vous connectez. Il montre ce qui vous concerne, et chaque partie ouvre l'application où cela se fait :
 
-- **Vos applications** : [Oneverse Plan](/fr/plan/) quand votre serveur l'a, Songverse, et **Screen** (la console qui pilote les écrans, voir [Écrans](/fr/screens/)) quand votre serveur l'a et que vous êtes dans une équipe Songverse.
+- **Vos applications** : [Oneverse Plan](/fr/plan/) quand votre serveur l'a ; Songverse, sauf si toutes vos équipes ne font que planifier ; et **Screen** (la console qui pilote les écrans, voir [Écrans](/fr/screens/)) quand votre serveur l'a et que vous utilisez Songverse ou que votre rôle pilote les écrans.
 - **Vos prochaines dates** : les dates à venir de vos équipes, auxquelles vous répondez sur place - Je m'inscris, Si besoin, Pas disponible - comme dans [Mon calendrier](/fr/teams/#calendrier) ; le titre d'une date ouvre [sa page](/fr/teams/#la-page-dune-date). **Ouvrir le calendrier** les montre toutes.
 - **Postes ouverts** : les parties qu'un autre groupe de votre organisation a ouvertes au vôtre (voir [Organisations](/fr/organizations/)), à prendre d'ici.
 - **Nouvelles** : les annonces qui vous ont été envoyées - de votre organisation, de vos équipes, de votre serveur. **Toutes les notifications** ouvre le reste. La cloche en haut liste tout, de toutes les applications.
@@ -47,6 +47,10 @@ Quand vous vous connectez vous-même sur Oneverse (pas depuis une application), 
 - **Réglages** : votre profil, votre photo, votre langue et vos clés d'accès (**Paramètres du compte**, aussi en haut), et la façon dont les notifications vous parviennent.
 
 Dans plusieurs organisations, la liste en haut choisit celle que montre l'accueil : ses équipes, ses nouvelles et ses liens. Cet appareil s'en souvient.
+
+## Changer d'application
+
+Chaque application a en haut le même bouton **Changer d'application**, une grille de carrés : l'accueil d'Oneverse, Oneverse Plan, Songverse et la console de Screen. Il liste les applications que vous avez sur l'accueil (ci-dessus), celle où vous êtes marquée. Chacune s'ouvre au même endroit quand elle l'a : une équipe, une organisation, une date ou le calendrier entre Plan et Songverse ; une liste de chants entre Songverse et Screen (sa console pour cette liste). Sinon, elle s'ouvre sur son accueil. La touche **Tab** l'atteint comme tout bouton, et dans Songverse, **Ctrl K** (**⌘ K** sur un Mac) trouve aussi les autres applications par leur nom : tapez **plan**.
 
 ## Se repérer
 

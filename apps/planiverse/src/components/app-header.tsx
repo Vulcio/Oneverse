@@ -6,9 +6,11 @@ import { Button } from "@oneverse/ui/components/button";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { NotificationBell } from "@oneverse/planning/components/notification-bell";
+import { AppSwitcher } from "@oneverse/app/components/app-switcher";
 import { PlaniverseBrand } from "#/components/brand";
+import { apiClient } from "#/lib/api-client";
 
-/** Planiverse's header (issue #241): its name, its pages, and who's signed in. */
+/** Planiverse's header (issue #241): its name, its pages, the other apps (issue #552), and who's signed in. */
 export function AppHeader({ session }: { session: AppSession }) {
   const { t, i18n } = useTranslation();
   const tab = "rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground";
@@ -29,6 +31,8 @@ export function AppHeader({ session }: { session: AppSession }) {
             {t("nav.organizations")}
           </Link>
         </nav>
+        {/* The other apps (issue #552). */}
+        <AppSwitcher current="plan" api={apiClient} />
         {/* Its notifications (issue #242): the same as Songverse's bell. */}
         <NotificationBell />
         <DropdownMenu>

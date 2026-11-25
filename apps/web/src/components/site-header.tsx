@@ -1,14 +1,16 @@
 import { CommandSearch } from "#/components/command-search";
 import { ModeSwitch } from "#/components/mode-switch";
+import { AppSwitcher } from "@oneverse/app/components/app-switcher";
 import { NotificationBell } from "@oneverse/planning/components/notification-bell";
+import { apiClient } from "#/lib/api-client";
 import { SidebarTrigger } from "@oneverse/ui/components/sidebar";
 import { useMode } from "#/lib/mode";
 import { usePageBeat } from "#/lib/song-beat";
 import { cn } from "@oneverse/ui/lib/utils";
 
 /**
- * The top of every page: the sidebar's toggle, search, notifications and
- * the mode switch.
+ * The top of every page: the sidebar's toggle, search, the other apps
+ * (issue #552), notifications and the mode switch.
  * No breadcrumb (issue #67): the sidebar shows where you are, and the
  * page's own title names it.
  */
@@ -24,6 +26,7 @@ export function SiteHeader() {
         <SidebarTrigger className="-ml-1" />
         <div className="ml-auto flex items-center gap-2">
           <CommandSearch />
+          <AppSwitcher current="songverse" api={apiClient} />
           <NotificationBell />
           <ModeSwitch />
         </div>

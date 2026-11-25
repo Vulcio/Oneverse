@@ -38,7 +38,7 @@ You sign in at Oneverse, then come back to the app you opened. Once you're signe
 
 Signing in at Oneverse yourself (not from an app) lands you on its home, at the same address you sign in at. It shows what's for you, and each part opens the app where it's done:
 
-- **Your apps**: [Oneverse Plan](/plan/) when your server has it, Songverse, and **Screen** (the console that runs the screens, see [Screens](/screens/)) when your server has it and you're in a Songverse team.
+- **Your apps**: [Oneverse Plan](/plan/) when your server has it; Songverse, unless every team you're in only plans; and **Screen** (the console that runs the screens, see [Screens](/screens/)) when your server has it and you use Songverse or your role runs screens.
 - **Your next dates**: the coming dates of your teams, answered right there - Sign up, If needed, Can't make it - as in [My calendar](/teams/#calendar); a date's title opens [its page](/teams/#a-dates-page). **Open the calendar** shows them all.
 - **Open places**: parts another group of your organisation opened to yours (see [Organisations](/organizations/)), taken from here.
 - **News**: the announcements you were sent - your organisation's, your teams', your server's. **All notifications** opens the rest. The bell at the top lists everything, from every app.
@@ -47,6 +47,10 @@ Signing in at Oneverse yourself (not from an app) lands you on its home, at the 
 - **Settings**: your profile, picture, language and passkeys (**Account settings**, also at the top), and how notifications reach you.
 
 In several organisations, the list at the top picks the one the home shows: its teams, news and links. This device remembers it.
+
+## Switching apps
+
+Every app has the same **Switch app** button at the top, a grid of squares: Oneverse's home, Oneverse Plan, Songverse and Screen's console. It lists the apps you have on its home (above), the one you're in marked. Each opens at the same place when it has one: a team, an organisation, a date or the calendar between Plan and Songverse; a set between Songverse and Screen (its console for that set). Otherwise it opens at the app's home. The **Tab** key reaches it like any button, and in Songverse, **Ctrl K** (**⌘ K** on a Mac) finds the other apps by their names too: type **plan**.
 
 ## Finding your way around
 
