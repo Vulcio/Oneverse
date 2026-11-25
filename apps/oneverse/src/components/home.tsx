@@ -2,7 +2,7 @@ import { addDays, localDate, partKey, type AppNotification, type Brand, type MyE
 import { CalendarDays, ChevronRight, Globe, MapPin, MessageCircle, Monitor, Music, Settings } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { EventAnswer } from "@oneverse/planning/components/event-answer";
+import { EventDateRow } from "@oneverse/planning/components/event-date-row";
 import { usePartLabel } from "@oneverse/planning/components/lineup";
 import { NotificationList } from "@oneverse/planning/components/notification-list";
 import { OpenPlacesCard } from "@oneverse/planning/components/open-places-card";
@@ -101,8 +101,8 @@ function AppTiles({ canOperate }: { canOperate: boolean }) {
 
 /** One's next dates, answered here, and the open places one may take (issue #528): My calendar's, the first few. */
 function Planning() {
-  const { api, links } = usePlanning();
-  const { t, i18n } = useTranslation();
+  const { api } = usePlanning();
+  const { t } = useTranslation();
   const partLabel = usePartLabel([]);
   const [dates, setDates] = useState<MyEventDate[] | null>(null);
   const [places, setPlaces] = useState<OpenPlace[]>([]);
@@ -130,8 +130,6 @@ function Planning() {
     }
   };
 
-  const dayFormat = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric" });
-  const timeFormat = (zone: string) => new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit", timeZone: zone });
   return (
     <>
       <Card data-testid="home-dates">
@@ -147,56 +145,10 @@ function Planning() {
             <p className="text-sm text-muted-foreground">{t("hub.noDates")}</p>
           ) : (
             <ul className="flex flex-col divide-y">
-              {dates.map((date) => {
-                const mine = date.lineup.filter((place) => place.mine);
-                return (
-                  <li key={`${date.eventId}-${date.date}`} className="flex gap-3 py-3 first:pt-0 last:pb-0" data-event-date={date.date} data-event-id={date.eventId}>
-                    <div className="w-14 shrink-0 rounded-lg border py-1 text-center text-sm tabular-nums">
-                      <div className="font-semibold">{dayFormat.format(new Date(`${date.date}T12:00:00Z`))}</div>
-                      <div className="text-xs text-muted-foreground">{timeFormat(date.timeZone).format(new Date(date.startsAt))}</div>
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="text-sm font-medium">{date.title}</span>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <HostLink href={links.team(date.teamId)} className="flex items-center gap-1.5 hover:text-foreground">
-                          <EntityAvatar name={date.teamName} color={date.teamColor} avatarUrl={date.teamAvatarUrl} size={16} />
-                          {date.teamName}
-                        </HostLink>
-                        {date.place ? (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="size-3" aria-hidden />
-                            {date.place}
-                          </span>
-                        ) : null}
-                      </div>
-                      {mine.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {mine.map((place) => {
-                            const part = date.parts.find((one) => partKey(one) === place.partKey);
-                            return (
-                              <Badge key={place.id} variant="success" data-testid="home-on">
-                                {t("teamCalendar.youreOn", { part: part ? partLabel(part) : place.partKey })}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                      {/* As in My calendar: a guest answers for their place, a rehearsal follows its event. */}
-                      {!date.guest && !date.rehearsalFor ? (
-                        <EventAnswer
-                          value={date.myAnswer}
-                          labels
-                          label={t("teamCalendar.yourAnswer")}
-                          onAnswer={(answer, note, wishes) => act(() => api.answerTeamEventDate(date.teamId, date.eventId, date.date, { answer, ...(note !== undefined && { note }), ...(wishes !== undefined && { wishes }) }))}
-                          wishOptions={date.wishOptions}
-                          partLabel={partLabel}
-                          onClear={() => act(() => api.clearTeamEventDateAnswer(date.teamId, date.eventId, date.date))}
-                        />
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
+              {/* My calendar's row (issue #575): its page, its line-up and its set, as everywhere. */}
+              {dates.map((date) => (
+                <EventDateRow key={`${date.eventId}-${date.date}`} date={date} partLabel={partLabel} act={act} />
+              ))}
             </ul>
           )}
         </CardContent>

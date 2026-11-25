@@ -18,6 +18,8 @@ export interface PlanningHost {
     team: (teamId: string) => string;
     organization: (organizationId: string) => string;
     organizationEvents: (organizationId: string) => string;
+    /** One date's page (issue #575): the same path, /events/:eventId/:date, in every app. */
+    eventDate: (eventId: string, date: string) => string;
     /** The Notifications page (issue #149). */
     notifications: string;
     /** The Notifications settings card (issue #568): how each kind reaches one, and one's devices. */

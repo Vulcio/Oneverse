@@ -91,6 +91,11 @@ export function isTimeZone(value: string): boolean {
 }
 
 /** A date `days` days after `date` (before, if negative). */
+/** One event date's page (issue #575): the same path in Plan, Songverse and Oneverse's home, where notifications about a date lead. */
+export function eventDatePath(eventId: string, date: string): string {
+  return `/events/${eventId}/${date}`;
+}
+
 export function addDays(date: string, days: number): string {
   const [y, m, d] = date.split("-").map(Number) as [number, number, number];
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, calendarFeed, callAt, eventDates, localDate, localTime, type CalendarFeedEntry } from "@oneverse/core";
+import { addDays, eventDatePath, calendarFeed, callAt, eventDates, localDate, localTime, type CalendarFeedEntry } from "@oneverse/core";
 import en from "@oneverse/core/i18n/locales/en";
 import fr from "@oneverse/core/i18n/locales/fr";
 import { createHash, randomBytes } from "node:crypto";
@@ -107,7 +107,8 @@ export class CalendarFeedService {
           title: date.title || event.title,
           location: event.place,
           description: [callLine(date.startsAt, event.callMinutes, event.timeZone, locale), event.note, setUrl].filter(Boolean).join("\n"),
-          url: setUrl,
+          // Its page (issue #575): when, where, the line-up and the set.
+          url: `${webUrl()}${eventDatePath(event.id, date.date)}`,
         });
       }
     }
@@ -146,7 +147,7 @@ export class CalendarFeedService {
         title: `${date.title || event.title} (${event.team.name})`,
         location: event.place,
         description: [callLine(date.startsAt, event.callMinutes, event.timeZone, locale), event.team.name, event.note, setUrl].filter(Boolean).join("\n"),
-        url: setUrl,
+        url: `${webUrl()}${eventDatePath(event.id, day)}`,
       });
     }
     // The rehearsals of the dates they signed up for (issue #235, phase 7).
@@ -165,7 +166,7 @@ export class CalendarFeedService {
           title: `${rehearsal.title} (${rehearsal.team.name})`,
           location: rehearsal.place,
           description: [callLine(date.startsAt, rehearsal.callMinutes, rehearsal.timeZone, locale), rehearsal.team.name, rehearsal.note, setUrl].filter(Boolean).join("\n"),
-          url: setUrl,
+          url: `${webUrl()}${eventDatePath(rehearsal.id, date.date)}`,
         });
       }
     }

@@ -37,6 +37,10 @@ With **Sign up** or **If needed**, the hand button beside your answer opens **Wh
 
 The team's admins see, beside each date, how many members signed up, answered if needed, can't make it, and haven't answered. Clicking it opens **Who can play**: everyone's answer, with their notes and days away. An admin can answer there for a member who doesn't use Songverse; it shows as answered by them.
 
+### A date's page
+
+Each date has its own page: its title on the team's calendar, on **My calendar** and in Oneverse's **Your next dates** opens it, and so do the notifications and reminders about that date and its entry in your calendar link. It's the same page in Songverse, Plan and Oneverse: when and where (with **Moved from** if the date moved), the event's note, **Your answer**, its **Line-up** - **You're on Drums** to accept or decline, the places you can take - its **Rehearsals**, and **Open set**. Those who change the set see **Who can play** too. The team's admins have **Edit the line-up** and a link to the team's calendar, where the event itself is changed. A date that isn't on your calendar - another team's, or cancelled for good - says so.
+
 ### Positions needed
 
 In an event's dialog, **Positions needed** lists what it needs and how many: **Add a position** picks one - **Host**, **Speaker**, **Music**, **Media operator**, **Audio operator**, **Lights**, **Technician** - the team's own positions (see [Positions](/organizations/#positions)), a name the team used before, or **Another name…** ("Welcome", "Coffee"). An event asks for roles, not instruments: on each date's set, whoever is on **Music** asks for the instruments that date needs (see [Who can play](/sets/#who-can-play)); events made before keep the instruments they asked for. A member covers the roles they listed under **Roles** on their dashboard, and the positions they ticked; anyone covers a position with a name of the team's own.

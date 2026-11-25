@@ -1908,6 +1908,13 @@ export interface MyEventDate extends EventDate {
   rehearsalFor: RehearsalFor | null;
 }
 
+/** One date's page (issue #575): as on one's calendar, with the event's note and its rehearsals for that date. */
+export interface MyEventDateDetail extends MyEventDate {
+  locationId: string | null;
+  note: string | null;
+  rehearsals: { eventId: string; date: string; startsAt: string; endsAt: string; title: string }[];
+}
+
 /** What a rehearsal's date is for (issue #235, phase 7): its event, that date, and its title. */
 export interface RehearsalFor {
   eventId: string;
@@ -3337,6 +3344,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     clearTeamEventDateAnswerFor: (teamId: string, eventId: string, date: string, userId: string) =>
       request<void>(`/teams/${teamId}/events/${eventId}/dates/${date}/answers/${userId}`, { method: "DELETE" }),
     listMyEventDates: (from: string, to: string) => request<MyEventDate[]>(`/users/me/event-dates?${new URLSearchParams({ from, to })}`),
+    getMyEventDate: (eventId: string, date: string) => request<MyEventDateDetail>(`/users/me/event-dates/${eventId}/${date}`),
     listOpenPlaces: (from: string, to: string) => request<OpenPlace[]>(`/users/me/open-places?${new URLSearchParams({ from, to })}`),
     takeOpenPlace: (data: VolunteerRequest) => request<LineupPlace>("/users/me/open-places", { method: "POST", body: JSON.stringify(data) }),
     giveUpOpenPlace: (assignmentId: string) => request<void>(`/users/me/open-places/${assignmentId}`, { method: "DELETE" }),

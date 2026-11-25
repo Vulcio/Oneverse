@@ -1,19 +1,15 @@
 import { addDays, localDate, type AwayDays, type CustomInstrument, type MyEventDate, type OpenPlace } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
-import { MapPin, Repeat } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AwayDaysCard } from "../components/away-days-card";
 import { CalendarFeedCard } from "../components/calendar-feed-card";
 import { OpenPlacesCard } from "../components/open-places-card";
-import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
-import { EventAnswer } from "../components/event-answer";
-import { LineupLine, usePartLabel } from "../components/lineup";
-import { Badge } from "@oneverse/ui/components/badge";
+import { EventDateRow } from "../components/event-date-row";
+import { usePartLabel } from "../components/lineup";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent } from "@oneverse/ui/components/card";
-import { HostLink, usePlanning } from "../host";
-import { cn } from "@oneverse/ui/lib/utils";
+import { usePlanning } from "../host";
 import { FieldError } from "@oneverse/ui/components/field";
 
 /** How far the page shows, then how much more each "Show more" adds. */
@@ -28,8 +24,8 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * every date in them that isn't answered.
  */
 export function MyCalendarPage() {
-  const { api, links, sets } = usePlanning();
-  const { t, i18n } = useTranslation();
+  const { api } = usePlanning();
+  const { t } = useTranslation();
   const router = useRouter();
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
   const [dates, setDates] = useState<MyEventDate[] | null>(null);
@@ -69,9 +65,6 @@ export function MyCalendarPage() {
     }
   };
 
-  const dayFormat = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short" });
-  const timeFormat = (zone: string) => new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit", timeZone: zone });
-
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -87,71 +80,7 @@ export function MyCalendarPage() {
             ) : (
               <ul className="flex flex-col divide-y" aria-label={t("teamCalendar.myCalendar")}>
                 {dates.map((date) => (
-                  <li
-                    key={`${date.eventId}-${date.date}`}
-                    // Narrow (a phone): the date and its set on one line, the rest under them, full width.
-                    className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2 py-3 first:pt-0 last:pb-0 @lg:flex @lg:flex-wrap @lg:gap-y-1", date.cancelled && "text-muted-foreground")}
-                    data-event-date={date.date}
-                    data-event-id={date.eventId}
-                  >
-                    <div className="w-28 shrink-0 text-sm tabular-nums">
-                      <div className="font-medium">{dayFormat.format(new Date(`${date.date}T12:00:00Z`))}</div>
-                      <div className="text-xs text-muted-foreground">{timeFormat(date.timeZone).format(new Date(date.startsAt))}</div>
-                      {date.callAt ? (
-                        <div className="text-xs text-muted-foreground" data-testid="calendar-call">
-                          {t("teamCalendar.callAt", { time: timeFormat(date.timeZone).format(new Date(date.callAt)) })}
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="col-span-2 flex min-w-0 flex-1 flex-col gap-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className={cn("text-sm font-medium", date.cancelled && "line-through")}>{date.title}</span>
-                        {date.repeats ? <Repeat className="size-3.5 text-muted-foreground" aria-label={t("teamCalendar.repeats")} /> : null}
-                        {date.rehearsalFor ? <Badge variant="muted" data-testid="calendar-rehearsal">{t("teamCalendar.rehearsalBadge")}</Badge> : null}
-                        {date.cancelled ? <Badge variant="outline">{t("teamCalendar.cancelled")}</Badge> : null}
-                      </div>
-                      {date.rehearsalFor ? (
-                        <span className="text-xs text-muted-foreground" data-testid="calendar-rehearsal-of">
-                          {t("teamCalendar.rehearsalOf", { title: date.rehearsalFor.title, date: dayFormat.format(new Date(`${date.rehearsalFor.date}T12:00:00Z`)) })}
-                        </span>
-                      ) : null}
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                        <HostLink href={links.team(date.teamId)} className="flex items-center gap-1.5 hover:text-foreground">
-                          <EntityAvatar name={date.teamName} color={date.teamColor} avatarUrl={date.teamAvatarUrl} size={16} />
-                          {date.teamName}
-                        </HostLink>
-                        {date.place ? (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="size-3" aria-hidden />
-                            {date.place}
-                          </span>
-                        ) : null}
-                      </div>
-                      {/* A guest on another team's line-up answers for their place, not the date; a rehearsal follows its event's line-up. */}
-                      {!date.cancelled && !date.guest && !date.rehearsalFor ? (
-                        <div className="mt-1">
-                          <EventAnswer
-                            value={date.myAnswer}
-                            labels
-                            label={t("teamCalendar.yourAnswer")}
-                            onAnswer={(answer, note, wishes) => act(() => api.answerTeamEventDate(date.teamId, date.eventId, date.date, { answer, ...(note !== undefined && { note }), ...(wishes !== undefined && { wishes }) }))}
-                            wishOptions={date.wishOptions}
-                            partLabel={partLabel}
-                            onClear={() => act(() => api.clearTeamEventDateAnswer(date.teamId, date.eventId, date.date))}
-                          />
-                        </div>
-                      ) : null}
-                      {!date.cancelled && !date.rehearsalFor ? (
-                        <LineupLine teamId={date.teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} missing={date.missing} volunteerOptions={date.volunteerOptions} onChanged={() => act(async () => {})} />
-                      ) : null}
-                    </div>
-                    {!date.cancelled && date.setlistId && sets ? (
-                      <Button variant="outline" size="sm" className="col-start-2 row-start-1" render={<HostLink href={sets.href(date.setlistId)} />}>
-                        {t("teamCalendar.openSet")}
-                        <span className="text-muted-foreground">· {t("teamCalendar.setItems", { count: date.songCount })}</span>
-                      </Button>
-                    ) : null}
-                  </li>
+                  <EventDateRow key={`${date.eventId}-${date.date}`} date={date} partLabel={partLabel} act={act} />
                 ))}
               </ul>
             )}

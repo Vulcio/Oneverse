@@ -16,7 +16,7 @@ import { LineupService } from "./lineup.service.js";
 import { RemindersService } from "./reminders.service.js";
 import { TeamEventsService } from "./team-events.service.js";
 
-function dateParam(date: string): string {
+export function dateParam(date: string): string {
   if (!isCalendarDate(date)) throw new BadRequestException(["date must be a date, YYYY-MM-DD"]);
   return date;
 }

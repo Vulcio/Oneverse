@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { AVAILABILITY_ANSWERS, missingRequired, volunteerOptions, callAt, wishOptions, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@oneverse/core";
+import { eventDatePath, AVAILABILITY_ANSWERS, REHEARSAL_DAYS_BEFORE_MAX, addDays, missingRequired, volunteerOptions, callAt, wishOptions, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@oneverse/core";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
@@ -184,7 +184,7 @@ export class AvailabilityService {
       // They're told an admin answered for them (issue #236).
       const [admin, team] = await Promise.all([this.prisma.client.user.findUnique({ where: { id: by }, select: { displayName: true } }), this.prisma.client.team.findUnique({ where: { id: teamId }, select: { name: true } })]);
       const [shown] = eventDates(timingOf(event), date, date, changesOf(event));
-      await this.notifications.notify([{ userId, kind: "ANSWERED_FOR_YOU", data: { event: shown?.title || event.title, date, team: team?.name ?? "", answer: row.answer, by: admin?.displayName ?? "" }, url: "/calendar", teamId }], by);
+      await this.notifications.notify([{ userId, kind: "ANSWERED_FOR_YOU", data: { event: shown?.title || event.title, date, team: team?.name ?? "", answer: row.answer, by: admin?.displayName ?? "" }, url: eventDatePath(eventId, date), teamId }], by);
     }
     return { answer: row.answer, note: row.note, away: false, byAdmin: !!row.answeredByUserId, wishes: row.wishes };
   }
@@ -274,6 +274,26 @@ export class AvailabilityService {
   }
 
   // --- someone's calendar, across their teams
+
+  /**
+   * One date, as on someone's calendar (issue #575): for its page in every
+   * app. Only a date of one of their teams, or one they're on the line-up
+   * of as a guest; with the event's rehearsals for it.
+   */
+  async myDate(userId: string, eventId: string, date: string) {
+    const [found] = (await this.myDates(userId, date, date)).filter((one) => one.eventId === eventId && one.date === date);
+    if (!found) throw new NotFoundException("No such date on your calendar");
+    const parent = found.rehearsalFor ? null : await this.prisma.client.teamEvent.findUnique({ where: { id: eventId }, include: withDates });
+    const rehearsals = parent ? await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: eventId }, include: withDates }) : [];
+    return {
+      ...found,
+      locationId: parent?.locationId ?? null,
+      note: parent?.note ?? null,
+      rehearsals: rehearsals
+        .flatMap((rehearsal) => rehearsalDatesOf(rehearsal, parent!, addDays(date, -REHEARSAL_DAYS_BEFORE_MAX), date).filter((one) => one.forDate === date && !one.cancelled).map((one) => ({ eventId: rehearsal.id, date: one.date, startsAt: one.startsAt, endsAt: one.endsAt, title: rehearsal.title })))
+        .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+    };
+  }
 
   /** The dates of every team someone is in, from `from` to `to`, with their answer and each date's set. */
   async myDates(userId: string, from: string, to: string) {

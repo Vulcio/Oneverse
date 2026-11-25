@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { addDays, callAt, dayBeforeReminderDue, deadlineReminderDue, eventDates, localDate, localTime, type CreateAnswerRequestRequest } from "@oneverse/core";
+import { eventDatePath, addDays, callAt, dayBeforeReminderDue, deadlineReminderDue, eventDates, localDate, localTime, type CreateAnswerRequestRequest } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -151,7 +151,7 @@ export class RemindersService {
             userId,
             kind: "EVENT_TOMORROW",
             data: { event: date.title || event.title, date: date.date, team: event.team.name, startTime: date.startTime, ...(event.place ? { place: event.place } : {}), ...(call ? { callTime: localTime(call, event.timeZone) } : {}) },
-            url: setlist ? `/sets/${setlist.id}` : "/calendar",
+            url: eventDatePath(event.id, date.date),
             teamId: event.teamId,
           })),
         );

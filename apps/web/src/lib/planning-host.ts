@@ -12,6 +12,7 @@ export const planningHost: PlanningHost = {
     team: (teamId) => `/teams/${teamId}`,
     organization: (organizationId) => `/organizations/${organizationId}`,
     organizationEvents: (organizationId) => `/organizations/${organizationId}/events`,
+    eventDate: (eventId, date) => `/events/${eventId}/${date}`,
     notifications: "/notifications",
     notificationSettings: "/dashboard#notifications",
     notification: (url) => url,

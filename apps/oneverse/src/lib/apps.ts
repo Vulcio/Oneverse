@@ -23,6 +23,9 @@ export function appAddresses() {
 }
 
 /** The paths Plan has (as planiverse's planning-host.ts): a notification's path that isn't one opens in Songverse. */
+/** The home's own pages a notification opens here (issue #575): a date's. */
+const HOME_PATHS = /^\/events\//;
+
 const PLAN_PATHS = /^\/(calendar|teams|organizations|account|notifications)(\/|$|[?#])/;
 
 /**
@@ -43,10 +46,12 @@ export function planningHost(): PlanningHost {
       team: (teamId) => `${planning}/teams/${teamId}`,
       organization: (organizationId) => `${planning}/organizations/${organizationId}`,
       organizationEvents: (organizationId) => `${planning}/organizations/${organizationId}/events`,
+      // A date's page is the home's own (issue #575), as in Plan and Songverse.
+      eventDate: (eventId, date) => `/events/${eventId}/${date}`,
       notifications: `${planning}/notifications`,
       // The Notifications settings (issue #568): Plan's account page, or Songverse's dashboard where Plan isn't deployed.
       notificationSettings: plan ? `${plan}/account#notifications` : `${songverse}/dashboard#notifications`,
-      notification: (url) => (/^https?:\/\//.test(url) ? url : `${PLAN_PATHS.test(url) ? planning : songverse}${url}`),
+      notification: (url) => (/^https?:\/\//.test(url) || HOME_PATHS.test(url) ? url : `${PLAN_PATHS.test(url) ? planning : songverse}${url}`),
     },
     sets: { href: (setlistId) => `${songverse}/sets/${setlistId}`, canMake: false },
     // No service worker here: a device gets them from Plan or Songverse.

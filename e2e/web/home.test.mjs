@@ -82,7 +82,7 @@ try {
     const places = page.getByTestId("open-places");
     await places.getByTestId("open-place-take").click();
     await places.waitFor({ state: "detached" });
-    await page.locator("[data-event-date]", { hasText: `Sunday ${stamp}` }).getByTestId("home-on").waitFor();
+    await page.locator("[data-event-date]", { hasText: `Sunday ${stamp}` }).locator("[data-my-place]").waitFor();
   });
 
   await step("the other organisation: no teams of its own, and no links", async () => {

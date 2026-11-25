@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, asksOpenTo, MUSIC_LEADER, partKey, withAsks, callAt, daysBetween, eventDates, eventFallsOn, EVENT_ONLY_PARTS, INSTRUMENTS, OWN_TEAM, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming, canMoveDate } from "@oneverse/core";
+import { eventDatePath, addDays, asksOpenTo, MUSIC_LEADER, partKey, withAsks, callAt, daysBetween, eventDates, eventFallsOn, EVENT_ONLY_PARTS, INSTRUMENTS, OWN_TEAM, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming, canMoveDate } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { eventLocation } from "../locations/locations.service.js";
@@ -143,7 +143,7 @@ export class TeamEventsService {
     for (const { date, userId } of signedUp) {
       if (!notices.has(date)) notices.set(date, this.dateNotice(before, after, date));
       const notice = notices.get(date);
-      if (notice) sent.push({ userId, kind: notice.kind, data: { ...notice.data, team }, url: "/calendar", teamId: before.teamId });
+      if (notice) sent.push({ userId, kind: notice.kind, data: { ...notice.data, team }, url: eventDatePath(before.id, date), teamId: before.teamId });
     }
     await this.notifications.notify(sent, by);
   }
@@ -552,7 +552,7 @@ export class TeamEventsService {
       const team = await this.teamName(teamId);
       const title = shown.title || fresh.title;
       await this.notifications.notify(
-        signedUp.map(({ userId }) => ({ userId, kind: "EVENT_DATE_MOVED" as const, data: { event: title, date, to, startTime: shown.startTime, team }, url: "/calendar", teamId })),
+        signedUp.map(({ userId }) => ({ userId, kind: "EVENT_DATE_MOVED" as const, data: { event: title, date, to, startTime: shown.startTime, team }, url: eventDatePath(eventId, to), teamId })),
         by,
       );
     }

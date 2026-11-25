@@ -11,7 +11,7 @@ export function songverseUrl(): string | null {
 }
 
 /** The paths Planiverse has: a notification's path that isn't one opens in Songverse. */
-const PLANIVERSE_PATHS = /^\/(calendar|teams|organizations|account|notifications)(\/|$|[?#])/;
+const PLANIVERSE_PATHS = /^\/(calendar|events|teams|organizations|account|notifications)(\/|$|[?#])/;
 
 /** Planiverse's pages, and Songverse's sets, opened there (issue #241) - made from here too (issue #531). */
 export function planningHost(): PlanningHost {
@@ -25,6 +25,7 @@ export function planningHost(): PlanningHost {
       team: (teamId) => `/teams/${teamId}`,
       organization: (organizationId) => `/organizations/${organizationId}`,
       organizationEvents: (organizationId) => `/organizations/${organizationId}/events`,
+      eventDate: (eventId, date) => `/events/${eventId}/${date}`,
       notifications: "/notifications",
       notificationSettings: "/account#notifications",
       // Its own pages here; the rest (a set, a song, People) in Songverse - or My calendar without it.

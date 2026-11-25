@@ -79,6 +79,7 @@ import { Route as ProtectedSongbooksNewRouteImport } from './routes/_protected/s
 import { Route as ProtectedTeamsIndexRouteImport } from './routes/_protected/teams/index'
 import { Route as ProtectedTeamsTeamIdRouteImport } from './routes/_protected/teams/$teamId'
 import { Route as ProtectedTeamsNewRouteImport } from './routes/_protected/teams/new'
+import { Route as ProtectedEventsEventIdDateRouteImport } from './routes/_protected/events/$eventId.$date'
 import { Route as ProtectedLibrarySongVersionIdLiveRouteImport } from './routes/_protected/library/$songVersionId_.live'
 import { Route as ProtectedLibraryArtistsNameRouteImport } from './routes/_protected/library/artists_.$name'
 import { Route as ProtectedOrganizationsOrganizationIdEventsRouteImport } from './routes/_protected/organizations/$organizationId_.events'
@@ -453,6 +454,12 @@ const ProtectedTeamsNewRoute = ProtectedTeamsNewRouteImport.update({
   path: '/teams/new',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedEventsEventIdDateRoute =
+  ProtectedEventsEventIdDateRouteImport.update({
+    id: '/events/$eventId/$date',
+    path: '/events/$eventId/$date',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedLibrarySongVersionIdLiveRoute =
   ProtectedLibrarySongVersionIdLiveRouteImport.update({
     id: '/library/$songVersionId_/live',
@@ -572,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/songbook-catalogs/': typeof ProtectedSongbookCatalogsIndexRoute
   '/songbooks/': typeof ProtectedSongbooksIndexRoute
   '/teams/': typeof ProtectedTeamsIndexRoute
+  '/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
   '/library/$songVersionId/live': typeof ProtectedLibrarySongVersionIdLiveRoute
   '/library/artists/$name': typeof ProtectedLibraryArtistsNameRoute
   '/organizations/$organizationId/events': typeof ProtectedOrganizationsOrganizationIdEventsRoute
@@ -649,6 +657,7 @@ export interface FileRoutesByTo {
   '/songbook-catalogs': typeof ProtectedSongbookCatalogsIndexRoute
   '/songbooks': typeof ProtectedSongbooksIndexRoute
   '/teams': typeof ProtectedTeamsIndexRoute
+  '/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
   '/library/$songVersionId/live': typeof ProtectedLibrarySongVersionIdLiveRoute
   '/library/artists/$name': typeof ProtectedLibraryArtistsNameRoute
   '/organizations/$organizationId/events': typeof ProtectedOrganizationsOrganizationIdEventsRoute
@@ -730,6 +739,7 @@ export interface FileRoutesById {
   '/_protected/songbook-catalogs/': typeof ProtectedSongbookCatalogsIndexRoute
   '/_protected/songbooks/': typeof ProtectedSongbooksIndexRoute
   '/_protected/teams/': typeof ProtectedTeamsIndexRoute
+  '/_protected/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
   '/_protected/library/$songVersionId_/live': typeof ProtectedLibrarySongVersionIdLiveRoute
   '/_protected/library/artists_/$name': typeof ProtectedLibraryArtistsNameRoute
   '/_protected/organizations/$organizationId_/events': typeof ProtectedOrganizationsOrganizationIdEventsRoute
@@ -811,6 +821,7 @@ export interface FileRouteTypes {
     | '/songbook-catalogs/'
     | '/songbooks/'
     | '/teams/'
+    | '/events/$eventId/$date'
     | '/library/$songVersionId/live'
     | '/library/artists/$name'
     | '/organizations/$organizationId/events'
@@ -888,6 +899,7 @@ export interface FileRouteTypes {
     | '/songbook-catalogs'
     | '/songbooks'
     | '/teams'
+    | '/events/$eventId/$date'
     | '/library/$songVersionId/live'
     | '/library/artists/$name'
     | '/organizations/$organizationId/events'
@@ -968,6 +980,7 @@ export interface FileRouteTypes {
     | '/_protected/songbook-catalogs/'
     | '/_protected/songbooks/'
     | '/_protected/teams/'
+    | '/_protected/events/$eventId/$date'
     | '/_protected/library/$songVersionId_/live'
     | '/_protected/library/artists_/$name'
     | '/_protected/organizations/$organizationId_/events'
@@ -1484,6 +1497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedTeamsNewRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/events/$eventId/$date': {
+      id: '/_protected/events/$eventId/$date'
+      path: '/events/$eventId/$date'
+      fullPath: '/events/$eventId/$date'
+      preLoaderRoute: typeof ProtectedEventsEventIdDateRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/library/$songVersionId_/live': {
       id: '/_protected/library/$songVersionId_/live'
       path: '/library/$songVersionId/live'
@@ -1648,6 +1668,7 @@ interface ProtectedRouteChildren {
   ProtectedSongbookCatalogsIndexRoute: typeof ProtectedSongbookCatalogsIndexRoute
   ProtectedSongbooksIndexRoute: typeof ProtectedSongbooksIndexRoute
   ProtectedTeamsIndexRoute: typeof ProtectedTeamsIndexRoute
+  ProtectedEventsEventIdDateRoute: typeof ProtectedEventsEventIdDateRoute
   ProtectedLibrarySongVersionIdLiveRoute: typeof ProtectedLibrarySongVersionIdLiveRoute
   ProtectedLibraryArtistsNameRoute: typeof ProtectedLibraryArtistsNameRoute
   ProtectedOrganizationsOrganizationIdEventsRoute: typeof ProtectedOrganizationsOrganizationIdEventsRoute
@@ -1697,6 +1718,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedSongbookCatalogsIndexRoute: ProtectedSongbookCatalogsIndexRoute,
   ProtectedSongbooksIndexRoute: ProtectedSongbooksIndexRoute,
   ProtectedTeamsIndexRoute: ProtectedTeamsIndexRoute,
+  ProtectedEventsEventIdDateRoute: ProtectedEventsEventIdDateRoute,
   ProtectedLibrarySongVersionIdLiveRoute:
     ProtectedLibrarySongVersionIdLiveRoute,
   ProtectedLibraryArtistsNameRoute: ProtectedLibraryArtistsNameRoute,

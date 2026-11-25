@@ -5,6 +5,7 @@ import type { AuthenticatedUser } from "../common/types/authenticated-request.js
 import { AvailabilityService } from "./availability.service.js";
 import { CreateAwayDto, MyEventDatesQueryDto, UpdateAwayDto, VolunteerDto } from "./dto/team-events.dto.js";
 import { LineupService } from "./lineup.service.js";
+import { dateParam } from "./team-events.controller.js";
 
 /** Someone's own calendar (issue #235): the dates of all their teams, and the days they're away. */
 @ApiTags("team calendar")
@@ -38,6 +39,12 @@ export class MyCalendarController {
   @Get("event-dates")
   dates(@SignedIn() user: AuthenticatedUser, @Query() query: MyEventDatesQueryDto) {
     return this.availability.myDates(user.id, query.from, query.to);
+  }
+
+  /** One date of one's calendar (issue #575): its page, the same in every app. */
+  @Get("event-dates/:eventId/:date")
+  date(@SignedIn() user: AuthenticatedUser, @Param("eventId") eventId: string, @Param("date") date: string) {
+    return this.availability.myDate(user.id, eventId, dateParam(date));
   }
 
   @Get("away")

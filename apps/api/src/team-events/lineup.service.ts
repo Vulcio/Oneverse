@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, coversPart, daysBetween, isMembersOnlyPart, placesLeft, type VolunteerRequest, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
+import { eventDatePath, addDays, coversPart, daysBetween, isMembersOnlyPart, placesLeft, type VolunteerRequest, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, swapWidensAt, type AssignPartRequest, type EventPart, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -152,7 +152,7 @@ export class LineupService {
     }
     if (dto.userId && guest && event.withSet) await this.letSeeSet(teamId, eventId, date, dto.userId);
     if (dto.userId && !accepted) {
-      await this.notifications.notify([{ userId: dto.userId, kind: "SCHEDULED", data: { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, dto.part)) }, url: "/calendar", teamId }]);
+      await this.notifications.notify([{ userId: dto.userId, kind: "SCHEDULED", data: { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, dto.part)) }, url: eventDatePath(eventId, date), teamId }]);
     }
     return { id: row.id, userId: row.userId, displayName: row.user?.displayName ?? row.guestName ?? "", partKey: row.partKey, status: row.status, guest: row.userId ? (guest ? "account" : null) : "external", guestEmail: row.guestEmail };
   }
@@ -169,7 +169,7 @@ export class LineupService {
     const setlistId = row.event.dates.find((one) => dateText(one.date) === date)?.setlist?.id;
     if (!member && !stillOn && setlistId) await this.prisma.client.setlistGuest.deleteMany({ where: { setlistId, userId: row.userId } });
     if (row.userId !== by && row.status !== "DECLINED" && date >= localDate(new Date(), row.event.timeZone)) {
-      await this.notifications.notify([{ userId: row.userId, kind: "UNSCHEDULED", data: { event: this.titleOn(row.event, date), date, team: row.event.team.name, ...(await this.partData(row.event, row.partKey)) }, url: "/calendar", teamId }]);
+      await this.notifications.notify([{ userId: row.userId, kind: "UNSCHEDULED", data: { event: this.titleOn(row.event, date), date, team: row.event.team.name, ...(await this.partData(row.event, row.partKey)) }, url: eventDatePath(eventId, date), teamId }]);
     }
   }
 
@@ -200,7 +200,7 @@ export class LineupService {
       ]);
       const data = { event: this.titleOn(event, date), date, team: event.team.name, by: me?.displayName ?? "", ...(await this.partData(event, row.partKey)) };
       await this.notifications.notify(
-        admins.map(({ userId: admin }) => ({ userId: admin, kind: "SCHEDULE_DECLINED" as const, data, url: `/teams/${teamId}`, teamId })),
+        admins.map(({ userId: admin }) => ({ userId: admin, kind: "SCHEDULE_DECLINED" as const, data, url: eventDatePath(eventId, date), teamId })),
         userId,
       );
     }
@@ -255,7 +255,7 @@ export class LineupService {
     const me = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { displayName: true } });
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by: me?.displayName ?? "", ...(await this.partData(event, row.partKey)) };
     const asked = first.length > 0 ? first : candidates;
-    const notified = await this.notifications.notify(asked.map((candidate) => ({ userId: candidate.userId, kind: "SWAP_OFFERED" as const, data, url: "/calendar", teamId })));
+    const notified = await this.notifications.notify(asked.map((candidate) => ({ userId: candidate.userId, kind: "SWAP_OFFERED" as const, data, url: eventDatePath(eventId, date), teamId })));
     return { id: row.id, swapRequestedAt: now.toISOString(), notified };
   }
 
@@ -282,7 +282,7 @@ export class LineupService {
       if (!part) continue;
       const others = (await this.swapCandidatesFor(row.event.teamId, row.eventId, date, part, row.userId!)).filter((one) => one.answer !== "IF_NEEDED");
       const data = { event: this.titleOn(row.event, date), date, team: row.event.team.name, by: row.user?.displayName ?? "", ...(await this.partData(row.event, row.partKey)) };
-      told += await this.notifications.notify(others.map((one) => ({ userId: one.userId, kind: "SWAP_OFFERED" as const, data, url: "/calendar", teamId: row.event.teamId })));
+      told += await this.notifications.notify(others.map((one) => ({ userId: one.userId, kind: "SWAP_OFFERED" as const, data, url: eventDatePath(row.eventId, date), teamId: row.event.teamId })));
     }
     return told;
   }
@@ -331,7 +331,7 @@ export class LineupService {
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by: member.user.displayName, ...(await this.partData(event, row.partKey)) };
     const told = [...new Set([row.userId!, ...admins.map((admin) => admin.userId)])];
     await this.notifications.notify(
-      told.map((person) => ({ userId: person, kind: "SWAP_TAKEN" as const, data, url: person === row.userId ? "/calendar" : `/teams/${teamId}`, teamId })),
+      told.map((person) => ({ userId: person, kind: "SWAP_TAKEN" as const, data, url: eventDatePath(eventId, date), teamId })),
       userId,
     );
     return { id: created.id, userId, partKey: created.partKey, status: created.status };
@@ -458,7 +458,7 @@ export class LineupService {
     if (!row?.userId || row.assignedByUserId !== row.userId || row.status !== "PENDING") throw new NotFoundException("No offer waiting to be confirmed");
     const updated = await this.prisma.client.teamEventAssignment.update({ where: { id: row.id }, data: { status: "ACCEPTED", respondedAt: new Date() } });
     const data = { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, row.partKey)) };
-    await this.notifications.notify([{ userId: row.userId, kind: "OFFER_CONFIRMED", data, url: `/teams/${teamId}`, teamId }], by.id);
+    await this.notifications.notify([{ userId: row.userId, kind: "OFFER_CONFIRMED", data, url: eventDatePath(eventId, date), teamId }], by.id);
     return { id: updated.id, status: updated.status, note: updated.note };
   }
 
@@ -473,6 +473,6 @@ export class LineupService {
   private async tellAdmins(teamId: string, event: EventRow & { team: { name: string } }, date: string, key: string, kind: "VOLUNTEERED" | "OFFER_TO_CONFIRM" | "VOLUNTEER_WITHDREW", by: string, except: string) {
     const admins = await this.prisma.client.teamMembership.findMany({ where: { teamId, role: "ADMIN" }, select: { userId: true } });
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by, ...(await this.partData(event, key)) };
-    await this.notifications.notify(admins.map(({ userId: admin }) => ({ userId: admin, kind, data, url: `/teams/${teamId}`, teamId })), except);
+    await this.notifications.notify(admins.map(({ userId: admin }) => ({ userId: admin, kind, data, url: eventDatePath(event.id, date), teamId })), except);
   }
 }

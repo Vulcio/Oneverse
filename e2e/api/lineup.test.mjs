@@ -57,7 +57,7 @@ check("a member scheduled: asked", r.status === 201 && drums.status === "PENDING
 r = await call(admin, "POST", `${base}/lineup`, { userId: drummer.id, part: "DRUMS" });
 check("…twice: refused", r.status === 409, String(r.status));
 const asked = (await notes(drummer, "SCHEDULED"))[0];
-check("…and told: the part, the date", asked?.data.part === "DRUMS" && asked.data.date === date && asked.data.event === "Sunday" && asked.url === "/calendar", JSON.stringify(asked));
+check("…and told: the part, the date", asked?.data.part === "DRUMS" && asked.data.date === date && asked.data.event === "Sunday" && asked.url === `/events/${event.id}/${date}`, JSON.stringify(asked));
 r = await call(admin, "POST", `${base}/lineup`, { userId: sound.id, part: "SOUND_ENGINEER" });
 const soundPlace = r.body;
 await call(admin, "POST", `/teams/${team.id}/events/${other.id}/dates/${date}/lineup`, { userId: drummer.id, part: "DRUMS" });
@@ -85,7 +85,7 @@ check("only the person scheduled answers", r.status === 404, String(r.status));
 r = await call(drummer, "PUT", `${base}/lineup/${drums.id}/response`, { status: "DECLINED", note: "Away that weekend" });
 check("declined, with a note", r.status === 200 && r.body.status === "DECLINED" && r.body.note === "Away that weekend", JSON.stringify(r.body));
 const declined = (await notes(admin, "SCHEDULE_DECLINED"))[0];
-check("the admins are told who can't, and what", declined?.data.by === "lineup drummer" && declined.data.part === "DRUMS" && declined.url === `/teams/${team.id}`, JSON.stringify(declined));
+check("the admins are told who can't, and what", declined?.data.by === "lineup drummer" && declined.data.part === "DRUMS" && declined.url === `/events/${event.id}/${date}`, JSON.stringify(declined));
 check("declining: no longer signed up", (await setOf(drummer))?.signedUp === false);
 check("the admins see the note", (await dateAs(admin)).lineup.find((place) => place.id === drums.id).note === "Away that weekend");
 r = await call(drummer, "PUT", `${base}/lineup/${drums.id}/response`, { status: "ACCEPTED" });

@@ -32,7 +32,7 @@ const unfolded = body.replace(/\r\n /g, "");
 const starts = [...unfolded.matchAll(/^DTSTART:(\S+)$/gm)].map((m) => m[1]);
 const ical = (date) => date.replace(/-/g, "");
 check("only the dates signed up for: not If needed, not cancelled", starts.length === 2 && starts[0].startsWith(ical(plus(3))) && starts[1].startsWith(ical(plus(17))), starts.join(" "));
-check("each with its team, place (escaped), note and set", unfolded.includes(`SUMMARY:Morning service (Feed ${stamp})`) && unfolded.includes("LOCATION:Main hall\\; side door") && unfolded.includes("Arrive at 9:15") && /URL:http\S+\/sets\/\S+/.test(unfolded), unfolded.split("\r\n").filter((l) => /^(SUMMARY|LOCATION|URL)/.test(l)).join(" | "));
+check("each with its team, place (escaped), note, set and its page (issue #575)", unfolded.includes(`SUMMARY:Morning service (Feed ${stamp})`) && unfolded.includes("LOCATION:Main hall\\; side door") && unfolded.includes("Arrive at 9:15") && /\/sets\/\S+/.test(unfolded) && /URL:http\S+\/events\/\S+\/\d{4}-\d\d-\d\d/.test(unfolded), unfolded.split("\r\n").filter((l) => /^(SUMMARY|LOCATION|URL)/.test(l)).join(" | "));
 check("…and its call time (issue #240), in the reader's language", unfolded.includes("DESCRIPTION:Call 09:15\\n"), unfolded.split("\r\n").find((l) => l.startsWith("DESCRIPTION")));
 check("stable IDs, so calendars update the entries", unfolded.includes(`UID:${event.id}-${plus(3)}@songverse`));
 check("calendars told how often to look again", unfolded.includes("REFRESH-INTERVAL;VALUE=DURATION:PT60M"));

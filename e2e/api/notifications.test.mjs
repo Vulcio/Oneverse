@@ -35,7 +35,7 @@ await call(admin, "PUT", `${base}/${first}/answer`, { answer: "AVAILABLE" });
 // --- a date's time changes
 await call(admin, "PATCH", `${base}/${first}`, { startTime: "09:30" });
 let page = await list(singer);
-check("signed up: told the date changed, with its new time", page.unread === 1 && page.items[0].kind === "EVENT_DATE_CHANGED" && page.items[0].data.startTime === "09:30" && page.items[0].data.date === first && page.items[0].data.event === "Sunday service" && page.items[0].data.team === team.name && page.items[0].url === "/calendar", JSON.stringify(page));
+check("signed up: told the date changed, with its new time", page.unread === 1 && page.items[0].kind === "EVENT_DATE_CHANGED" && page.items[0].data.startTime === "09:30" && page.items[0].data.date === first && page.items[0].data.event === "Sunday service" && page.items[0].data.team === team.name && page.items[0].url === `/events/${weekly.id}/${first}`, JSON.stringify(page));
 check("If needed isn't signing up: not told", (await list(drummer)).items.length === 0);
 check("whoever made the change isn't told", (await list(admin)).items.length === 0);
 r = await call(singer, "GET", "/users/me/notifications/unread");

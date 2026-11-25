@@ -15,6 +15,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
+import { Route as ProtectedEventsEventIdDateRouteImport } from './routes/_protected/events/$eventId.$date'
 
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
@@ -45,6 +46,12 @@ const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedEventsEventIdDateRoute =
+  ProtectedEventsEventIdDateRouteImport.update({
+    id: '/events/$eventId/$date',
+    path: '/events/$eventId/$date',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ProtectedIndexRoute
@@ -52,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-out': typeof SignOutRoute
   '/account': typeof ProtectedAccountRoute
+  '/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
 export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
@@ -59,6 +67,7 @@ export interface FileRoutesByTo {
   '/sign-out': typeof SignOutRoute
   '/account': typeof ProtectedAccountRoute
   '/': typeof ProtectedIndexRoute
+  '/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,12 +77,25 @@ export interface FileRoutesById {
   '/sign-out': typeof SignOutRoute
   '/_protected/account': typeof ProtectedAccountRoute
   '/_protected/': typeof ProtectedIndexRoute
+  '/_protected/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/reset-password' | '/sign-in' | '/sign-out' | '/account'
+  fullPaths:
+    | '/'
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-out'
+    | '/account'
+    | '/events/$eventId/$date'
   fileRoutesByTo: FileRoutesByTo
-  to: '/reset-password' | '/sign-in' | '/sign-out' | '/account' | '/'
+  to:
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-out'
+    | '/account'
+    | '/'
+    | '/events/$eventId/$date'
   id:
     | '__root__'
     | '/_protected'
@@ -82,6 +104,7 @@ export interface FileRouteTypes {
     | '/sign-out'
     | '/_protected/account'
     | '/_protected/'
+    | '/_protected/events/$eventId/$date'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -135,17 +158,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAccountRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/events/$eventId/$date': {
+      id: '/_protected/events/$eventId/$date'
+      path: '/events/$eventId/$date'
+      fullPath: '/events/$eventId/$date'
+      preLoaderRoute: typeof ProtectedEventsEventIdDateRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
   }
 }
 
 interface ProtectedRouteChildren {
   ProtectedAccountRoute: typeof ProtectedAccountRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
+  ProtectedEventsEventIdDateRoute: typeof ProtectedEventsEventIdDateRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountRoute: ProtectedAccountRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
+  ProtectedEventsEventIdDateRoute: ProtectedEventsEventIdDateRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
