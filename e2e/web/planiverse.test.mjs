@@ -1,11 +1,11 @@
 // Planiverse (issue #241): the planning on its own, with the same account
 // as Songverse. Signed out, its sign-in page; signed in, My calendar with a
-// Songverse team's set opening in Songverse; an organisation, a group that
-// only plans and a Songverse team, whose sets open in Songverse (a group
+// Songverse team's set opening as its running order in the Oneverse app (issue #521); an organisation, a group that
+// only plans and a Songverse team, whose sets open there too (a group
 // that only plans has them too, issue #531); joining
 // an organisation by its link; signing out.
 import { chromium } from "playwright";
-import { LOG, ONEVERSE, PLANIVERSE, WEB, api, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { LOG, ONEVERSE, PLANIVERSE, api, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { readFileSync } from "node:fs";
 
 let page;
@@ -55,12 +55,12 @@ try {
     await page.locator("#signin-email").waitFor();
   });
 
-  await step("signed in with the Songverse account: My calendar, the set opening in Songverse", async () => {
+  await step("signed in with the Songverse account: My calendar, the set opening in the Oneverse app", async () => {
     await signInHere(alice);
     const row = page.locator("[data-event-date]", { hasText: "Sunday service" }).first();
     await row.waitFor();
     const href = await row.getByRole("link", { name: /Open set/ }).getAttribute("href");
-    if (href !== `${WEB}/sets/${setlistId}`) throw new Error(`the set opens at ${href}`);
+    if (href !== `${ONEVERSE}/sets/${setlistId}`) throw new Error(`the set opens at ${href}`);
     await page.locator("[data-event-date]", { hasText: "Door welcome" }).first().waitFor();
   });
 
@@ -73,24 +73,24 @@ try {
     await page.getByTestId("team-calendar").getByText("Door welcome").first().waitFor();
   });
 
-  await step("a Songverse team's calendar: its set opens in Songverse", async () => {
+  await step("a Songverse team's calendar: its set opens in the Oneverse app", async () => {
     await page.goto(`${PLANIVERSE}/teams/${music.id}`);
     const calendar = page.getByTestId("team-calendar");
     const open = calendar.getByTestId("calendar-open-set").first();
-    if ((await open.getAttribute("href")) !== `${WEB}/sets/${setlistId}`) throw new Error(`the set opens at ${await open.getAttribute("href")}`);
+    if ((await open.getAttribute("href")) !== `${ONEVERSE}/sets/${setlistId}`) throw new Error(`the set opens at ${await open.getAttribute("href")}`);
   });
 
-  await step("a group that only plans: its event's set planned from here, opening in Songverse (issue #531)", async () => {
+  await step("a group that only plans: its event's set planned from here, opening in the Oneverse app (issues #531, #521)", async () => {
     await page.goto(`${PLANIVERSE}/teams/${welcome.id}`);
     const calendar = page.getByTestId("team-calendar");
     const row = calendar.locator(`[data-event-id="${notices.id}"]`).first();
     await row.getByTestId("calendar-plan-set").click();
-    await page.waitForURL(`${WEB}/sets/**`);
+    await page.waitForURL(`${ONEVERSE}/sets/**`);
     const made = (await api(alice, "GET", `/teams/${welcome.id}/event-dates?from=${later}&to=${later}`))[0];
     if (!made?.setlistId || !page.url().endsWith(`/sets/${made.setlistId}`)) throw new Error(`the set: ${JSON.stringify(made)} at ${page.url()}`);
-    // A notification's address in Planiverse (its emails) goes on to Songverse too.
+    // A notification's address in Planiverse (its emails) goes there too.
     await page.goto(`${PLANIVERSE}/sets/${made.setlistId}`);
-    await page.waitForURL(`${WEB}/sets/${made.setlistId}`);
+    await page.waitForURL(`${ONEVERSE}/sets/${made.setlistId}`);
     await page.goto(`${PLANIVERSE}/organizations/${org.id}/events`);
     await page.getByTestId("org-new-event").waitFor();
   });
