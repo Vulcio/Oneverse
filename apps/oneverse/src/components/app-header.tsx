@@ -15,12 +15,15 @@ export function AppHeader({ awaitingApproval = false }: { awaitingApproval?: boo
   return (
     <header className="border-b">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link to="/" className="flex items-center gap-2 font-semibold" data-testid="home-link">
-          <OneverseBrand />
-        </Link>
+        {/* The other apps right beside its name, as in every app (issue #552). */}
+        <div className="flex items-center gap-1">
+          <Link to="/" className="flex items-center gap-2 font-semibold" data-testid="home-link">
+            <OneverseBrand />
+          </Link>
+          {awaitingApproval ? null : <AppSwitcher current="oneverse" api={apiClient} />}
+        </div>
         <div className="flex items-center gap-2">
         {/* Waiting for their organisation's approval (issue #533): nothing to be told of here yet. */}
-        {awaitingApproval ? null : <AppSwitcher current="oneverse" api={apiClient} />}
         {awaitingApproval ? null : <NotificationBell />}
         {awaitingApproval ? null : (
           <Button variant="ghost" size="sm" aria-label={t("nav.teams")} render={<Link to="/teams" data-testid="teams-link" />}>

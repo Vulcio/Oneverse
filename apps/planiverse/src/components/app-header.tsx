@@ -17,9 +17,13 @@ export function AppHeader({ session }: { session: AppSession }) {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-        <Link to="/calendar" className="flex items-center gap-2 font-semibold">
-          <PlaniverseBrand />
-        </Link>
+        {/* The other apps right beside its name, as in every app (issue #552). */}
+        <div className="flex items-center gap-1">
+          <Link to="/calendar" className="flex items-center gap-2 font-semibold">
+            <PlaniverseBrand />
+          </Link>
+          <AppSwitcher current="plan" api={apiClient} />
+        </div>
         <nav className="flex flex-1 items-center gap-1">
           <Link to="/calendar" className={tab} activeProps={{ className: "bg-accent text-accent-foreground" }} data-testid="nav-calendar">
             {t("nav.calendar")}
@@ -31,8 +35,6 @@ export function AppHeader({ session }: { session: AppSession }) {
             {t("nav.organizations")}
           </Link>
         </nav>
-        {/* The other apps (issue #552). */}
-        <AppSwitcher current="plan" api={apiClient} />
         {/* Its notifications (issue #242): the same as Songverse's bell. */}
         <NotificationBell />
         <DropdownMenu>
