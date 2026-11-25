@@ -111,6 +111,12 @@ export const UpdateTeamEventDateSchema = z.strictObject({
 });
 export type UpdateTeamEventDateRequest = z.input<typeof UpdateTeamEventDateSchema>;
 
+/** One date moved to another day (issue #576), with its answers, line-up and set: a day no other date of the event is on. */
+export const MoveEventDateSchema = z.strictObject({
+  to: date("to"),
+});
+export type MoveEventDateRequest = z.input<typeof MoveEventDateSchema>;
+
 /**
  * What a date asks for besides its event's parts (issue #549): the
  * instruments (or the group's positions, or names) its music lead wants

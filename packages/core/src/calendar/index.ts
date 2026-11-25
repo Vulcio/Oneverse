@@ -22,6 +22,18 @@ export interface EventTiming {
   /** An IANA time zone ("Europe/Paris"). */
   timeZone: string;
   repeat?: EventRepeat | null;
+  /**
+   * Dates moved to another day by themselves (issue #576): each one is on
+   * `to` instead of `from`, with its answers, line-up and set. `from` is the
+   * day the series put it on, kept however often it moves.
+   */
+  moves?: readonly EventMove[] | null;
+}
+
+/** One date of a series moved to another day (issue #576). */
+export interface EventMove {
+  from: string;
+  to: string;
 }
 
 /** One date of an event changed by itself: cancelled, another time or another title. */
@@ -44,6 +56,8 @@ export interface EventDate {
   cancelled: boolean;
   /** Changed by itself (a time or a title of its own); cancelled dates aren't counted. */
   changed: boolean;
+  /** The day the series put it on, when it was moved to this one (issue #576); else null. */
+  movedFrom: string | null;
 }
 
 /** The most dates `eventDates` lists at once. */
@@ -165,8 +179,8 @@ export function callAt(startsAt: string, minutes: number | null | undefined): st
   return minutes ? new Date(new Date(startsAt).getTime() - minutes * 60_000).toISOString() : null;
 }
 
-/** Whether an event falls on a date (before any date's own changes). */
-export function eventFallsOn(event: Pick<EventTiming, "date" | "repeat">, date: string): boolean {
+/** Whether its series puts an event on a date, moves left aside. */
+function onSeries(event: Pick<EventTiming, "date" | "repeat">, date: string): boolean {
   if (date === event.date) return true;
   const repeat = event.repeat;
   if (!repeat || date < event.date || (repeat.until && date > repeat.until)) return false;
@@ -175,12 +189,38 @@ export function eventFallsOn(event: Pick<EventTiming, "date" | "repeat">, date: 
 }
 
 /**
+ * Whether an event falls on a date (before any date's own changes): its
+ * series' dates, less those moved away, and the days they were moved to
+ * (issue #576).
+ */
+export function eventFallsOn(event: Pick<EventTiming, "date" | "repeat" | "moves">, date: string): boolean {
+  const moves = event.moves ?? [];
+  if (moves.some((move) => move.to === date)) return true;
+  if (moves.some((move) => move.from === date)) return false;
+  return onSeries(event, date);
+}
+
+/**
+ * Whether a date of an event can move to another day (issue #576): the day
+ * must be free - no other date of the event on it - and the date not
+ * already there.
+ */
+export function canMoveDate(event: Pick<EventTiming, "date" | "repeat" | "moves">, date: string, to: string): boolean {
+  if (!isCalendarDate(to) || to === date || !eventFallsOn(event, date)) return false;
+  return !eventFallsOn(event, to) || (event.moves ?? []).some((move) => move.from === to && move.to === date);
+}
+
+/**
  * The dates an event falls on from `from` to `to` (both included), with
- * each date's own changes - cancelled, another start time or title. At
- * most `EVENT_DATES_LIMIT` dates.
+ * each date's own changes - cancelled, another start time or title - and
+ * those moved to another day on that day (issue #576). At most
+ * `EVENT_DATES_LIMIT` dates.
  */
 export function eventDates(event: EventTiming, from: string, to: string, changes: EventDateChange[] = []): EventDate[] {
   const byDate = new Map(changes.map((change) => [change.date, change]));
+  const moves = event.moves ?? [];
+  const movedAway = new Set(moves.map((move) => move.from));
+  const movedFrom = new Map(moves.map((move) => [move.to, move.from]));
   const dates: string[] = [];
   const step = event.repeat ? 7 * Math.max(1, event.repeat.everyWeeks) : 0;
   const last = event.repeat?.until && event.repeat.until < to ? event.repeat.until : to;
@@ -191,20 +231,26 @@ export function eventDates(event: EventTiming, from: string, to: string, changes
     const skip = from > event.date ? Math.ceil(daysBetween(event.date, from) / step) : 0;
     for (let date = addDays(event.date, skip * step); date <= last && dates.length < EVENT_DATES_LIMIT; date = addDays(date, step)) dates.push(date);
   }
-  return dates.map((date) => {
-    const change = byDate.get(date);
-    const startTime = change?.startTime || event.startTime;
-    const startsAt = zonedInstant(date, startTime, event.timeZone);
-    return {
-      date,
-      startTime,
-      startsAt,
-      endsAt: new Date(new Date(startsAt).getTime() + event.durationMinutes * 60_000).toISOString(),
-      title: change?.title || null,
-      cancelled: !!change?.cancelled,
-      changed: !change?.cancelled && (!!change?.title || (!!change?.startTime && change.startTime !== event.startTime)),
-    };
-  });
+  const shown = dates.filter((date) => !movedAway.has(date) || movedFrom.has(date));
+  for (const move of moves) if (move.to >= from && move.to <= to && !shown.includes(move.to)) shown.push(move.to);
+  return shown
+    .sort()
+    .slice(0, EVENT_DATES_LIMIT)
+    .map((date) => {
+      const change = byDate.get(date);
+      const startTime = change?.startTime || event.startTime;
+      const startsAt = zonedInstant(date, startTime, event.timeZone);
+      return {
+        date,
+        startTime,
+        startsAt,
+        endsAt: new Date(new Date(startsAt).getTime() + event.durationMinutes * 60_000).toISOString(),
+        title: change?.title || null,
+        cancelled: !!change?.cancelled,
+        changed: !change?.cancelled && (!!change?.title || (!!change?.startTime && change.startTime !== event.startTime)),
+        movedFrom: movedFrom.get(date) ?? null,
+      };
+    });
 }
 
 /** A rehearsal tied to an event (issue #235, phase 7): that many days before each of its dates, at its own time. */
@@ -241,6 +287,8 @@ export function rehearsalDates(event: EventTiming, rehearsal: RehearsalTiming, f
       title: null,
       cancelled: date.cancelled,
       changed: false,
+      // Its event's date moved (issue #576): so did it.
+      movedFrom: date.movedFrom ? addDays(date.movedFrom, -rehearsal.daysBefore) : null,
       forDate: date.date,
     };
   });

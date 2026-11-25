@@ -422,7 +422,9 @@ function DetailsCard({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="set-date">{t("sets.dateLabel")}</Label>
-              <DatePicker id="set-date" value={eventDate} clearable onChange={setEventDate} testId="set-date" />
+              {/* A date's set takes its date from that date (issue #576): it moves on the calendar. */}
+              <DatePicker id="set-date" value={eventDate} clearable={!set.fromEvent} disabled={!!set.fromEvent} onChange={setEventDate} testId="set-date" />
+              {set.fromEvent ? <p className="text-xs text-muted-foreground">{t("sets.dateFromEvent")}</p> : null}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="set-name">{t("sets.nameLabel")}</Label>

@@ -7,7 +7,7 @@ import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RequestSwapDto, RespondAssignmentDto, CreateTeamEventDto, CreateTeamEventTypeDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, SetTeamEventDateAsksDto, UpdateTeamEventDto, UpdateTeamEventTypeDto } from "./dto/team-events.dto.js";
+import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RequestSwapDto, RespondAssignmentDto, CreateTeamEventDto, CreateTeamEventTypeDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, MoveEventDateDto, SetTeamEventDateAsksDto, UpdateTeamEventDto, UpdateTeamEventTypeDto } from "./dto/team-events.dto.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { AvailabilityService } from "./availability.service.js";
 import { CalendarFeedService } from "./calendar-feed.service.js";
@@ -177,6 +177,13 @@ export class TeamEventsController {
   @UseGuards(TeamAdminGuard)
   updateDate(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: UpdateTeamEventDateDto) {
     return this.events.updateDate(teamId, eventId, dateParam(date), dto, user?.id ?? null);
+  }
+
+  /** One date moved to another day (issue #576), with its answers, line-up and set. */
+  @Post("events/:eventId/dates/:date/move")
+  @UseGuards(TeamAdminGuard)
+  moveDate(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: MoveEventDateDto) {
+    return this.events.moveDate(teamId, eventId, dateParam(date), dto.to, user?.id ?? null);
   }
 
   /**

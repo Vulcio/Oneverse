@@ -1785,6 +1785,8 @@ model TeamEventDate {
   // What this date asks for besides its event's parts (issue #549): the instruments its music lead
   // asks for from the set, [{ part, position, name, count, openTo }] as TeamEvent.parts.
   asks         Json?
+  // The day its series put it on, when it was moved to this one (issue #576): it keeps its answers, line-up and set.
+  movedFrom    DateTime? @db.Date
 
   event   TeamEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   setlist Setlist?  @relation(fields: [setlistId], references: [id], onDelete: SetNull)

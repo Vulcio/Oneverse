@@ -33,7 +33,8 @@
               "endsAt": "2026-12-24T18:30:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             }
           ]
         },
@@ -76,7 +77,8 @@
               "endsAt": "2026-10-18T10:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             },
             {
               "date": "2026-10-25",
@@ -85,7 +87,8 @@
               "endsAt": "2026-10-25T11:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             },
             {
               "date": "2026-11-01",
@@ -94,7 +97,8 @@
               "endsAt": "2026-11-01T11:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             },
             {
               "date": "2026-11-08",
@@ -103,7 +107,8 @@
               "endsAt": "2026-11-08T11:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             }
           ]
         },
@@ -142,7 +147,8 @@
               "endsAt": "2026-02-01T16:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             },
             {
               "date": "2026-02-15",
@@ -151,7 +157,8 @@
               "endsAt": "2026-02-15T16:00:00.000Z",
               "title": null,
               "cancelled": true,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             },
             {
               "date": "2026-03-01",
@@ -160,7 +167,8 @@
               "endsAt": "2026-03-01T16:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             },
             {
               "date": "2026-03-15",
@@ -169,7 +177,8 @@
               "endsAt": "2026-03-15T16:30:00.000Z",
               "title": "Easter rehearsal",
               "cancelled": false,
-              "changed": true
+              "changed": true,
+              "movedFrom": null
             },
             {
               "date": "2026-03-29",
@@ -178,7 +187,8 @@
               "endsAt": "2026-03-29T15:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             }
           ]
         },
@@ -206,7 +216,8 @@
               "endsAt": "2026-10-11T11:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             },
             {
               "date": "2026-10-18",
@@ -215,9 +226,255 @@
               "endsAt": "2026-10-18T11:00:00.000Z",
               "title": null,
               "cancelled": false,
-              "changed": false
+              "changed": false,
+              "movedFrom": null
             }
           ]
+        },
+        {
+          "name": "one Sunday moved to the Saturday before, with its own time (issue #576)",
+          "args": [
+            {
+              "date": "2026-10-11",
+              "startTime": "10:00",
+              "durationMinutes": 120,
+              "timeZone": "Europe/Paris",
+              "repeat": {
+                "everyWeeks": 1
+              },
+              "moves": [
+                {
+                  "from": "2026-10-25",
+                  "to": "2026-10-24"
+                }
+              ]
+            },
+            "2026-10-12",
+            "2026-11-01",
+            [
+              {
+                "date": "2026-10-24",
+                "startTime": "18:00"
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "date": "2026-10-18",
+              "startTime": "10:00",
+              "startsAt": "2026-10-18T08:00:00.000Z",
+              "endsAt": "2026-10-18T10:00:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": false,
+              "movedFrom": null
+            },
+            {
+              "date": "2026-10-24",
+              "startTime": "18:00",
+              "startsAt": "2026-10-24T16:00:00.000Z",
+              "endsAt": "2026-10-24T18:00:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": true,
+              "movedFrom": "2026-10-25"
+            },
+            {
+              "date": "2026-11-01",
+              "startTime": "10:00",
+              "startsAt": "2026-11-01T09:00:00.000Z",
+              "endsAt": "2026-11-01T11:00:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": false,
+              "movedFrom": null
+            }
+          ]
+        },
+        {
+          "name": "a date moved out of the range, another moved into it",
+          "args": [
+            {
+              "date": "2026-10-11",
+              "startTime": "10:00",
+              "durationMinutes": 60,
+              "timeZone": "UTC",
+              "repeat": {
+                "everyWeeks": 1
+              },
+              "moves": [
+                {
+                  "from": "2026-10-18",
+                  "to": "2026-11-30"
+                },
+                {
+                  "from": "2026-12-06",
+                  "to": "2026-10-21"
+                }
+              ]
+            },
+            "2026-10-12",
+            "2026-10-31",
+            []
+          ],
+          "expected": [
+            {
+              "date": "2026-10-21",
+              "startTime": "10:00",
+              "startsAt": "2026-10-21T10:00:00.000Z",
+              "endsAt": "2026-10-21T11:00:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": false,
+              "movedFrom": "2026-12-06"
+            },
+            {
+              "date": "2026-10-25",
+              "startTime": "10:00",
+              "startsAt": "2026-10-25T10:00:00.000Z",
+              "endsAt": "2026-10-25T11:00:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": false,
+              "movedFrom": null
+            }
+          ]
+        },
+        {
+          "name": "a one-off moved",
+          "args": [
+            {
+              "date": "2026-12-24",
+              "startTime": "18:00",
+              "durationMinutes": 90,
+              "timeZone": "Europe/Paris",
+              "moves": [
+                {
+                  "from": "2026-12-24",
+                  "to": "2026-12-23"
+                }
+              ]
+            },
+            "2026-12-01",
+            "2026-12-31",
+            []
+          ],
+          "expected": [
+            {
+              "date": "2026-12-23",
+              "startTime": "18:00",
+              "startsAt": "2026-12-23T17:00:00.000Z",
+              "endsAt": "2026-12-23T18:30:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": false,
+              "movedFrom": "2026-12-24"
+            }
+          ]
+        }
+      ]
+    },
+    "canMoveDate": {
+      "about": "Whether one of an event's dates can move to another day (issue #576): a day none of its other dates is on.",
+      "params": [
+        "event",
+        "date",
+        "to"
+      ],
+      "cases": [
+        {
+          "name": "a Sunday to the Saturday before",
+          "args": [
+            {
+              "date": "2026-10-11",
+              "repeat": {
+                "everyWeeks": 1
+              }
+            },
+            "2026-10-25",
+            "2026-10-24"
+          ],
+          "expected": true
+        },
+        {
+          "name": "onto the next Sunday, taken",
+          "args": [
+            {
+              "date": "2026-10-11",
+              "repeat": {
+                "everyWeeks": 1
+              }
+            },
+            "2026-10-25",
+            "2026-11-01"
+          ],
+          "expected": false
+        },
+        {
+          "name": "a day the event isn't on",
+          "args": [
+            {
+              "date": "2026-10-11",
+              "repeat": {
+                "everyWeeks": 1
+              }
+            },
+            "2026-10-26",
+            "2026-10-27"
+          ],
+          "expected": false
+        },
+        {
+          "name": "back to the day it was moved from",
+          "args": [
+            {
+              "date": "2026-10-11",
+              "repeat": {
+                "everyWeeks": 1
+              },
+              "moves": [
+                {
+                  "from": "2026-10-25",
+                  "to": "2026-10-24"
+                }
+              ]
+            },
+            "2026-10-24",
+            "2026-10-25"
+          ],
+          "expected": true
+        },
+        {
+          "name": "the day it was moved away from is free",
+          "args": [
+            {
+              "date": "2026-10-11",
+              "repeat": {
+                "everyWeeks": 1
+              },
+              "moves": [
+                {
+                  "from": "2026-10-25",
+                  "to": "2026-10-24"
+                }
+              ]
+            },
+            "2026-11-01",
+            "2026-10-25"
+          ],
+          "expected": true
+        },
+        {
+          "name": "not a date",
+          "args": [
+            {
+              "date": "2026-10-11",
+              "repeat": null
+            },
+            "2026-10-11",
+            "2026-02-30"
+          ],
+          "expected": false
         }
       ]
     },
@@ -480,6 +737,42 @@
           "expected": {
             "title": "Réponses attendues d'ici le mar. 20 oct.",
             "body": "Louange : 3 date(s) encore sans votre réponse"
+          }
+        },
+        {
+          "name": "a date moved to another day (issue #576)",
+          "args": [
+            "EVENT_DATE_MOVED",
+            {
+              "event": "Morning service",
+              "date": "2026-10-25",
+              "to": "2026-10-24",
+              "team": "Worship team",
+              "startTime": "18:00"
+            },
+            "en"
+          ],
+          "expected": {
+            "title": "Morning service moves from Sun, Oct 25 to Sat, Oct 24",
+            "body": "Worship team - at 18:00"
+          }
+        },
+        {
+          "name": "a date moved, in French",
+          "args": [
+            "EVENT_DATE_MOVED",
+            {
+              "event": "Culte du matin",
+              "date": "2026-10-25",
+              "to": "2026-10-24",
+              "team": "Louange",
+              "startTime": "18:00"
+            },
+            "fr"
+          ],
+          "expected": {
+            "title": "Culte du matin du dim. 25 oct. est déplacé au sam. 24 oct.",
+            "body": "Louange - à 18:00"
           }
         },
         {
@@ -762,6 +1055,10 @@
               "email": true,
               "push": true
             },
+            "EVENT_DATE_MOVED": {
+              "email": true,
+              "push": true
+            },
             "EVENT_CANCELLED": {
               "email": true,
               "push": true
@@ -945,6 +1242,10 @@
             },
             "EVENT_DATE_CHANGED": {
               "email": false,
+              "push": true
+            },
+            "EVENT_DATE_MOVED": {
+              "email": true,
               "push": true
             },
             "EVENT_CANCELLED": {
@@ -1138,6 +1439,10 @@
               },
               "EVENT_DATE_CHANGED": {
                 "email": false,
+                "push": true
+              },
+              "EVENT_DATE_MOVED": {
+                "email": true,
                 "push": true
               },
               "EVENT_CANCELLED": {
@@ -2754,6 +3059,7 @@
               "title": null,
               "cancelled": false,
               "changed": false,
+              "movedFrom": null,
               "forDate": "2026-10-18"
             },
             {
@@ -2764,6 +3070,7 @@
               "title": null,
               "cancelled": true,
               "changed": false,
+              "movedFrom": null,
               "forDate": "2026-10-25"
             },
             {
@@ -2774,6 +3081,7 @@
               "title": null,
               "cancelled": false,
               "changed": false,
+              "movedFrom": null,
               "forDate": "2026-11-01"
             }
           ]
@@ -2805,6 +3113,7 @@
               "title": null,
               "cancelled": false,
               "changed": false,
+              "movedFrom": null,
               "forDate": "2026-10-18"
             }
           ]

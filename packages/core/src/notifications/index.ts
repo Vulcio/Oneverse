@@ -11,6 +11,8 @@ export const NOTIFICATION_KINDS = [
   "EVENT_DATE_CANCELLED",
   // A date one signed up for changed: its time or its title.
   "EVENT_DATE_CHANGED",
+  // A date one signed up for moved to another day (issue #576).
+  "EVENT_DATE_MOVED",
   // An event one signed up for (some coming date of it) is deleted.
   "EVENT_CANCELLED",
   // A team admin answered for one (Available, If needed, Not available).
@@ -91,6 +93,8 @@ export interface NotificationData {
   event?: string;
   /** YYYY-MM-DD. */
   date?: string;
+  /** YYYY-MM-DD: the day a date moved to (issue #576). */
+  to?: string;
   team?: string;
   /** HH:MM. */
   startTime?: string;
@@ -183,6 +187,7 @@ export function notificationText(kind: NotificationKind, data: NotificationData,
   const values = {
     event: data.event ?? "",
     date: data.date ? notificationDate(data.date, locale) : "",
+    to: data.to ? notificationDate(data.to, locale) : "",
     team: data.team ?? "",
     time: data.startTime ?? "",
     answer: data.answer && (AVAILABILITY_ANSWERS as readonly string[]).includes(data.answer) ? answers[data.answer] : "",

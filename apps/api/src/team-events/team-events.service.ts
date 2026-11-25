@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, asksOpenTo, MUSIC_LEADER, partKey, withAsks, callAt, daysBetween, eventDates, eventFallsOn, EVENT_ONLY_PARTS, INSTRUMENTS, OWN_TEAM, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@oneverse/core";
+import { addDays, asksOpenTo, MUSIC_LEADER, partKey, withAsks, callAt, daysBetween, eventDates, eventFallsOn, EVENT_ONLY_PARTS, INSTRUMENTS, OWN_TEAM, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming, canMoveDate } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { eventLocation } from "../locations/locations.service.js";
@@ -22,6 +22,8 @@ export function timingOf(event: EventRow): EventTiming {
     durationMinutes: event.durationMinutes,
     timeZone: event.timeZone,
     repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null,
+    // Its dates moved to another day (issue #576).
+    moves: event.dates.flatMap((row) => (row.movedFrom ? [{ from: dateText(row.movedFrom), to: dateText(row.date) }] : [])),
   };
 }
 
@@ -101,6 +103,15 @@ export class TeamEventsService {
     const dates = [...new Set([...answers, ...lineup].map((row) => dateText(row.date)))];
     const people = await signedUpFor(this.prisma.client, dates.map((date) => ({ eventId, date })));
     return dates.flatMap((date) => (people.get(signupKey(eventId, date)) ?? []).map((userId) => ({ date, userId })));
+  }
+
+  private async answeredOrScheduled(eventId: string, date: string): Promise<{ userId: string }[]> {
+    const where = { eventId, date: day(date) };
+    const [answers, lineup] = await Promise.all([
+      this.prisma.client.teamEventAnswer.findMany({ where, select: { userId: true } }),
+      this.prisma.client.teamEventAssignment.findMany({ where: { ...where, userId: { not: null }, status: { not: "DECLINED" } }, select: { userId: true } }),
+    ]);
+    return [...new Set([...answers, ...lineup].map((row) => row.userId!))].map((userId) => ({ userId }));
   }
 
   private async teamName(teamId: string): Promise<string> {
@@ -498,6 +509,54 @@ export class TeamEventsService {
     await this.notifyDates(event, fresh, signedUp, by);
     const [shown] = eventDates(timingOf(fresh), date, date, changesOf(fresh));
     return this.dateSummary(fresh, shown!, fresh.dates.find((one) => dateText(one.date) === date));
+  }
+
+  /**
+   * One date moved to another day (issue #576), by the team's admins (or,
+   * for an organisation's event, through it: `planned`): its answers,
+   * line-up, asks and set go with it, and its rehearsals' too. The day must
+   * be free of the event's other dates. Whoever answered or is on its line-up is told.
+   */
+  async moveDate(teamId: string, eventId: string, date: string, to: string, by: string | null = null, planned = false) {
+    const event = await this.find(teamId, eventId);
+    this.notPlanned(event, planned);
+    if (event.rehearsalForId) throw new BadRequestException(["A rehearsal follows its event's dates: move that event's date"]);
+    const timing = timingOf(event);
+    if (!eventFallsOn(timing, date)) throw new NotFoundException("The event isn't on that date");
+    if (!canMoveDate(timing, date, to)) throw new BadRequestException(["to must be a day this event isn't on already"]);
+    const existing = event.dates.find((row) => dateText(row.date) === date);
+    if (event.dates.some((row) => dateText(row.date) === to && row.id !== existing?.id)) throw new BadRequestException(["to must be a day this event isn't on already"]);
+    const original = existing?.movedFrom ? dateText(existing.movedFrom) : date;
+    // Everyone who answered or is on its line-up is told, not only those signed up: their answer was for another day.
+    const signedUp = date >= localDate(new Date(), event.timeZone) ? await this.answeredOrScheduled(eventId, date) : [];
+    const rehearsals = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: eventId }, select: { id: true, daysBefore: true } });
+    await this.prisma.client.$transaction(async (tx) => {
+      const movedFrom = to === original ? null : day(original);
+      if (existing) await tx.teamEventDate.update({ where: { id: existing.id }, data: { date: day(to), movedFrom } });
+      else await tx.teamEventDate.create({ data: { eventId, date: day(to), movedFrom } });
+      // What hangs on the date by its day goes with it; its reminders are sent again for the new day.
+      for (const [id, shift] of [[eventId, 0] as const, ...rehearsals.map((one) => [one.id, one.daysBefore ?? 0] as const)]) {
+        const at = { eventId: id, date: day(addDays(date, -shift)) };
+        const now = { date: day(addDays(to, -shift)) };
+        await tx.teamEventAnswer.deleteMany({ where: { eventId: id, date: now.date } });
+        await tx.teamEventAssignment.deleteMany({ where: { eventId: id, date: now.date } });
+        await tx.teamEventAnswer.updateMany({ where: at, data: now });
+        await tx.teamEventAssignment.updateMany({ where: at, data: now });
+        await tx.teamEventReminder.deleteMany({ where: { eventId: id, date: { in: [at.date, now.date] } } });
+      }
+      if (existing?.setlist) await tx.setlist.update({ where: { id: existing.setlist.id }, data: { eventDate: day(to) } });
+    });
+    const fresh = await this.find(teamId, eventId);
+    const [shown] = eventDates(timingOf(fresh), to, to, changesOf(fresh));
+    if (signedUp.length > 0 && shown && !shown.cancelled) {
+      const team = await this.teamName(teamId);
+      const title = shown.title || fresh.title;
+      await this.notifications.notify(
+        signedUp.map(({ userId }) => ({ userId, kind: "EVENT_DATE_MOVED" as const, data: { event: title, date, to, startTime: shown.startTime, team }, url: "/calendar", teamId })),
+        by,
+      );
+    }
+    return this.dateSummary(fresh, shown!, fresh.dates.find((one) => dateText(one.date) === to));
   }
 
   /**

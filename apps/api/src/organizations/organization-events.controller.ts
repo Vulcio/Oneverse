@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { CreateTeamEventTypeDto, TeamEventDatesQueryDto, UpdateTeamEventTypeDto } from "../team-events/dto/team-events.dto.js";
+import { CreateTeamEventTypeDto, MoveEventDateDto, TeamEventDatesQueryDto, UpdateTeamEventTypeDto } from "../team-events/dto/team-events.dto.js";
 import { CreateOrganizationEventDto, UpdateOrganizationEventDateDto, UpdateOrganizationEventDto } from "./dto/organization-events.dto.js";
 import { OrganizationEventsService } from "./organization-events.service.js";
 
@@ -44,6 +44,13 @@ export class OrganizationEventsController {
     @Body() dto: UpdateOrganizationEventDateDto,
   ) {
     return this.events.updateDate(user, organizationId, eventId, date, dto.cancelled);
+  }
+
+  /** One date moved to another day for every team (issue #576), by its admins or its organiser. */
+  @Post("events/:eventId/dates/:date/move")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  moveDate(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: MoveEventDateDto) {
+    return this.events.moveDate(user, organizationId, eventId, date, dto.to);
   }
 
   /** Its groups' events asking to become the organisation's (issue #549): its admins accept or decline them. */

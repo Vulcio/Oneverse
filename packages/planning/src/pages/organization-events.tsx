@@ -1,6 +1,6 @@
 import { addDays, localDate, needsFromParts, partsFromNeeds, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type TeamEventType, type OrganizationEventTransfer, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Ban, CalendarDays, CircleCheck, MapPin, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { ArrowLeft, Ban, CalendarArrowUp, CalendarDays, CircleCheck, MapPin, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -20,6 +20,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LocationField, useLocations } from "../components/locations";
+import { MoveDateDialog } from "../components/move-date-dialog";
 import { HostLink, usePlanning } from "../host";
 import { loadOrganizationEventsPage } from "../loaders";
 
@@ -49,6 +50,7 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
   const [dates, setDates] = useState<OrganizationEventDate[] | null>(null);
   const [editing, setEditing] = useState<OrganizationEvent | "new" | null>(null);
+  const [moving, setMoving] = useState<OrganizationEventDate | null>(null);
   // Its dates, or each event once (issue #549): a series is changed as a whole from there.
   const [view, setView] = useState<"dates" | "events">("dates");
   const [error, setError] = useState<string | null>(null);
@@ -155,6 +157,13 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
                               {date.cancelled ? <RotateCcw /> : <Ban />}
                               {date.cancelled ? t("teamCalendar.restoreDate") : t("teamCalendar.cancelDate")}
                             </DropdownMenuItem>
+                            {/* Another day for this date, for every team (issue #576). */}
+                            {date.cancelled ? null : (
+                              <DropdownMenuItem onClick={() => setMoving(date)} data-testid="org-move-date">
+                                <CalendarArrowUp />
+                                {t("teamCalendar.moveDate")}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => setEditing(event)} data-testid="org-edit-event">
                               <Pencil />
                               {event.repeat ? t("teamCalendar.editSeries") : t("organizations.editEvent")}
@@ -219,6 +228,18 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
         </CardContent>
       </Card>
 
+      {moving ? (
+        <MoveDateDialog
+          date={moving.date}
+          title={`${moving.title}, ${dayFormat.format(new Date(`${moving.date}T12:00:00Z`))}`}
+          onClose={() => setMoving(null)}
+          onMove={async (to) => {
+            await api.moveOrganizationEventDate(organization.id, moving.eventId, moving.date, { to });
+            setMoving(null);
+            await load();
+          }}
+        />
+      ) : null}
       {editing ? (
         <OrganizationEventDialog
           organization={organization}

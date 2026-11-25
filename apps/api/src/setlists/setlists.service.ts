@@ -337,6 +337,11 @@ export class SetlistsService {
 
   async update(user: AuthenticatedUser, setlistId: string, dto: UpdateSetlistDto) {
     const set = await this.sets.findEditable(user, setlistId);
+    // A date's set takes its date from that date (issue #576): it moves with "Move this date".
+    if (dto.eventDate !== undefined && (await this.prisma.client.teamEventDate.count({ where: { setlistId } })) > 0) {
+      const current = (await this.prisma.client.setlist.findUnique({ where: { id: setlistId }, select: { eventDate: true } }))?.eventDate?.toISOString().slice(0, 10) ?? null;
+      if ((dto.eventDate || null) !== current) throw new BadRequestException(["eventDate follows the event's date: move the date on the calendar instead"]);
+    }
     if (dto.teamId !== undefined && dto.teamId !== set.ownerTeamId) {
       await this.sets.findManageable(user, setlistId);
       await this.moveTo(user, set, dto.teamId);

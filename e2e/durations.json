@@ -55,6 +55,7 @@
 "api/live-route": 5,
 "api/locations": 2,
 "api/metadata": 6,
+"api/move-date": 6,
 "api/musicbrainz": 1,
 "api/notes": 4,
 "api/notification-apps": 2,

@@ -47,7 +47,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, notificationUrl, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, setLeadingKeys, needsFromParts, partsFromNeeds, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { type AssignmentStatus, type EventPart, asksOpenTo, coversPart, fillingGroups, missingRequired, withAsks, volunteerOptions, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, setLeadingKeys, needsFromParts, partsFromNeeds, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant, canMoveDate } from "../calendar/index.js";
 import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
@@ -2788,6 +2788,38 @@ export const CONFORMANCE: ConformanceArea[] = [
             ],
           },
           { name: "a range before the first date", args: [{ date: "2026-10-11", startTime: "10:00", durationMinutes: 60, timeZone: "UTC", repeat: { everyWeeks: 1 } }, "2026-09-01", "2026-10-20", []] },
+          {
+            name: "one Sunday moved to the Saturday before, with its own time (issue #576)",
+            args: [
+              { date: "2026-10-11", startTime: "10:00", durationMinutes: 120, timeZone: "Europe/Paris", repeat: { everyWeeks: 1 }, moves: [{ from: "2026-10-25", to: "2026-10-24" }] },
+              "2026-10-12",
+              "2026-11-01",
+              [{ date: "2026-10-24", startTime: "18:00" }],
+            ],
+          },
+          {
+            name: "a date moved out of the range, another moved into it",
+            args: [
+              { date: "2026-10-11", startTime: "10:00", durationMinutes: 60, timeZone: "UTC", repeat: { everyWeeks: 1 }, moves: [{ from: "2026-10-18", to: "2026-11-30" }, { from: "2026-12-06", to: "2026-10-21" }] },
+              "2026-10-12",
+              "2026-10-31",
+              [],
+            ],
+          },
+          { name: "a one-off moved", args: [{ date: "2026-12-24", startTime: "18:00", durationMinutes: 90, timeZone: "Europe/Paris", moves: [{ from: "2026-12-24", to: "2026-12-23" }] }, "2026-12-01", "2026-12-31", []] },
+        ],
+      },
+      canMoveDate: {
+        about: "Whether one of an event's dates can move to another day (issue #576): a day none of its other dates is on.",
+        params: ["event", "date", "to"],
+        run: canMoveDate,
+        cases: [
+          { name: "a Sunday to the Saturday before", args: [{ date: "2026-10-11", repeat: { everyWeeks: 1 } }, "2026-10-25", "2026-10-24"] },
+          { name: "onto the next Sunday, taken", args: [{ date: "2026-10-11", repeat: { everyWeeks: 1 } }, "2026-10-25", "2026-11-01"] },
+          { name: "a day the event isn't on", args: [{ date: "2026-10-11", repeat: { everyWeeks: 1 } }, "2026-10-26", "2026-10-27"] },
+          { name: "back to the day it was moved from", args: [{ date: "2026-10-11", repeat: { everyWeeks: 1 }, moves: [{ from: "2026-10-25", to: "2026-10-24" }] }, "2026-10-24", "2026-10-25"] },
+          { name: "the day it was moved away from is free", args: [{ date: "2026-10-11", repeat: { everyWeeks: 1 }, moves: [{ from: "2026-10-25", to: "2026-10-24" }] }, "2026-11-01", "2026-10-25"] },
+          { name: "not a date", args: [{ date: "2026-10-11", repeat: null }, "2026-10-11", "2026-02-30"] },
         ],
       },
       zonedInstant: {
@@ -2833,6 +2865,8 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "answered for you", args: ["ANSWERED_FOR_YOU", { event: "Rehearsal", date: "2026-10-15", team: "Worship team", answer: "IF_NEEDED", by: "Sam" }, "en"] },
           { name: "answers asked for", args: ["ANSWERS_REQUESTED", { team: "Worship team", by: "Sam", deadline: "2026-10-20" }, "en"] },
           { name: "answers due, in French", args: ["ANSWER_DEADLINE", { team: "Louange", deadline: "2026-10-20", count: 3 }, "fr"] },
+          { name: "a date moved to another day (issue #576)", args: ["EVENT_DATE_MOVED", { event: "Morning service", date: "2026-10-25", to: "2026-10-24", team: "Worship team", startTime: "18:00" }, "en"] },
+          { name: "a date moved, in French", args: ["EVENT_DATE_MOVED", { event: "Culte du matin", date: "2026-10-25", to: "2026-10-24", team: "Louange", startTime: "18:00" }, "fr"] },
           { name: "tomorrow, with a place", args: ["EVENT_TOMORROW", { event: "Morning service", date: "2026-10-18", team: "Worship team", startTime: "10:00", place: "Main hall" }, "en"] },
           { name: "tomorrow, without one", args: ["EVENT_TOMORROW", { event: "Morning service", date: "2026-10-18", team: "Worship team", startTime: "10:00" }, "en"] },
           { name: "scheduled, in French: the part in their words", args: ["SCHEDULED", { event: "Culte", date: "2026-10-18", team: "Louange", part: "DRUMS" }, "fr"] },

@@ -68,7 +68,7 @@ import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { AddQuickSelectionSchema, AddSetlistItemSchema, OperatorPresetsRequest, OperatorTimerPreset, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
-import type { AnswerEventDateRequest, AssignPartRequest, VolunteerRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, SetTeamEventDateAsksRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest } from "../requests/events.js";
+import type { AnswerEventDateRequest, AssignPartRequest, VolunteerRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, MoveEventDateRequest, SetTeamEventDateAsksRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { AnalyseRecordingRequest, SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateOwnRoleRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateOwnRoleRequest, UpdateRoleRequest } from "../requests/roles.js";
@@ -3289,6 +3289,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     deleteOrganizationEvent: (organizationId: string, eventId: string) => request<void>(`/organizations/${organizationId}/events/${eventId}`, { method: "DELETE" }),
     setOrganizationEventDateCancelled: (organizationId: string, eventId: string, date: string, cancelled: boolean) =>
       request<void>(`/organizations/${organizationId}/events/${eventId}/dates/${date}`, { method: "PATCH", body: JSON.stringify({ cancelled }) }),
+    /** One date moved to another day for every team (issue #576). */
+    moveOrganizationEventDate: (organizationId: string, eventId: string, date: string, data: MoveEventDateRequest) =>
+      request<void>(`/organizations/${organizationId}/events/${eventId}/dates/${date}/move`, { method: "POST", body: JSON.stringify(data) }),
     /** Takes a team out of the organisation (its admins). */
     removeOrganizationTeam: (organizationId: string, teamId: string) => request<void>(`/organizations/${organizationId}/teams/${teamId}`, { method: "DELETE" }),
 
@@ -3318,6 +3321,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     deleteOrganizationEventType: (organizationId: string, typeId: string) => request<void>(`/organizations/${organizationId}/event-types/${typeId}`, { method: "DELETE" }),
     updateTeamEventDate: (teamId: string, eventId: string, date: string, data: UpdateTeamEventDateRequest) =>
       request<TeamEventDateSummary>(`/teams/${teamId}/events/${eventId}/dates/${date}`, { method: "PATCH", body: JSON.stringify(data) }),
+    /** One date moved to another day (issue #576), with its answers, line-up and set. */
+    moveTeamEventDate: (teamId: string, eventId: string, date: string, data: MoveEventDateRequest) =>
+      request<TeamEventDateSummary>(`/teams/${teamId}/events/${eventId}/dates/${date}/move`, { method: "POST", body: JSON.stringify(data) }),
     ensureTeamEventDateSet: (teamId: string, eventId: string, date: string) =>
       request<{ setlistId: string }>(`/teams/${teamId}/events/${eventId}/dates/${date}/set`, { method: "POST" }),
     answerTeamEventDate: (teamId: string, eventId: string, date: string, data: AnswerEventDateRequest) =>

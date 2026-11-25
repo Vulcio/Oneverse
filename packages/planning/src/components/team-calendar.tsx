@@ -1,6 +1,6 @@
 import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Ban, Building2, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { Ban, Building2, CalendarArrowUp, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LineupDialog, LineupLine, partOf, usePartLabel } from "./lineup";
 import { LocationField, useLocations } from "./locations";
+import { MoveDateDialog } from "./move-date-dialog";
 import { HostLink, usePlanning } from "../host";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
 import { cn } from "@oneverse/ui/lib/utils";
@@ -81,6 +82,7 @@ export function TeamCalendar({
   const [view, setView] = useState<"dates" | "events">("dates");
   // A date changed on its own (issue #549): its title and start time.
   const [editingDate, setEditingDate] = useState<TeamEventDateSummary | null>(null);
+  const [movingDate, setMovingDate] = useState<TeamEventDateSummary | null>(null);
   const [answersOf, setAnswersOf] = useState<TeamEventDateSummary | null>(null);
   // The date whose line-up is open, by event and date: shown fresh from `dates` after each change.
   const [lineupOf, setLineupOf] = useState<{ eventId: string; date: string } | null>(null);
@@ -235,6 +237,12 @@ export function TeamCalendar({
                       <span className={cn("text-sm font-medium", date.cancelled && "line-through")}>{date.title}</span>
                       {date.repeats ? <Repeat className="size-3.5 text-muted-foreground" aria-label={t("teamCalendar.repeats")} /> : null}
                       {date.changed ? <Badge variant="muted" data-testid="calendar-date-changed">{t("teamCalendar.dateChanged")}</Badge> : null}
+                      {/* Moved here from another day (issue #576). */}
+                      {date.movedFrom ? (
+                        <Badge variant="muted" data-testid="calendar-date-moved">
+                          {t("teamCalendar.movedFrom", { date: dayFormat.format(new Date(`${date.movedFrom}T12:00:00Z`)) })}
+                        </Badge>
+                      ) : null}
                       {rehearsal ? <Badge variant="muted" data-testid="calendar-rehearsal">{t("teamCalendar.rehearsalBadge")}</Badge> : null}
                       {/* Planned by the team's organisation (issue #241), with its host. */}
                       {event?.planned ? (
@@ -342,6 +350,13 @@ export function TeamCalendar({
                             {t("teamCalendar.editDate")}
                           </DropdownMenuItem>
                         ) : null}
+                        {/* Another day for this date (issue #576): an organisation's event moves on its calendar. */}
+                        {event && !rehearsal && !event.planned && !date.cancelled ? (
+                          <DropdownMenuItem onClick={() => setMovingDate(date)} data-testid="calendar-move-date">
+                            <CalendarArrowUp />
+                            {t("teamCalendar.moveDate")}
+                          </DropdownMenuItem>
+                        ) : null}
                         {event ? (
                           <DropdownMenuItem onClick={() => setEditing(event)} data-testid="calendar-edit-event">
                             <Pencil />
@@ -444,6 +459,18 @@ export function TeamCalendar({
           partLabel={partLabel}
           onChanged={load}
           onClose={() => setTypesOpen(false)}
+        />
+      ) : null}
+      {movingDate ? (
+        <MoveDateDialog
+          date={movingDate.date}
+          title={`${movingDate.title}, ${dayFormat.format(new Date(`${movingDate.date}T12:00:00Z`))}`}
+          onClose={() => setMovingDate(null)}
+          onMove={async (to) => {
+            await api.moveTeamEventDate(teamId, movingDate.eventId, movingDate.date, { to });
+            setMovingDate(null);
+            await load();
+          }}
         />
       ) : null}
       {editingDate ? (

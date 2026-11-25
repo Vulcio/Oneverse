@@ -315,6 +315,18 @@ export class OrganizationEventsService {
   }
 
   /**
+   * A date moved to another day for every group (issue #576), by its admins
+   * or its organiser: each group's date goes, with its answers, line-up and
+   * set. The first group checks the day is free; the others follow.
+   */
+  async moveDate(viewer: Viewer, organizationId: string, eventId: string, date: string, to: string) {
+    const event = await this.find(organizationId, eventId);
+    await this.assertManager(viewer, organizationId, event);
+    if (event.teamEvents.length === 0) throw new BadRequestException(["This event needs a team before its dates can move"]);
+    for (const part of event.teamEvents) await this.events.moveDate(part.teamId, part.id, date, to, viewer.id, true);
+  }
+
+  /**
    * Its dates from `from` to `to`, each with every group's part: its set,
    * who's on its line-up, and - for its admins and the event's host - how
    * its parts are covered.
