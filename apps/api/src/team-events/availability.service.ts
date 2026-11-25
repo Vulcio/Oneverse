@@ -338,6 +338,7 @@ export class AvailabilityService {
           eventId: event.id,
           title: event.title,
           place: event.place,
+          rooms: event.rooms.map((room) => room.name),
           timeZone: event.timeZone,
           callAt: callAt(date.startsAt, event.callMinutes),
           repeats: !!parent.repeatEveryWeeks,
@@ -373,6 +374,8 @@ export class AvailabilityService {
             eventId: event.id,
             title: date.title || event.title,
             place: event.place,
+            // The venue's rooms (issue #563), by name.
+            rooms: event.rooms.map((room) => room.name),
             timeZone: event.timeZone,
             callAt: callAt(date.startsAt, event.callMinutes),
             repeats: !!event.repeatEveryWeeks,

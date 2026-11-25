@@ -1,4 +1,4 @@
-import { ApiError, type CustomInstrument, type MyEventDateDetail } from "@oneverse/core";
+import { ApiError, wherePlace, type CustomInstrument, type MyEventDateDetail } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { CalendarDays, Clock, MapPin, Repeat } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -120,10 +120,10 @@ export function EventDatePage({ eventId, date: day }: { eventId: string; date: s
             {time.format(new Date(date.startsAt))} – {time.format(new Date(date.endsAt))}
             {date.callAt ? <span data-testid="calendar-call">· {t("teamCalendar.callAt", { time: time.format(new Date(date.callAt)) })}</span> : null}
           </span>
-          {date.place ? (
+          {wherePlace(date.place, date.rooms) ? (
             <span className="flex items-center gap-1.5">
               <MapPin className="size-4" aria-hidden />
-              {date.place}
+              {wherePlace(date.place, date.rooms)}
             </span>
           ) : null}
           <HostLink href={links.team(date.teamId)} className="flex items-center gap-1.5 hover:text-foreground">

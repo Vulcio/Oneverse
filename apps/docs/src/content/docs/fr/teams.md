@@ -75,7 +75,11 @@ Une répétition avant chaque date : dans **Nouvel événement**, **Répétition
 
 Où ont lieu les événements de l'équipe : ses administrateurs les ajoutent sous **Sites** sur la page de l'équipe, avec **Ajouter un site** : un **Nom**, une **Adresse (facultatif)** et un **Fuseau horaire**. **Modifier** en change un, **Retirer** l'enlève (ses événements gardent leur lieu, sans le site). Une équipe dans une organisation peut aussi utiliser les sites de l'organisation (voir [Sites](/fr/organizations/#sites)).
 
-Dans **Nouvel événement**, **Site** en choisit un : le lieu devient son nom, et le fuseau horaire le sien. Vous pouvez toujours écrire un lieu à vous à côté (« Salle 4 »).
+Cochez **Chez quelqu'un** pour la maison d'un groupe de maison : son adresse ne va alors qu'à ceux qui voient ses événements, jamais dans les liens de calendrier.
+
+Un site peut avoir des salles - Grande salle, Salle enfants 1 : **Ajouter une salle** dessous, avec un **Nom de la salle** et peut-être une **Capacité** ; **×** en retire une (ses événements gardent le site).
+
+Dans **Nouvel événement**, **Site** en choisit un : le lieu devient son nom, et le fuseau horaire le sien ; un site qui a des salles les liste alors, pour cocher celles que prend l'événement. Ses dates les montrent avant le lieu (« Grande salle, Église du port »), et les liens de calendrier donnent les salles, le site et son adresse. Vous pouvez toujours écrire un lieu à vous à côté. Un type d'événement garde aussi son site et ses salles habituels.
 
 ### Votre lien de calendrier
 

@@ -258,6 +258,8 @@ function EventTypeDialog({
   // Where its events usually are (issue #559): one of the owner's locations.
   const locations = useLocations("teamId" in owner ? { teamId: owner.teamId } : { organizationId: owner.organizationId });
   const [locationId, setLocationId] = useState(type?.locationId ?? "");
+  // Its usual rooms (issue #563).
+  const [roomIds, setRoomIds] = useState<string[]>(type?.roomIds ?? []);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -265,7 +267,7 @@ function EventTypeDialog({
   const save = async () => {
     setBusy(true);
     setError(null);
-    const body = { name, startTime: startTime || null, durationMinutes: duration ? Number(duration) : null, callMinutes: call ? Number(call) : null, parts: parts.map(partBody), withSet, ...("organizationId" in owner ? { editingTeamIds } : {}), ...(locationId ? { locationId } : type?.locationId ? { locationId: null } : {}) };
+    const body = { name, startTime: startTime || null, durationMinutes: duration ? Number(duration) : null, callMinutes: call ? Number(call) : null, parts: parts.map(partBody), withSet, ...("organizationId" in owner ? { editingTeamIds } : {}), ...(locationId ? { locationId, roomIds } : type?.locationId ? { locationId: null } : {}) };
     try {
       if (type) await calls.update(type.id, body);
       else await calls.create(body);
@@ -307,7 +309,7 @@ function EventTypeDialog({
             <Label htmlFor="event-type-call">{t("teamCalendar.callMinutes")}</Label>
             <Input id="event-type-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} />
           </div>
-          <LocationField id="event-type-location" locations={locations} value={locationId} place="" onChange={(change) => setLocationId(change.locationId)} />
+          <LocationField id="event-type-location" locations={locations} value={locationId} place="" rooms={roomIds} onRooms={setRoomIds} onChange={(change) => setLocationId(change.locationId)} />
           {makesSets ? <WithSetField id="event-type-with-set" checked={withSet} onChange={setWithSet} /> : null}
           {makesSets && withSet && "organizationId" in owner ? <EditingTeamsField teams={owner.teams} value={editingTeamIds} onChange={setEditingTeamIds} /> : null}
           <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} />

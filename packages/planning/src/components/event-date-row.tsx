@@ -1,4 +1,4 @@
-import type { EventPart, MyEventDate } from "@oneverse/core";
+import { wherePlace, type EventPart, type MyEventDate } from "@oneverse/core";
 import { MapPin, Repeat } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
@@ -56,10 +56,10 @@ export function EventDateRow({ date, partLabel, act }: { date: MyEventDate; part
             <EntityAvatar name={date.teamName} color={date.teamColor} avatarUrl={date.teamAvatarUrl} size={16} />
             {date.teamName}
           </HostLink>
-          {date.place ? (
+          {wherePlace(date.place, date.rooms) ? (
             <span className="flex items-center gap-1">
               <MapPin className="size-3" aria-hidden />
-              {date.place}
+              {wherePlace(date.place, date.rooms)}
             </span>
           ) : null}
         </div>

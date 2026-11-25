@@ -525,6 +525,8 @@ function OrganizationEventDialog({
   // Where it takes place (issue #320): one of the organisation's locations.
   const locations = useLocations({ organizationId: organization.id });
   const [locationId, setLocationId] = useState(event?.locationId ?? "");
+  // The venue's rooms it takes (issue #563).
+  const [roomIds, setRoomIds] = useState<string[]>(event?.rooms?.map((room) => room.id) ?? []);
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
@@ -547,6 +549,7 @@ function OrganizationEventDialog({
     if (type.durationMinutes) setDuration(String(type.durationMinutes));
     const typeLocation = locations.find((one) => one.id === type.locationId);
     setLocationId(typeLocation?.id ?? "");
+    setRoomIds(typeLocation ? (type.roomIds ?? []) : []);
     setPlace(typeLocation?.name ?? "");
     if (typeLocation) setTimeZone(typeLocation.timeZone);
     setWithSet(type.withSet);
@@ -572,8 +575,8 @@ function OrganizationEventDialog({
     run(() => {
       const timing = { title, date, startTime, durationMinutes: Number(duration), timeZone, note: note || null, repeat: everyWeeks ? { everyWeeks: Number(everyWeeks), until: until || null } : null };
       return event
-        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, withSet, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
-        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, hostUserId, withSet, needs: needsBody() });
+        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], withSet, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
+        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], hostUserId, withSet, needs: needsBody() });
     });
 
   return (
@@ -657,6 +660,8 @@ function OrganizationEventDialog({
             locations={locations}
             value={locationId}
             place={place}
+            rooms={roomIds}
+            onRooms={setRoomIds}
             onChange={(change) => {
               setLocationId(change.locationId);
               if (change.place !== undefined) setPlace(change.place);
@@ -794,7 +799,7 @@ function OrganizationEventDialog({
                     ...(needs[0]?.call ? { callMinutes: Number(needs[0].call) } : {}),
                     withSet,
                     editingTeamIds: needs.filter((need) => need.editsSet).map((need) => need.teamId),
-                    ...(locationId ? { locationId } : {}),
+                    ...(locationId ? { locationId, roomIds } : {}),
                     parts: partsFromNeeds(needsBody()),
                   }),
                 )

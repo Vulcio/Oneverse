@@ -1580,6 +1580,8 @@ model TeamEvent {
   rehearsals        TeamEvent[]           @relation("Rehearsals")
   organizationEvent OrganizationEvent?    @relation(fields: [organizationEventId], references: [id], onDelete: Cascade)
   location          Location?             @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  // The venue's rooms it takes (issue #563).
+  rooms             Room[]                @relation("TeamEventRooms")
 
   @@unique([organizationEventId, teamId])
   @@index([teamId])
@@ -1617,6 +1619,8 @@ model OrganizationEvent {
   createdBy    User?        @relation("OrganizationEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   teamEvents   TeamEvent[]
   location     Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  // The venue's rooms it takes (issue #563).
+  rooms        Room[]       @relation("OrganizationEventRooms")
 
   @@index([organizationId])
   @@index([locationId])
@@ -1647,6 +1651,8 @@ model TeamEventType {
   team         Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   location     Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  // Its usual rooms (issue #563).
+  rooms        Room[]        @relation("TeamEventTypeRooms")
   events       TeamEvent[]
 
   @@unique([teamId, name])
@@ -3788,6 +3794,8 @@ model Location {
   address             String?
   // The time zone of its events, and of what follows it (a Pulse, issue #320).
   timeZone            String
+  // A venue at someone's home (issue #563): its address only for those who see its events.
+  home                Boolean  @default(false)
   ownerTeamId         String?
   ownerOrganizationId String?
   createdAt           DateTime @default(now())
@@ -3800,9 +3808,32 @@ model Location {
   eventTypes         TeamEventType[]
   // Screens and Pulses that follow its events (issue #320).
   screens            Screen[]
+  // Its rooms (issue #563), if it has any.
+  rooms              Room[]
 
   @@index([ownerTeamId])
   @@index([ownerOrganizationId])
+}
+
+// A space inside a venue (a Location) that events book (issue #563): Main hall,
+// Kids room 1. Setup and teardown are how long before and after an event it's
+// held by default (bookings, issue #565).
+model Room {
+  id              String   @id @default(cuid())
+  locationId      String
+  name            String
+  capacity        Int?
+  setupMinutes    Int      @default(0)
+  teardownMinutes Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  location           Location            @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  teamEvents         TeamEvent[]         @relation("TeamEventRooms")
+  organizationEvents OrganizationEvent[] @relation("OrganizationEventRooms")
+  eventTypes         TeamEventType[]     @relation("TeamEventTypeRooms")
+
+  @@index([locationId])
 }
 
 // Server backups (issue #119), edited in Admin > Backups: where the Worker

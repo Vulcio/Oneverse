@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { isTimeZone } from "../calendar/index.js";
-import { clearableText, optional, requiredText } from "./fields.js";
+import { clearableInt, clearableText, optional, requiredText } from "./fields.js";
 
 /** Where events take place (issue #320): an organisation's or a team's locations. */
 
@@ -14,6 +14,7 @@ export const CreateLocationSchema = z
     name: requiredText(80),
     address: optional(z.string().trim().max(300)),
     timeZone: timeZone.describe("An IANA time zone (Europe/Paris): its events' and what follows it"),
+    home: optional(z.boolean()).describe("At someone's home (issue #563): its address only for those who see its events"),
     teamId: optional(id),
     organizationId: optional(id),
   })
@@ -25,6 +26,7 @@ export const UpdateLocationSchema = z.strictObject({
   name: optional(requiredText(80)),
   address: clearableText(300),
   timeZone: optional(timeZone),
+  home: optional(z.boolean()),
 });
 export type UpdateLocationRequest = z.input<typeof UpdateLocationSchema>;
 
@@ -33,3 +35,23 @@ export const LocationsQuerySchema = z.strictObject({
   teamId: optional(id),
   organizationId: optional(id),
 });
+
+const minutes = z.number().int().min(0).max(24 * 60);
+
+/** POST /locations/:id/rooms (issue #563): a room of a venue, by its owner's admins. */
+export const CreateRoomSchema = z.strictObject({
+  name: requiredText(80),
+  capacity: optional(z.number().int().min(1).max(100000)),
+  setupMinutes: optional(minutes).describe("Held this long before an event, by default"),
+  teardownMinutes: optional(minutes).describe("Held this long after an event, by default"),
+});
+export type CreateRoomRequest = z.input<typeof CreateRoomSchema>;
+
+/** PATCH /locations/:id/rooms/:roomId: a field left out keeps its value; capacity null clears it. */
+export const UpdateRoomSchema = z.strictObject({
+  name: optional(requiredText(80)),
+  capacity: clearableInt(1, 100000),
+  setupMinutes: optional(minutes),
+  teardownMinutes: optional(minutes),
+});
+export type UpdateRoomRequest = z.input<typeof UpdateRoomSchema>;

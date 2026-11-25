@@ -71,11 +71,13 @@ Unlike a host, a **Speaker** can always be a guest, even from outside the organi
 
 A rehearsal ahead of each date: in **New event**, **Rehearsal for** picks the event it prepares, and **Days before** how many days ahead (up to 14), with its own start time and length. It follows that event: a date moved or cancelled moves or cancels its rehearsal. It shows on the calendar marked **Rehearsal**, "for Sunday service, Sun 18 Oct", and **Open set** opens that date's set, so everyone rehearses the songs that will be played. A rehearsal takes no answers or line-up of its own: the people signed up for its date (see [Line-up](/teams/#line-up)) see it on **My calendar** and in their calendar link, and are reminded the day before. Deleting the event deletes its rehearsals.
 
-### Locations
+### Venues
 
-Where the team's events take place: its admins add them under **Locations** on the team's page, with **Add location**: a **Name**, an **Address (optional)** and a **Time zone**. **Edit** changes one, **Remove** takes it off (its events keep their place, without the location). A team in an organisation can also use the organisation's locations (see [Locations](/organizations/#locations)).
+Where the team's events take place: its admins add them under **Venues** on the team's page, with **Add venue**: a **Name**, an **Address (optional)** and a **Time zone**. Tick **At someone's home** for a homegroup's house: its address then goes only to those who see its events, never into calendar links. **Edit** changes one, **Remove** takes it off (its events keep their place, without the venue). A team in an organisation can also use the organisation's venues (see [Venues](/organizations/#venues)).
 
-In **New event**, **Location** picks one: the place becomes its name and the time zone its own. You can still type a place of your own beside it ("Room 4").
+A venue may hold rooms - Main hall, Kids room 1: **Add room** under it, with a **Room name** and maybe a **Capacity**; **×** removes one (its events keep the venue).
+
+In **New event**, **Venue** picks one: the place becomes its name and the time zone its own; a venue with rooms then lists them, to tick those the event takes. Its dates show them before the place ("Main hall, Riverside church"), and calendar links give the rooms, the venue and its address. You can still type a place of your own beside it. An event type keeps its usual venue and rooms too.
 
 ### Your calendar link
 

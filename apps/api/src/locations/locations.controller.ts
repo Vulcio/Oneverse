@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { CreateLocationSchema, LocationsQuerySchema, UpdateLocationSchema } from "@oneverse/core";
+import { CreateLocationSchema, CreateRoomSchema, LocationsQuerySchema, UpdateLocationSchema, UpdateRoomSchema } from "@oneverse/core";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { zodDto } from "../common/zod-validation.js";
@@ -9,6 +9,8 @@ import { LocationsService } from "./locations.service.js";
 class CreateLocationDto extends zodDto(CreateLocationSchema) {}
 class UpdateLocationDto extends zodDto(UpdateLocationSchema) {}
 class LocationsQueryDto extends zodDto(LocationsQuerySchema) {}
+class CreateRoomDto extends zodDto(CreateRoomSchema) {}
+class UpdateRoomDto extends zodDto(UpdateRoomSchema) {}
 
 /** Locations (issue #320): where an organisation's or a team's events take place. */
 @ApiTags("locations")
@@ -48,5 +50,23 @@ export class LocationsController {
   @ApiOperation({ summary: "Removes a location", description: "Its events keep their place, without the location." })
   remove(@Param("locationId") locationId: string, @SignedIn() user: AuthenticatedUser): Promise<void> {
     return this.locations.remove(user, locationId);
+  }
+
+  @Post(":locationId/rooms")
+  @ApiOperation({ summary: "Adds a room to a venue (issue #563)", description: "By its owner's admins. Answers the venue with its rooms." })
+  addRoom(@Param("locationId") locationId: string, @Body() dto: CreateRoomDto, @SignedIn() user: AuthenticatedUser): ReturnType<LocationsService["addRoom"]> {
+    return this.locations.addRoom(user, locationId, dto);
+  }
+
+  @Patch(":locationId/rooms/:roomId")
+  @ApiOperation({ summary: "Changes a room", description: "A field left out keeps its value; capacity null clears it." })
+  updateRoom(@Param("locationId") locationId: string, @Param("roomId") roomId: string, @Body() dto: UpdateRoomDto, @SignedIn() user: AuthenticatedUser): ReturnType<LocationsService["updateRoom"]> {
+    return this.locations.updateRoom(user, locationId, roomId, dto);
+  }
+
+  @Delete(":locationId/rooms/:roomId")
+  @ApiOperation({ summary: "Removes a room", description: "Its events keep the venue, without the room. Answers the venue." })
+  removeRoom(@Param("locationId") locationId: string, @Param("roomId") roomId: string, @SignedIn() user: AuthenticatedUser): ReturnType<LocationsService["removeRoom"]> {
+    return this.locations.removeRoom(user, locationId, roomId);
   }
 }

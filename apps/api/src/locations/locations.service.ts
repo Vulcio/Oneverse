@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import type { CreateLocationRequest, UpdateLocationRequest } from "@oneverse/core";
+import type { CreateLocationRequest, CreateRoomRequest, UpdateLocationRequest, UpdateRoomRequest } from "@oneverse/core";
 import type { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -9,10 +9,12 @@ const LOCATION_SELECT = {
   name: true,
   address: true,
   timeZone: true,
+  home: true,
   ownerTeamId: true,
   ownerOrganizationId: true,
   team: { select: { name: true } },
   organization: { select: { name: true } },
+  rooms: { select: { id: true, name: true, capacity: true, setupMinutes: true, teardownMinutes: true }, orderBy: { name: "asc" } },
 } as const;
 type LocationRow = Prisma.LocationGetPayload<{ select: typeof LOCATION_SELECT }>;
 type Owner = { ownerTeamId: string | null; ownerOrganizationId: string | null };
@@ -44,6 +46,25 @@ export async function eventLocation(prisma: PrismaService, owner: { teamId: stri
   }
   return location;
 }
+
+/**
+ * The rooms an event takes (issue #563): its location's, none without one.
+ * Undefined when not given; on a change of location without rooms given,
+ * none (the old location's rooms aren't the new one's).
+ */
+export async function eventRooms(prisma: PrismaService, locationId: string | null, roomIds: readonly string[] | undefined, locationChanged = false): Promise<string[] | undefined> {
+  if (roomIds === undefined) return locationChanged ? [] : undefined;
+  const ids = [...new Set(roomIds)];
+  if (ids.length === 0) return [];
+  if (!locationId) throw new BadRequestException(["roomIds needs a locationId: rooms are a location's"]);
+  const found = await prisma.client.room.count({ where: { id: { in: ids }, locationId } });
+  if (found !== ids.length) throw new BadRequestException(["roomIds must be rooms of the event's location"]);
+  return ids;
+}
+
+/** Rooms as Prisma takes them: on a new event, or replacing an event's. */
+export const roomsOnCreate = (ids: string[] | undefined) => (ids?.length ? { connect: ids.map((id) => ({ id })) } : undefined);
+export const roomsOnUpdate = (ids: string[] | undefined) => (ids ? { set: ids.map((id) => ({ id })) } : undefined);
 
 /**
  * Locations (issue #320): where an organisation's or a team's events take
@@ -86,7 +107,7 @@ export class LocationsService {
     const owner = { ownerTeamId: data.teamId ?? null, ownerOrganizationId: data.teamId ? null : (data.organizationId ?? null) };
     if (!this.canEdit(user, scope, owner)) throw new ForbiddenException(data.teamId ? "Only the team's admins add locations for it" : "Only the organisation's admins add locations for it");
     const location = await this.prisma.client.location.create({
-      data: { name: data.name, address: data.address || null, timeZone: data.timeZone, ...owner },
+      data: { name: data.name, address: data.address || null, timeZone: data.timeZone, home: data.home ?? false, ...owner },
       select: LOCATION_SELECT,
     });
     return present(location, true);
@@ -96,7 +117,7 @@ export class LocationsService {
     await this.changeable(user, locationId);
     const location = await this.prisma.client.location.update({
       where: { id: locationId },
-      data: { name: change.name ?? undefined, address: change.address, timeZone: change.timeZone ?? undefined },
+      data: { name: change.name ?? undefined, address: change.address, timeZone: change.timeZone ?? undefined, home: change.home ?? undefined },
       select: LOCATION_SELECT,
     });
     return present(location, true);
@@ -106,6 +127,33 @@ export class LocationsService {
   async remove(user: AuthenticatedUser, locationId: string): Promise<void> {
     await this.changeable(user, locationId);
     await this.prisma.client.location.delete({ where: { id: locationId } });
+  }
+
+  /** A room of a venue (issue #563), by its owner's admins. */
+  async addRoom(user: AuthenticatedUser, locationId: string, data: CreateRoomRequest) {
+    await this.changeable(user, locationId);
+    await this.prisma.client.room.create({
+      data: { locationId, name: data.name, capacity: data.capacity ?? null, setupMinutes: data.setupMinutes ?? 0, teardownMinutes: data.teardownMinutes ?? 0 },
+    });
+    return this.get(user, locationId);
+  }
+
+  async updateRoom(user: AuthenticatedUser, locationId: string, roomId: string, change: UpdateRoomRequest) {
+    await this.changeable(user, locationId);
+    const { count } = await this.prisma.client.room.updateMany({
+      where: { id: roomId, locationId },
+      data: { name: change.name ?? undefined, capacity: change.capacity, setupMinutes: change.setupMinutes ?? undefined, teardownMinutes: change.teardownMinutes ?? undefined },
+    });
+    if (count === 0) throw new NotFoundException("Room not found");
+    return this.get(user, locationId);
+  }
+
+  /** Its events keep the venue, without the room. */
+  async removeRoom(user: AuthenticatedUser, locationId: string, roomId: string) {
+    await this.changeable(user, locationId);
+    const { count } = await this.prisma.client.room.deleteMany({ where: { id: roomId, locationId } });
+    if (count === 0) throw new NotFoundException("Room not found");
+    return this.get(user, locationId);
   }
 
   private async changeable(user: AuthenticatedUser, locationId: string) {
@@ -145,6 +193,8 @@ function present(location: LocationRow, canEdit: boolean) {
     name: location.name,
     address: location.address,
     timeZone: location.timeZone,
+    home: location.home,
+    rooms: location.rooms,
     owner: location.ownerTeamId
       ? { kind: "team" as const, id: location.ownerTeamId, name: location.team?.name ?? "" }
       : { kind: "organization" as const, id: location.ownerOrganizationId!, name: location.organization?.name ?? "" },

@@ -30,7 +30,7 @@ A set put on a screen from **Screens**, in its tile's **Settings**, is fixed ins
 
 ### Events at a location
 
-A team's or an organisation's screen can follow one of its [locations](/teams/#locations) instead: pick **Events at Main campus (automatic)** as its **Set**. It then shows the set of the event taking place there now (started within three hours), else the next one there today, worked out in the location's time zone; it moves on by itself when the next event starts. A lobby TV or a Pulse that stays at a church is set up this way once. Its tile says "At Main campus: Sunday service", or that there's no event there now.
+A team's or an organisation's screen can follow one of its [venues](/teams/#venues) instead: pick **Events at Main campus (automatic)** as its **Set**. It then shows the set of the event taking place there now (started within three hours), else the next one there today, worked out in the location's time zone; it moves on by itself when the next event starts. A lobby TV or a Pulse that stays at a church is set up this way once. Its tile says "At Main campus: Sunday service", or that there's no event there now.
 
 ### The screen's menu
 

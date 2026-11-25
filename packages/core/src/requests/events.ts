@@ -51,6 +51,7 @@ export const CreateTeamEventSchema = z.strictObject({
   timeZone: timeZone.describe("An IANA time zone (Europe/Paris): times stay the same across daylight saving"),
   place: optional(z.string().trim().max(200)),
   locationId: optional(z.string().trim().min(1).max(64)).describe("Where it takes place (issue #320): one of the team's or its organisation's locations; `place` is filled from it when left out"),
+  roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563)"),
   note: optional(z.string().trim().max(1000)),
   repeat: optional(RepeatSchema).describe("Left out: a one-off"),
   parts: optional(eventParts),
@@ -71,6 +72,7 @@ export const UpdateTeamEventSchema = z.strictObject({
   timeZone: timeZone.optional(),
   place: clearableText(200),
   locationId: z.string().trim().min(1).max(64).nullable().optional().describe("null: no location"),
+  roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563); [] takes none"),
   note: clearableText(1000),
   repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
   parts: eventParts.optional(),
@@ -91,6 +93,7 @@ export const CreateTeamEventTypeSchema = z.strictObject({
   withSet: optional(z.boolean()).describe("Whether its events' dates get a set; true when left out"),
   editingTeamIds: optional(z.array(z.string().trim().min(1).max(64)).max(30)).describe("An organisation's type (issue #578): the groups that edit its events' sets. Left out or empty: every group that uses Songverse"),
   locationId: optional(z.string().trim().min(1).max(64)).describe("Where its events usually are (issue #559): one of its owner's locations"),
+  roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563)"),
 });
 export type CreateTeamEventTypeRequest = z.input<typeof CreateTeamEventTypeSchema>;
 
@@ -104,6 +107,7 @@ export const UpdateTeamEventTypeSchema = z.strictObject({
   withSet: z.boolean().optional(),
   editingTeamIds: z.array(z.string().trim().min(1).max(64)).max(30).optional(),
   locationId: z.string().trim().min(1).max(64).nullable().optional(),
+  roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563); [] takes none"),
 });
 export type UpdateTeamEventTypeRequest = z.input<typeof UpdateTeamEventTypeSchema>;
 
@@ -255,6 +259,7 @@ export const CreateOrganizationEventSchema = z.strictObject({
   timeZone,
   place: optional(z.string().trim().max(200)),
   locationId: optional(z.string().trim().min(1).max(64)).describe("Where it takes place (issue #320): one of the organisation's locations; `place` is filled from it when left out"),
+  roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563)"),
   note: optional(z.string().trim().max(1000)),
   repeat: optional(RepeatSchema).describe("Left out: a one-off"),
   hostUserId: z.string().trim().min(1).max(64).describe("Who's in charge of it: one of the organisation's members"),
@@ -272,6 +277,7 @@ export const UpdateOrganizationEventSchema = z.strictObject({
   timeZone: timeZone.optional(),
   place: clearableText(200),
   locationId: z.string().trim().min(1).max(64).nullable().optional().describe("null: no location"),
+  roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563); [] takes none"),
   note: clearableText(1000),
   repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
   hostUserId: z.string().trim().min(1).max(64).optional(),

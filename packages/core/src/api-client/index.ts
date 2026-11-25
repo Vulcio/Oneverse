@@ -54,7 +54,7 @@ import type { RecordingChord } from "../recording/chords.js";
 import type { RecordingAnalysis } from "../recording/analysis-check.js";
 import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
-import type { CreateLocationRequest, UpdateLocationRequest } from "../requests/locations.js";
+import type { CreateLocationRequest, CreateRoomRequest, UpdateLocationRequest, UpdateRoomRequest } from "../requests/locations.js";
 import type { z } from "zod";
 import type { BibleUpdateSchema, YouVersionSearchQuerySchema } from "../requests/scriptures.js";
 import type { SetItemPassage } from "../screens/index.js";
@@ -1064,8 +1064,28 @@ export interface EventLocation {
   address: string | null;
   timeZone: string;
   owner: { kind: "team" | "organization"; id: string; name: string };
+  /** At someone's home (issue #563): its address only for those who see its events. */
+  home?: boolean;
+  /** Its rooms (issue #563), if it has any. */
+  rooms?: LocationRoom[];
   /** Its owner's admins change it. */
   canEdit: boolean;
+}
+
+/** A space inside a venue that events book (issue #563). */
+export interface LocationRoom {
+  id: string;
+  name: string;
+  capacity: number | null;
+  /** Held this long before and after an event, by default (bookings, issue #565). */
+  setupMinutes: number;
+  teardownMinutes: number;
+}
+
+/** A room an event takes. */
+export interface EventRoom {
+  id: string;
+  name: string;
 }
 
 /** A widget's default look (issue #273): the user's own, or a team's. */
@@ -1655,6 +1675,8 @@ export interface TeamEvent {
   place: string | null;
   /** Where it takes place (issue #320): one of its owner's locations. */
   locationId: string | null;
+  /** The rooms of its location it takes (issue #563). */
+  rooms?: EventRoom[];
   note: string | null;
   repeat: EventRepeat | null;
   /** The parts it needs (issue #235, phase 7). */
@@ -1708,6 +1730,8 @@ export interface TeamEventType {
   editingTeamIds?: string[];
   /** Where its events usually are (issue #559). */
   locationId?: string | null;
+  /** Its usual rooms (issue #563), its location's. */
+  roomIds?: string[];
   /** How many of the team's events were made from it. */
   eventCount: number;
 }
@@ -1739,6 +1763,8 @@ export interface OrganizationEvent {
   place: string | null;
   /** Where it takes place (issue #320): one of its owner's locations. */
   locationId: string | null;
+  /** The rooms of its location it takes (issue #563). */
+  rooms?: EventRoom[];
   note: string | null;
   repeat: EventRepeat | null;
   host: { id: string; displayName: string } | null;
@@ -1797,6 +1823,8 @@ export interface TeamEventDateSummary extends EventDate {
   /** What the date asks for besides its event's parts (issue #549), included in `parts`. */
   asks?: EventPart[];
   place: string | null;
+  /** The venue's rooms it takes (issue #563), by name. */
+  rooms?: string[];
   /** Where it takes place (issue #320): one of its owner's locations. */
   locationId: string | null;
   timeZone: string;
@@ -1926,6 +1954,8 @@ export interface MyEventDate extends EventDate {
   eventId: string;
   title: string;
   place: string | null;
+  /** The venue's rooms it takes (issue #563), by name. */
+  rooms?: string[];
   timeZone: string;
   /** When to be there (issue #240), ISO 8601; null without a call time. */
   callAt: string | null;
@@ -4181,6 +4211,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     createLocation: (data: CreateLocationRequest) => request<EventLocation>("/locations", { method: "POST", body: JSON.stringify(data) }),
     updateLocation: (locationId: string, data: UpdateLocationRequest) => request<EventLocation>(`/locations/${locationId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteLocation: (locationId: string) => request<void>(`/locations/${locationId}`, { method: "DELETE" }),
+    addRoom: (locationId: string, data: CreateRoomRequest) => request<EventLocation>(`/locations/${locationId}/rooms`, { method: "POST", body: JSON.stringify(data) }),
+    updateRoom: (locationId: string, roomId: string, data: UpdateRoomRequest) => request<EventLocation>(`/locations/${locationId}/rooms/${roomId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    removeRoom: (locationId: string, roomId: string) => request<EventLocation>(`/locations/${locationId}/rooms/${roomId}`, { method: "DELETE" }),
     uploadBrandAsset: (brandId: string, kind: BrandAssetKind, file: Blob, filename: string, name?: string) => {
       const form = new FormData();
       form.append("file", file, filename);

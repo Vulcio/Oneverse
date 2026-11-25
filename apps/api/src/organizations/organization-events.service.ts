@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { eventFallsOn } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { eventLocation } from "../locations/locations.service.js";
+import { eventLocation, eventRooms, roomsOnCreate, roomsOnUpdate } from "../locations/locations.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { AvailabilityService } from "../team-events/availability.service.js";
@@ -17,6 +17,7 @@ type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin">;
 
 const withGroups = {
   host: { select: { id: true, displayName: true } },
+  rooms: { select: { id: true, name: true }, orderBy: { name: "asc" } },
   teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, withSet: true, editsSet: true, team: { select: { name: true, color: true, avatarUrl: true, usesSongverse: true } } }, orderBy: { team: { name: "asc" } } },
 } as const;
 type Row = Prisma.OrganizationEventGetPayload<{ include: typeof withGroups }>;
@@ -72,6 +73,8 @@ export class OrganizationEventsService {
       timeZone: event.timeZone,
       place: event.place,
       locationId: event.locationId,
+      // The rooms of its location it takes (issue #563).
+      rooms: event.rooms,
       note: event.note,
       repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null,
       host: event.host,
@@ -218,6 +221,7 @@ export class OrganizationEventsService {
         timeZone: dto.timeZone,
         place: dto.place || location?.name || null,
         locationId: location?.id ?? null,
+        rooms: roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds)),
         note: dto.note || null,
         repeatEveryWeeks: dto.repeat?.everyWeeks ?? null,
         repeatUntil: dto.repeat?.until ? day(dto.repeat.until) : null,
@@ -228,7 +232,7 @@ export class OrganizationEventsService {
     });
     try {
       for (const need of await this.withEditors(dto.needs))
-        await this.events.create(need.teamId, viewer.id, { ...this.timing(event), parts: need.parts, callMinutes: need.callMinutes, withSet: event.withSet, editsSet: need.editsSet }, event.id);
+        await this.events.create(need.teamId, viewer.id, { ...this.timing(event), ...(dto.roomIds?.length ? { roomIds: dto.roomIds } : {}), parts: need.parts, callMinutes: need.callMinutes, withSet: event.withSet, editsSet: need.editsSet }, event.id);
     } catch (error) {
       // A group's part refused (one of its parts): none of it is kept.
       await this.prisma.client.organizationEvent.delete({ where: { id: event.id } });
@@ -271,6 +275,8 @@ export class OrganizationEventsService {
     const location = dto.locationId ? await eventLocation(this.prisma, { organizationId }, dto.locationId) : null;
     // Another location, no place given: the location's name.
     const place = dto.place === undefined && location && location.id !== before.locationId ? location.name : dto.place;
+    // Its rooms (issue #563), and every group's part's the same.
+    const roomIds = await eventRooms(this.prisma, dto.locationId === undefined ? before.locationId : dto.locationId, dto.roomIds, dto.locationId !== undefined && dto.locationId !== before.locationId);
     const after = await this.prisma.client.organizationEvent.update({
       where: { id: eventId },
       data: {
@@ -281,6 +287,7 @@ export class OrganizationEventsService {
         timeZone: dto.timeZone,
         place,
         locationId: dto.locationId,
+        rooms: roomsOnUpdate(roomIds),
         note: dto.note,
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
@@ -296,6 +303,7 @@ export class OrganizationEventsService {
       timeZone: dto.timeZone,
       place,
       locationId: dto.locationId,
+      roomIds,
       note: dto.note,
       repeat: dto.repeat,
     };
@@ -313,7 +321,7 @@ export class OrganizationEventsService {
     }
     for (const need of needed?.values() ?? []) {
       if (!before.teamEvents.some((part) => part.teamId === need.teamId))
-        await this.events.create(need.teamId, viewer.id, { ...this.timing(after), parts: need.parts, callMinutes: need.callMinutes, withSet: after.withSet, editsSet: need.editsSet }, eventId);
+        await this.events.create(need.teamId, viewer.id, { ...this.timing(after), roomIds: (await this.find(organizationId, eventId)).rooms.map((room) => room.id), parts: need.parts, callMinutes: need.callMinutes, withSet: after.withSet, editsSet: need.editsSet }, eventId);
     }
     if (after.hostUserId !== before.hostUserId) await this.tellHost(after, viewer.id);
     return this.summary(await this.find(organizationId, eventId), viewer, role);

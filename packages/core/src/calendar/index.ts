@@ -370,3 +370,8 @@ export function deadlineReminderDue(deadline: string, timeZone: string, now: str
   return today === addDays(deadline, -1) && localTime(now, timeZone) >= DEADLINE_REMINDER_TIME;
 }
 export * from "./parts.js";
+
+/** Where a date is, as shown (issue #563): its venue's rooms, then its place - "Main hall, Kids room, Church". */
+export function wherePlace(place: string | null | undefined, rooms?: readonly string[] | null): string | null {
+  return [...(rooms ?? []), place].filter(Boolean).join(", ") || null;
+}

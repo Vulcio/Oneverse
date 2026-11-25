@@ -91,6 +91,46 @@ check("…and forgets it", r.status === 200 && r.body.locationId === null, JSON.
 r = await call(lead, "POST", `/teams/${team.id}/event-types`, { name: `Elsewhere ${stamp}`, locationId: "nowhere" });
 check("…only one of its owner's", r.status === 400, JSON.stringify(r.body));
 
+// --- venues' rooms (issue #563)
+r = await call(member, "POST", `/locations/${campus.id}/rooms`, { name: "Main hall" });
+check("only its admins add rooms", r.status === 403, String(r.status));
+r = await call(lead, "POST", `/locations/${campus.id}/rooms`, { name: "Main hall", capacity: 300, setupMinutes: 30 });
+const mainHall = r.body.rooms?.find((room) => room.name === "Main hall");
+check("a room, with its capacity and setup", r.status === 201 && mainHall?.capacity === 300 && mainHall.setupMinutes === 30 && mainHall.teardownMinutes === 0, JSON.stringify(r.body));
+const kidsRoom = (await call(lead, "POST", `/locations/${campus.id}/rooms`, { name: "Kids room" })).body.rooms.find((room) => room.name === "Kids room");
+r = await call(lead, "PATCH", `/locations/${campus.id}/rooms/${kidsRoom.id}`, { capacity: 25, name: "Kids room 1" });
+check("changed", r.status === 200 && r.body.rooms.some((room) => room.id === kidsRoom.id && room.capacity === 25 && room.name === "Kids room 1"), JSON.stringify(r.body));
+r = await call(member, "GET", "/locations?organizationId=" + org.id);
+check("its members see the rooms", r.status === 200 && r.body.find((one) => one.id === campus.id)?.rooms.length === 2, JSON.stringify(r.body));
+r = await call(lead, "POST", `${base}/events`, { ...service, title: `Rooms ${stamp}`, locationId: campus.id, roomIds: [mainHall.id, kidsRoom.id] });
+const roomed = r.body;
+check("an organisation's event takes rooms", r.status === 201 && roomed.rooms?.length === 2, JSON.stringify(r.body));
+r = await call(member, "GET", `/teams/${team.id}/events/${roomed.needs[0].teamEventId}`);
+check("…its group's part too", r.body.rooms?.map((room) => room.name).sort().join() === "Kids room 1,Main hall", JSON.stringify(r.body));
+r = await call(lead, "PATCH", `${base}/events/${roomed.id}`, { roomIds: [mainHall.id] });
+check("…changed", r.status === 200 && r.body.rooms.length === 1 && r.body.rooms[0].id === mainHall.id, JSON.stringify(r.body));
+const feedUrl = (await call(lead, "POST", `${base}/calendar-feed`)).body.url;
+const feedLocation = async () => (await (await fetch(feedUrl)).text()).replace(/\r?\n /g, "").split(/\r?\n/).find((line) => line.startsWith("LOCATION:Main hall")) ?? "";
+let line = await feedLocation();
+check("calendar links say the room, the venue and its address", line === "LOCATION:Main hall\\, Main campus - 1 Church Street\\, Lyon", line);
+await call(lead, "PATCH", `/locations/${campus.id}`, { home: true });
+line = await feedLocation();
+check("…not a home's address", line === "LOCATION:Main hall\\, Main campus", line);
+await call(lead, "PATCH", `/locations/${campus.id}`, { home: false });
+r = await call(lead, "POST", `${base}/events`, { ...service, title: `No venue ${stamp}`, roomIds: [mainHall.id] });
+check("rooms need their venue", r.status === 400, JSON.stringify(r.body));
+const other = (await call(lead, "POST", "/locations", { name: "Other", timeZone: "Europe/Paris", organizationId: org.id })).body;
+r = await call(lead, "POST", `${base}/events`, { ...service, title: `Wrong room ${stamp}`, locationId: other.id, roomIds: [mainHall.id] });
+check("…not another venue's", r.status === 400, JSON.stringify(r.body));
+r = await call(lead, "PATCH", `${base}/events/${roomed.id}`, { locationId: other.id });
+check("another venue: none of the old one's rooms", r.status === 200 && r.body.rooms.length === 0, JSON.stringify(r.body));
+r = await call(lead, "POST", `${base}/event-types`, { name: `Roomed ${stamp}`, startTime: "10:00", locationId: campus.id, roomIds: [kidsRoom.id], parts: [{ part: "DRUMS", count: 1, openTo: [team.id] }] });
+check("an event type keeps its rooms", r.status === 201 && r.body.roomIds?.[0] === kidsRoom.id, JSON.stringify(r.body));
+r = await call(lead, "DELETE", `/locations/${campus.id}/rooms/${kidsRoom.id}`);
+check("a room removed", r.status === 200 && r.body.rooms.length === 1, JSON.stringify(r.body));
+r = await call(lead, "PATCH", `/locations/${campus.id}`, { home: true });
+check("a venue at someone's home", r.status === 200 && r.body.home === true, JSON.stringify(r.body));
+
 // --- removing one
 r = await call(member, "DELETE", `/locations/${annex.id}`);
 check("a member doesn't remove one", r.status === 403, String(r.status));

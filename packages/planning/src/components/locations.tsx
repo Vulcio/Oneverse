@@ -1,5 +1,5 @@
-import type { EventLocation } from "@oneverse/core";
-import { MapPin } from "lucide-react";
+import type { EventLocation, LocationRoom } from "@oneverse/core";
+import { DoorOpen, House, MapPin, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -39,10 +39,28 @@ export function useLocations(owner: Owner | null) {
 }
 
 /**
- * An event's location (issue #320), shown when its owner has any. Picking
- * one fills the place (unless one of its own was typed) and the time zone.
+ * An event's venue (issue #320), shown when its owner has any. Picking one
+ * fills the place (unless one of its own was typed) and the time zone; a
+ * venue with rooms (issue #563) then asks which it takes - none on another
+ * venue.
  */
-export function LocationField({ id, locations, value, place, onChange }: { id: string; locations: EventLocation[]; value: string; place: string; onChange: (change: { locationId: string; place?: string; timeZone?: string }) => void }) {
+export function LocationField({
+  id,
+  locations,
+  value,
+  place,
+  onChange,
+  rooms,
+  onRooms,
+}: {
+  id: string;
+  locations: EventLocation[];
+  value: string;
+  place: string;
+  onChange: (change: { locationId: string; place?: string; timeZone?: string }) => void;
+  rooms?: string[];
+  onRooms?: (roomIds: string[]) => void;
+}) {
   const { t } = useTranslation();
   if (locations.length === 0 && !value) return null;
   const current = locations.find((one) => one.id === value);
@@ -58,6 +76,7 @@ export function LocationField({ id, locations, value, place, onChange }: { id: s
           // The place follows the location while it's empty or the last location's name.
           const follows = !place || place === current?.name;
           onChange({ locationId: e.target.value, ...(picked ? { timeZone: picked.timeZone, ...(follows ? { place: picked.name } : {}) } : {}) });
+          onRooms?.([]);
         }}
       >
         <option value="">{t("teamCalendar.noLocation")}</option>
@@ -67,6 +86,20 @@ export function LocationField({ id, locations, value, place, onChange }: { id: s
           </option>
         ))}
       </NativeSelect>
+      {onRooms && current?.rooms?.length ? (
+        <fieldset className="mt-1 flex flex-wrap gap-x-4 gap-y-1.5" data-testid="event-rooms">
+          <legend className="sr-only">{t("locations.rooms")}</legend>
+          {current.rooms.map((room) => {
+            const checked = rooms?.includes(room.id) ?? false;
+            return (
+              <label key={room.id} className="flex items-center gap-2 text-sm" data-testid="event-room" data-room={room.name}>
+                <input type="checkbox" className="size-4" checked={checked} onChange={(e) => onRooms(e.target.checked ? [...(rooms ?? []), room.id] : (rooms ?? []).filter((one) => one !== room.id))} />
+                {room.name}
+              </label>
+            );
+          })}
+        </fieldset>
+      ) : null}
     </div>
   );
 }
@@ -132,8 +165,12 @@ export function LocationsCard({ owner }: { owner: Owner }) {
               ) : (
                 <li key={location.id} className="flex items-start justify-between gap-2 py-2 first:pt-0" data-testid="location-row">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{location.name}</p>
+                    <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+                      {location.home ? <House className="size-3.5 text-muted-foreground" aria-label={t("locations.home")} /> : null}
+                      {location.name}
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">{[location.address, location.timeZone.replaceAll("_", " ")].filter(Boolean).join(" · ")}</p>
+                    <Rooms location={location} onChanged={load} onError={setError} />
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <Button variant="ghost" size="sm" onClick={() => setEditing(location.id)}>
@@ -166,11 +203,80 @@ export function LocationsCard({ owner }: { owner: Owner }) {
   );
 }
 
-function LocationEditor({ initial, busy, onSave, onCancel }: { initial?: EventLocation; busy: boolean; onSave: (data: { name: string; address: string; timeZone: string }) => void; onCancel: () => void }) {
+/** A venue's rooms (issue #563): each with its capacity, removed with ×; a new one by name. */
+function Rooms({ location, onChanged, onError }: { location: EventLocation; onChanged: () => Promise<unknown>; onError: (message: string) => void }) {
+  const { api } = usePlanning();
+  const { t } = useTranslation();
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [capacity, setCapacity] = useState("");
+  const [busy, setBusy] = useState(false);
+  const run = async (action: () => Promise<unknown>) => {
+    setBusy(true);
+    try {
+      await action();
+      await onChanged();
+      return true;
+    } catch (err) {
+      onError(err instanceof Error ? err.message : String(err));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+  const rooms: LocationRoom[] = location.rooms ?? [];
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5" data-testid="location-rooms">
+      {rooms.map((room) => (
+        <span key={room.id} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs" data-testid="location-room" data-room={room.name}>
+          <DoorOpen className="size-3 text-muted-foreground" aria-hidden />
+          {room.name}
+          {room.capacity ? <span className="text-muted-foreground">· {t("locations.capacityOf", { count: room.capacity })}</span> : null}
+          {location.canEdit ? (
+            <button type="button" className="ml-0.5 text-muted-foreground hover:text-destructive" aria-label={t("locations.removeRoom", { name: room.name })} disabled={busy} onClick={() => void run(() => api.removeRoom(location.id, room.id))}>
+              <X className="size-3" />
+            </button>
+          ) : null}
+        </span>
+      ))}
+      {!location.canEdit ? null : adding ? (
+        <form
+          className="flex flex-wrap items-center gap-1.5"
+          data-testid="room-form"
+          onSubmit={(submitted) => {
+            submitted.preventDefault();
+            void run(() => api.addRoom(location.id, { name: name.trim(), ...(capacity ? { capacity: Number(capacity) } : {}) })).then((done) => {
+              if (!done) return;
+              setName("");
+              setCapacity("");
+              setAdding(false);
+            });
+          }}
+        >
+          <Input className="h-8 w-36 text-xs" value={name} maxLength={80} required autoFocus placeholder={t("locations.roomName")} aria-label={t("locations.roomName")} onChange={(e) => setName(e.target.value)} data-testid="room-name" />
+          <Input className="h-8 w-24 text-xs" type="number" min={1} value={capacity} placeholder={t("locations.capacity")} aria-label={t("locations.capacity")} onChange={(e) => setCapacity(e.target.value)} data-testid="room-capacity" />
+          <Button type="submit" size="sm" disabled={busy || !name.trim()} data-testid="room-save">
+            {t("locations.save")}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
+            {t("locations.cancel")}
+          </Button>
+        </form>
+      ) : (
+        <Button variant="ghost" size="sm" onClick={() => setAdding(true)} data-testid="room-add">
+          {t("locations.addRoom")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function LocationEditor({ initial, busy, onSave, onCancel }: { initial?: EventLocation; busy: boolean; onSave: (data: { name: string; address: string; timeZone: string; home: boolean }) => void; onCancel: () => void }) {
   const { t } = useTranslation();
   const [name, setName] = useState(initial?.name ?? "");
   const [address, setAddress] = useState(initial?.address ?? "");
   const [timeZone, setTimeZone] = useState(initial?.timeZone ?? browserZone());
+  const [home, setHome] = useState(initial?.home ?? false);
   const id = initial?.id ?? "new";
   return (
     <form
@@ -178,7 +284,7 @@ function LocationEditor({ initial, busy, onSave, onCancel }: { initial?: EventLo
       data-testid="location-form"
       onSubmit={(submitted) => {
         submitted.preventDefault();
-        onSave({ name: name.trim(), address: address.trim(), timeZone });
+        onSave({ name: name.trim(), address: address.trim(), timeZone, home });
       }}
     >
       <div className="flex flex-col gap-1.5">
@@ -189,6 +295,13 @@ function LocationEditor({ initial, busy, onSave, onCancel }: { initial?: EventLo
         <Label htmlFor={`location-address-${id}`}>{t("locations.address")}</Label>
         <Input id={`location-address-${id}`} value={address} maxLength={300} onChange={(e) => setAddress(e.target.value)} />
       </div>
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" className="mt-0.5 size-4" checked={home} onChange={(e) => setHome(e.target.checked)} data-testid="location-home" />
+        <span>
+          {t("locations.atHome")}
+          <span className="block text-xs text-muted-foreground">{t("locations.atHomeHint")}</span>
+        </span>
+      </label>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`location-zone-${id}`}>{t("locations.timeZone")}</Label>
         <NativeSelect id={`location-zone-${id}`} value={timeZone} onChange={(e) => setTimeZone(e.target.value)}>

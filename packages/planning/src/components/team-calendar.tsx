@@ -1,4 +1,4 @@
-import { addDays, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, wherePlace, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, Building2, CalendarArrowUp, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, ExternalLink, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -298,10 +298,10 @@ export function TeamCalendar({
                         {t("teamCalendar.rehearsalOf", { title: rehearsal.title, date: dayFormat.format(new Date(`${rehearsal.date}T12:00:00Z`)) })}
                       </span>
                     ) : null}
-                    {date.place ? (
+                    {wherePlace(date.place, date.rooms) ? (
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <MapPin className="size-3" aria-hidden />
-                        {date.place}
+                        {wherePlace(date.place, date.rooms)}
                       </span>
                     ) : null}
                     {/* Whether you can play (issue #235); for the admins, how everyone answered. */}
@@ -676,10 +676,10 @@ function EventSeriesList({ events, types, isAdmin, partLabel, onEdit, organizati
                 )}
               </span>
               {event.parts.length > 0 ? <span className="text-xs text-muted-foreground">{event.parts.map((part) => `${partLabel(part)}${part.count > 1 ? ` ×${part.count}` : ""}`).join(", ")}</span> : null}
-              {event.place ? (
+              {wherePlace(event.place, event.rooms?.map((room) => room.name)) ? (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="size-3" aria-hidden />
-                  {event.place}
+                  {wherePlace(event.place, event.rooms?.map((room) => room.name))}
                 </span>
               ) : null}
             </div>
@@ -887,6 +887,8 @@ function EventDialog({
   // Where it takes place (issue #320): one of the team's or its organisation's locations.
   const locations = useLocations({ teamId });
   const [locationId, setLocationId] = useState(event?.locationId ?? "");
+  // The venue's rooms it takes (issue #563).
+  const [roomIds, setRoomIds] = useState<string[]>(event?.rooms?.map((room) => room.id) ?? []);
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
@@ -917,6 +919,7 @@ function EventDialog({
     const typeLocation = locations.find((one) => one.id === type.locationId);
     if (typeLocation) {
       setLocationId(typeLocation.id);
+      setRoomIds(type.roomIds ?? []);
       if (!place || place === locations.find((one) => one.id === locationId)?.name) setPlace(typeLocation.name);
       if (!parentEvent) setTimeZone(typeLocation.timeZone);
     }
@@ -936,6 +939,7 @@ function EventDialog({
           timeZone: parentEvent.timeZone,
           place: place || null,
           locationId: locationId || null,
+          roomIds: locationId ? roomIds : [],
           note: note || null,
           rehearsalFor: { eventId: parentEvent.id, daysBefore: Number(daysBefore) },
         }
@@ -948,6 +952,7 @@ function EventDialog({
           timeZone,
           place: place || null,
           locationId: locationId || null,
+          roomIds: locationId ? roomIds : [],
           note: note || null,
           repeat,
           parts: parts.map(partBody),
@@ -1072,6 +1077,8 @@ function EventDialog({
             locations={locations}
             value={locationId}
             place={place}
+            rooms={roomIds}
+            onRooms={setRoomIds}
             onChange={(change) => {
               setLocationId(change.locationId);
               if (change.place !== undefined) setPlace(change.place);

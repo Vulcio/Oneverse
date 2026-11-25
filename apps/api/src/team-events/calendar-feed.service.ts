@@ -27,6 +27,15 @@ function callLine(startsAt: string, minutes: number | null, timeZone: string, lo
  * ahead, cancelled dates left out - each with its team, place and set.
  * Resetting the link makes a new token; the old address stops working.
  */
+const withVenue = { location: { select: { address: true, home: true } } } as const;
+
+/** Where a date is, for a calendar app (issue #563): its rooms, its place, and its venue's address - not a home's, in a link anyone may have. */
+function feedLocation(event: { place: string | null; rooms: { name: string }[]; location: { address: string | null; home: boolean } | null }, personal: boolean): string | null {
+  const address = event.location?.address && (personal || !event.location.home) ? event.location.address : null;
+  const where = [...event.rooms.map((room) => room.name), event.place].filter(Boolean).join(", ");
+  return [where, address && address !== event.place ? address : null].filter(Boolean).join(" - ") || null;
+}
+
 @Injectable()
 export class CalendarFeedService {
   constructor(private readonly prisma: PrismaService) {}
@@ -112,7 +121,7 @@ export class CalendarFeedService {
    * answers or line-up.
    */
   private async teamEntries(teamId: string, from: string, to: string, locale: string): Promise<CalendarFeedEntry[]> {
-    const events = await this.prisma.client.teamEvent.findMany({ where: { teamId }, include: { ...withDates, team: { select: { name: true } } } });
+    const events = await this.prisma.client.teamEvent.findMany({ where: { teamId }, include: { ...withDates, ...withVenue, team: { select: { name: true } } } });
     const entries: CalendarFeedEntry[] = [];
     for (const event of events) {
       const parent = event.rehearsalForId ? events.find((one) => one.id === event.rehearsalForId) : null;
@@ -127,7 +136,7 @@ export class CalendarFeedService {
           start: date.startsAt,
           end: date.endsAt,
           title: date.title || event.title,
-          location: event.place,
+          location: feedLocation(event, false),
           description: [callLine(date.startsAt, event.callMinutes, event.timeZone, locale), event.note, setUrl].filter(Boolean).join("\n"),
           // Its page (issue #575): when, where, the line-up and the set.
           url: `${webUrl()}${eventDatePath(event.id, date.date)}`,
@@ -142,7 +151,7 @@ export class CalendarFeedService {
    * many groups it needs, cancelled ones left out - nobody's answers.
    */
   private async organizationEntries(organizationId: string, from: string, to: string, locale: string): Promise<CalendarFeedEntry[]> {
-    const events = await this.prisma.client.organizationEvent.findMany({ where: { organizationId }, select: { id: true, teamEvents: { include: withDates, orderBy: { createdAt: "asc" } } } });
+    const events = await this.prisma.client.organizationEvent.findMany({ where: { organizationId }, select: { id: true, teamEvents: { include: { ...withDates, ...withVenue }, orderBy: { createdAt: "asc" } } } });
     const entries: CalendarFeedEntry[] = [];
     for (const { id, teamEvents } of events) {
       const [first] = teamEvents;
@@ -157,7 +166,7 @@ export class CalendarFeedService {
           start: date.startsAt,
           end: date.endsAt,
           title: date.title || first.title,
-          location: first.place,
+          location: feedLocation(first, false),
           description: [callLine(date.startsAt, first.callMinutes, first.timeZone, locale), first.note, setlistId ? `${webUrl()}/sets/${setlistId}` : null].filter(Boolean).join("\n"),
           url: `${webUrl()}${eventDatePath(first.id, date.date)}`,
         });
@@ -180,7 +189,7 @@ export class CalendarFeedService {
     );
     const events = await this.prisma.client.teamEvent.findMany({
       where: { id: { in: [...new Set(answers.map((answer) => answer.eventId))] } },
-      include: { ...withDates, team: { select: { name: true } } },
+      include: { ...withDates, ...withVenue, team: { select: { name: true } } },
     });
     const entries: CalendarFeedEntry[] = [];
     for (const answer of answers) {
@@ -196,13 +205,13 @@ export class CalendarFeedService {
         start: date.startsAt,
         end: date.endsAt,
         title: `${date.title || event.title} (${event.team.name})`,
-        location: event.place,
+        location: feedLocation(event, true),
         description: [callLine(date.startsAt, event.callMinutes, event.timeZone, locale), event.team.name, event.note, setUrl].filter(Boolean).join("\n"),
         url: `${webUrl()}${eventDatePath(event.id, day)}`,
       });
     }
     // The rehearsals of the dates they signed up for (issue #235, phase 7).
-    const rehearsals = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: { in: events.map((event) => event.id) } }, include: { ...withDates, team: { select: { name: true } } } });
+    const rehearsals = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: { in: events.map((event) => event.id) } }, include: { ...withDates, ...withVenue, team: { select: { name: true } } } });
     for (const rehearsal of rehearsals) {
       const parent = events.find((one) => one.id === rehearsal.rehearsalForId)!;
       const theirs = new Set(answers.filter((answer) => answer.eventId === parent.id).map((answer) => dateText(answer.date)));
@@ -215,7 +224,7 @@ export class CalendarFeedService {
           start: date.startsAt,
           end: date.endsAt,
           title: `${rehearsal.title} (${rehearsal.team.name})`,
-          location: rehearsal.place,
+          location: feedLocation(rehearsal, true),
           description: [callLine(date.startsAt, rehearsal.callMinutes, rehearsal.timeZone, locale), rehearsal.team.name, rehearsal.note, setUrl].filter(Boolean).join("\n"),
           url: `${webUrl()}${eventDatePath(rehearsal.id, date.date)}`,
         });
