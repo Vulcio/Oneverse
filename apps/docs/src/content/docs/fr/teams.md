@@ -81,6 +81,12 @@ Un site peut avoir des salles - Grande salle, Salle enfants 1 : **Ajouter une sa
 
 Dans **Nouvel événement**, **Site** en choisit un : le lieu devient son nom, et le fuseau horaire le sien ; un site qui a des salles les liste alors, pour cocher celles que prend l'événement. Ses dates les montrent avant le lieu (« Grande salle, Église du port »), et les liens de calendrier donnent les salles, le site et son adresse. Vous pouvez toujours écrire un lieu à vous à côté. Un type d'événement garde aussi son site et ses salles habituels.
 
+### Ressources
+
+Ce que les événements de l'équipe réservent en plus des salles - le minibus, la sono portable, un écran sur roulettes : ses administrateurs les ajoutent sous **Ressources** sur la page de l'équipe, avec **Ajouter une ressource** : un **Nom**, **Combien** il y en a, et où ils sont **Rangé à** (l'un de ses sites, ou **Nulle part en particulier**). Une équipe dans une organisation peut aussi utiliser celles de l'organisation.
+
+Dans **Nouvel événement**, **Ressources** les liste : cochez celles que prend l'événement, et combien quand il y en a plusieurs. Un type d'événement garde aussi ses ressources habituelles.
+
 ### Votre lien de calendrier
 
 Dans **Mon calendrier**, **Lien de calendrier** met les dates où vous êtes inscrit (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) dans votre propre calendrier : **Obtenir mon lien de calendrier**, puis **Ajouter à Google Agenda**, **Ajouter à Calendrier Apple** ou **Ajouter à Outlook** - ou **Copier le lien** et l'ajouter à n'importe quelle application de calendrier comme abonnement (« À partir de l'URL », « S'abonner à un calendrier »). Chaque date s'affiche avec son équipe, son lieu et un lien vers sa liste, de trois mois en arrière à un an à l'avance ; les dates annulées en disparaissent.

@@ -3,6 +3,7 @@ import { eventFallsOn } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { eventLocation, eventRooms, roomsOnCreate, roomsOnUpdate } from "../locations/locations.service.js";
+import { eventResources, RESOURCES_TAKEN, resourcesOnCreate, resourcesOnUpdate, resourcesTaken } from "../locations/resources.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { AvailabilityService } from "../team-events/availability.service.js";
@@ -18,6 +19,7 @@ type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin">;
 const withGroups = {
   host: { select: { id: true, displayName: true } },
   rooms: { select: { id: true, name: true }, orderBy: { name: "asc" } },
+  ...RESOURCES_TAKEN,
   teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, withSet: true, editsSet: true, team: { select: { name: true, color: true, avatarUrl: true, usesSongverse: true } } }, orderBy: { team: { name: "asc" } } },
 } as const;
 type Row = Prisma.OrganizationEventGetPayload<{ include: typeof withGroups }>;
@@ -75,6 +77,8 @@ export class OrganizationEventsService {
       locationId: event.locationId,
       // The rooms of its location it takes (issue #563).
       rooms: event.rooms,
+      // The resources it takes, and how many (issue #564): the organisation's, booked once for all its groups.
+      resources: resourcesTaken(event.resources),
       note: event.note,
       repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null,
       host: event.host,
@@ -222,6 +226,7 @@ export class OrganizationEventsService {
         place: dto.place || location?.name || null,
         locationId: location?.id ?? null,
         rooms: roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds)),
+        resources: resourcesOnCreate(await eventResources(this.prisma, { organizationId }, dto.resources)),
         note: dto.note || null,
         repeatEveryWeeks: dto.repeat?.everyWeeks ?? null,
         repeatUntil: dto.repeat?.until ? day(dto.repeat.until) : null,
@@ -288,6 +293,7 @@ export class OrganizationEventsService {
         place,
         locationId: dto.locationId,
         rooms: roomsOnUpdate(roomIds),
+        resources: resourcesOnUpdate(await eventResources(this.prisma, { organizationId }, dto.resources)),
         note: dto.note,
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,

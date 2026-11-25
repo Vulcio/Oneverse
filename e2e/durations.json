@@ -85,6 +85,7 @@
 "api/recent-plays": 1,
 "api/recordings": 4,
 "api/rehearsals": 1,
+"api/resources": 1,
 "api/reminders": 4,
 "api/roles": 1,
 "api/scoped-roles": 5,

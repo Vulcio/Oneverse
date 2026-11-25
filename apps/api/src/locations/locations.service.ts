@@ -17,10 +17,10 @@ const LOCATION_SELECT = {
   rooms: { select: { id: true, name: true, capacity: true, setupMinutes: true, teardownMinutes: true }, orderBy: { name: "asc" } },
 } as const;
 type LocationRow = Prisma.LocationGetPayload<{ select: typeof LOCATION_SELECT }>;
-type Owner = { ownerTeamId: string | null; ownerOrganizationId: string | null };
+export type Owner = { ownerTeamId: string | null; ownerOrganizationId: string | null };
 
 /** What a user may do with locations: the teams and organisations they're in, and those they run. */
-interface Scope {
+export interface Scope {
   teams: Set<string>;
   adminTeams: Set<string>;
   organizations: Set<string>;
@@ -78,7 +78,7 @@ export class LocationsService {
 
   /** A team's (its own and its organisation's: what its events can take), an organisation's, or every location the user can use. */
   async list(user: AuthenticatedUser, owner: { teamId?: string; organizationId?: string } = {}) {
-    const scope = await this.scopeOf(user);
+    const scope = await ownerScope(this.prisma, user);
     let where: Prisma.LocationWhereInput;
     if (owner.teamId) {
       if (!scope.teams.has(owner.teamId) && !user.isGlobalAdmin) throw new NotFoundException("Team not found");
@@ -92,20 +92,20 @@ export class LocationsService {
       where = { OR: [{ ownerTeamId: { in: [...scope.teams] } }, { ownerOrganizationId: { in: [...scope.organizations] } }] };
     }
     const locations = await this.prisma.client.location.findMany({ where, select: LOCATION_SELECT, orderBy: { name: "asc" } });
-    return locations.map((location) => present(location, this.canEdit(user, scope, location)));
+    return locations.map((location) => present(location, canEdit(user, scope, location)));
   }
 
   async get(user: AuthenticatedUser, locationId: string) {
-    const scope = await this.scopeOf(user);
+    const scope = await ownerScope(this.prisma, user);
     const location = await this.prisma.client.location.findUnique({ where: { id: locationId }, select: LOCATION_SELECT });
-    if (!location || !this.canSee(user, scope, location)) throw new NotFoundException("Location not found");
-    return present(location, this.canEdit(user, scope, location));
+    if (!location || !canSee(user, scope, location)) throw new NotFoundException("Location not found");
+    return present(location, canEdit(user, scope, location));
   }
 
   async create(user: AuthenticatedUser, data: CreateLocationRequest) {
-    const scope = await this.scopeOf(user);
+    const scope = await ownerScope(this.prisma, user);
     const owner = { ownerTeamId: data.teamId ?? null, ownerOrganizationId: data.teamId ? null : (data.organizationId ?? null) };
-    if (!this.canEdit(user, scope, owner)) throw new ForbiddenException(data.teamId ? "Only the team's admins add locations for it" : "Only the organisation's admins add locations for it");
+    if (!canEdit(user, scope, owner)) throw new ForbiddenException(data.teamId ? "Only the team's admins add locations for it" : "Only the organisation's admins add locations for it");
     const location = await this.prisma.client.location.create({
       data: { name: data.name, address: data.address || null, timeZone: data.timeZone, home: data.home ?? false, ...owner },
       select: LOCATION_SELECT,
@@ -157,34 +157,37 @@ export class LocationsService {
   }
 
   private async changeable(user: AuthenticatedUser, locationId: string) {
-    const scope = await this.scopeOf(user);
+    const scope = await ownerScope(this.prisma, user);
     const location = await this.prisma.client.location.findUnique({ where: { id: locationId }, select: LOCATION_SELECT });
-    if (!location || !this.canSee(user, scope, location)) throw new NotFoundException("Location not found");
-    if (!this.canEdit(user, scope, location)) throw new ForbiddenException(location.ownerTeamId ? "Only the team's admins change its locations" : "Only the organisation's admins change its locations");
+    if (!location || !canSee(user, scope, location)) throw new NotFoundException("Location not found");
+    if (!canEdit(user, scope, location)) throw new ForbiddenException(location.ownerTeamId ? "Only the team's admins change its locations" : "Only the organisation's admins change its locations");
     return location;
   }
 
-  private canSee(user: AuthenticatedUser, scope: Scope, location: Owner) {
-    return user.isGlobalAdmin || (location.ownerTeamId ? scope.teams.has(location.ownerTeamId) : !!location.ownerOrganizationId && scope.organizations.has(location.ownerOrganizationId));
-  }
+}
 
-  private canEdit(user: AuthenticatedUser, scope: Scope, location: Owner) {
-    return user.isGlobalAdmin || (location.ownerTeamId ? scope.adminTeams.has(location.ownerTeamId) : !!location.ownerOrganizationId && scope.adminOrganizations.has(location.ownerOrganizationId));
-  }
+/** Whether the user sees what a team or an organisation owns (a location, a resource): its members, an organisation's through a team in it too. */
+export function canSee(user: AuthenticatedUser, scope: Scope, owned: Owner) {
+  return user.isGlobalAdmin || (owned.ownerTeamId ? scope.teams.has(owned.ownerTeamId) : !!owned.ownerOrganizationId && scope.organizations.has(owned.ownerOrganizationId));
+}
 
-  /** Their teams and organisations - an organisation also through a team in it - and those they run. */
-  private async scopeOf(user: AuthenticatedUser): Promise<Scope> {
-    const [teams, organizations] = await Promise.all([
-      this.prisma.client.teamMembership.findMany({ where: { userId: user.id }, select: { teamId: true, role: true, team: { select: { organizationId: true } } } }),
-      this.prisma.client.organizationMembership.findMany({ where: { userId: user.id }, select: { organizationId: true, role: true } }),
-    ]);
-    return {
-      teams: new Set(teams.map((one) => one.teamId)),
-      adminTeams: new Set(teams.filter((one) => one.role === "ADMIN").map((one) => one.teamId)),
-      organizations: new Set([...organizations.map((one) => one.organizationId), ...teams.flatMap((one) => (one.team.organizationId ? [one.team.organizationId] : []))]),
-      adminOrganizations: new Set(organizations.filter((one) => one.role === "ADMIN").map((one) => one.organizationId)),
-    };
-  }
+/** Whether the user changes it: its owner's admins. */
+export function canEdit(user: AuthenticatedUser, scope: Scope, owned: Owner) {
+  return user.isGlobalAdmin || (owned.ownerTeamId ? scope.adminTeams.has(owned.ownerTeamId) : !!owned.ownerOrganizationId && scope.adminOrganizations.has(owned.ownerOrganizationId));
+}
+
+/** Their teams and organisations - an organisation also through a team in it - and those they run. */
+export async function ownerScope(prisma: PrismaService, user: AuthenticatedUser): Promise<Scope> {
+  const [teams, organizations] = await Promise.all([
+    prisma.client.teamMembership.findMany({ where: { userId: user.id }, select: { teamId: true, role: true, team: { select: { organizationId: true } } } }),
+    prisma.client.organizationMembership.findMany({ where: { userId: user.id }, select: { organizationId: true, role: true } }),
+  ]);
+  return {
+    teams: new Set(teams.map((one) => one.teamId)),
+    adminTeams: new Set(teams.filter((one) => one.role === "ADMIN").map((one) => one.teamId)),
+    organizations: new Set([...organizations.map((one) => one.organizationId), ...teams.flatMap((one) => (one.team.organizationId ? [one.team.organizationId] : []))]),
+    adminOrganizations: new Set(organizations.filter((one) => one.role === "ADMIN").map((one) => one.organizationId)),
+  };
 }
 
 function present(location: LocationRow, canEdit: boolean) {

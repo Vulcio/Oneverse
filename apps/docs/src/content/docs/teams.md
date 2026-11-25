@@ -79,6 +79,12 @@ A venue may hold rooms - Main hall, Kids room 1: **Add room** under it, with a *
 
 In **New event**, **Venue** picks one: the place becomes its name and the time zone its own; a venue with rooms then lists them, to tick those the event takes. Its dates show them before the place ("Main hall, Riverside church"), and calendar links give the rooms, the venue and its address. You can still type a place of your own beside it. An event type keeps its usual venue and rooms too.
 
+### Resources
+
+What the team's events book besides rooms - the van, the portable PA, a screen on wheels: its admins add them under **Resources** on the team's page, with **Add resource**: a **Name**, **How many** there are, and where they're **Kept at** (one of its venues, or **Nowhere in particular**). A team in an organisation can also use the organisation's.
+
+In **New event**, **Resources** lists them: tick those the event takes, and how many when there are several. An event type keeps its usual ones too.
+
 ### Your calendar link
 
 On **My calendar**, **Calendar link** puts the dates you signed up for (see [Line-up](/teams/#line-up)) in your own calendar: **Get my calendar link**, then **Add to Google Calendar**, **Add to Apple Calendar** or **Add to Outlook** - or **Copy link** and add it to any calendar app as a subscription ("From URL", "Subscribe to calendar"). Each date shows with its team, place and a link to its set, from three months back to a year ahead; cancelled dates leave it.

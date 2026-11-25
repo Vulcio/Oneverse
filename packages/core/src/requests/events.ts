@@ -2,6 +2,7 @@ import "../zod-config.js";
 import { z } from "zod";
 import { ASSIGNMENT_STATUSES, DATE_ASKS_LIMIT, isEventOnlyPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
+import { EventResourcesSchema } from "./locations.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
 
@@ -52,6 +53,7 @@ export const CreateTeamEventSchema = z.strictObject({
   place: optional(z.string().trim().max(200)),
   locationId: optional(z.string().trim().min(1).max(64)).describe("Where it takes place (issue #320): one of the team's or its organisation's locations; `place` is filled from it when left out"),
   roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563)"),
+  resources: optional(EventResourcesSchema),
   note: optional(z.string().trim().max(1000)),
   repeat: optional(RepeatSchema).describe("Left out: a one-off"),
   parts: optional(eventParts),
@@ -73,6 +75,7 @@ export const UpdateTeamEventSchema = z.strictObject({
   place: clearableText(200),
   locationId: z.string().trim().min(1).max(64).nullable().optional().describe("null: no location"),
   roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563); [] takes none"),
+  resources: optional(EventResourcesSchema),
   note: clearableText(1000),
   repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
   parts: eventParts.optional(),
@@ -94,6 +97,7 @@ export const CreateTeamEventTypeSchema = z.strictObject({
   editingTeamIds: optional(z.array(z.string().trim().min(1).max(64)).max(30)).describe("An organisation's type (issue #578): the groups that edit its events' sets. Left out or empty: every group that uses Songverse"),
   locationId: optional(z.string().trim().min(1).max(64)).describe("Where its events usually are (issue #559): one of its owner's locations"),
   roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563)"),
+  resources: optional(EventResourcesSchema),
 });
 export type CreateTeamEventTypeRequest = z.input<typeof CreateTeamEventTypeSchema>;
 
@@ -108,6 +112,7 @@ export const UpdateTeamEventTypeSchema = z.strictObject({
   editingTeamIds: z.array(z.string().trim().min(1).max(64)).max(30).optional(),
   locationId: z.string().trim().min(1).max(64).nullable().optional(),
   roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563); [] takes none"),
+  resources: optional(EventResourcesSchema),
 });
 export type UpdateTeamEventTypeRequest = z.input<typeof UpdateTeamEventTypeSchema>;
 
@@ -260,6 +265,7 @@ export const CreateOrganizationEventSchema = z.strictObject({
   place: optional(z.string().trim().max(200)),
   locationId: optional(z.string().trim().min(1).max(64)).describe("Where it takes place (issue #320): one of the organisation's locations; `place` is filled from it when left out"),
   roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563)"),
+  resources: optional(EventResourcesSchema),
   note: optional(z.string().trim().max(1000)),
   repeat: optional(RepeatSchema).describe("Left out: a one-off"),
   hostUserId: z.string().trim().min(1).max(64).describe("Who's in charge of it: one of the organisation's members"),
@@ -278,6 +284,7 @@ export const UpdateOrganizationEventSchema = z.strictObject({
   place: clearableText(200),
   locationId: z.string().trim().min(1).max(64).nullable().optional().describe("null: no location"),
   roomIds: optional(z.array(z.string().trim().min(1).max(64)).max(20)).describe("Rooms of its location it takes (issue #563); [] takes none"),
+  resources: optional(EventResourcesSchema),
   note: clearableText(1000),
   repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
   hostUserId: z.string().trim().min(1).max(64).optional(),

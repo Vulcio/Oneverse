@@ -54,7 +54,7 @@ import type { RecordingChord } from "../recording/chords.js";
 import type { RecordingAnalysis } from "../recording/analysis-check.js";
 import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
-import type { CreateLocationRequest, CreateRoomRequest, UpdateLocationRequest, UpdateRoomRequest } from "../requests/locations.js";
+import type { CreateLocationRequest, CreateResourceRequest, CreateRoomRequest, UpdateLocationRequest, UpdateResourceRequest, UpdateRoomRequest } from "../requests/locations.js";
 import type { z } from "zod";
 import type { BibleUpdateSchema, YouVersionSearchQuerySchema } from "../requests/scriptures.js";
 import type { SetItemPassage } from "../screens/index.js";
@@ -1088,6 +1088,26 @@ export interface EventRoom {
   name: string;
 }
 
+/** Something a team or an organisation owns that events book besides rooms (issue #564). */
+export interface Resource {
+  id: string;
+  name: string;
+  /** How many there are. */
+  quantity: number;
+  /** The venue it's kept at. */
+  location: { id: string; name: string } | null;
+  owner: { kind: "team" | "organization"; id: string; name: string };
+  /** Its owner's admins change it. */
+  canEdit: boolean;
+}
+
+/** How many of a resource an event takes. */
+export interface EventResourceUse {
+  resourceId: string;
+  name: string;
+  quantity: number;
+}
+
 /** A widget's default look (issue #273): the user's own, or a team's. */
 export interface ScreenWidgetDefault {
   kind: ScreenWidgetKind;
@@ -1677,6 +1697,8 @@ export interface TeamEvent {
   locationId: string | null;
   /** The rooms of its location it takes (issue #563). */
   rooms?: EventRoom[];
+  /** The resources it takes, and how many (issue #564). */
+  resources?: EventResourceUse[];
   note: string | null;
   repeat: EventRepeat | null;
   /** The parts it needs (issue #235, phase 7). */
@@ -1732,6 +1754,8 @@ export interface TeamEventType {
   locationId?: string | null;
   /** Its usual rooms (issue #563), its location's. */
   roomIds?: string[];
+  /** Its usual resources (issue #564). */
+  resources?: EventResourceUse[];
   /** How many of the team's events were made from it. */
   eventCount: number;
 }
@@ -1765,6 +1789,8 @@ export interface OrganizationEvent {
   locationId: string | null;
   /** The rooms of its location it takes (issue #563). */
   rooms?: EventRoom[];
+  /** The resources it takes, and how many (issue #564). */
+  resources?: EventResourceUse[];
   note: string | null;
   repeat: EventRepeat | null;
   host: { id: string; displayName: string } | null;
@@ -4214,6 +4240,11 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     addRoom: (locationId: string, data: CreateRoomRequest) => request<EventLocation>(`/locations/${locationId}/rooms`, { method: "POST", body: JSON.stringify(data) }),
     updateRoom: (locationId: string, roomId: string, data: UpdateRoomRequest) => request<EventLocation>(`/locations/${locationId}/rooms/${roomId}`, { method: "PATCH", body: JSON.stringify(data) }),
     removeRoom: (locationId: string, roomId: string) => request<EventLocation>(`/locations/${locationId}/rooms/${roomId}`, { method: "DELETE" }),
+    /** Resources (issue #564): a team's (its own and its organisation's), or an organisation's. */
+    listResources: (owner: { teamId: string } | { organizationId: string }) => request<Resource[]>(`/resources?${"teamId" in owner ? `teamId=${owner.teamId}` : `organizationId=${owner.organizationId}`}`),
+    createResource: (data: CreateResourceRequest) => request<Resource>("/resources", { method: "POST", body: JSON.stringify(data) }),
+    updateResource: (resourceId: string, data: UpdateResourceRequest) => request<Resource>(`/resources/${resourceId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteResource: (resourceId: string) => request<void>(`/resources/${resourceId}`, { method: "DELETE" }),
     uploadBrandAsset: (brandId: string, kind: BrandAssetKind, file: Blob, filename: string, name?: string) => {
       const form = new FormData();
       form.append("file", file, filename);

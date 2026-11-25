@@ -24,6 +24,7 @@ import { CalendarFeedCard } from "../components/calendar-feed-card";
 import { InvitationsCard, NewTeamForm } from "../components/team-manage";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
+import { ResourcesCard } from "../components/resources";
 import { GroupCard, MemberPositions, PositionsCard, TeamOrganizationCard } from "../components/team-cards";
 import { TeamCalendar } from "../components/team-calendar";
 import { NewGroupForm } from "./organization";
@@ -349,6 +350,7 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
 
       {/* Where its events take place (issue #320). */}
       {isAdmin ? <LocationsCard owner={{ teamId: team.id }} /> : null}
+      {isAdmin ? <ResourcesCard owner={{ teamId: team.id }} /> : null}
 
       {isAdmin || positions.length > 0 ? <PositionsCard teamId={team.id} positions={positions} isAdmin={isAdmin} onChanged={refresh} onError={setError} /> : null}
 

@@ -2,10 +2,11 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { EVENT_TYPES_LIMIT, type CreateTeamEventTypeRequest, type UpdateTeamEventTypeRequest } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { eventLocation, eventRooms, roomsOnCreate, roomsOnUpdate } from "../locations/locations.service.js";
+import { eventResources, RESOURCES_TAKEN, resourcesOnCreate, resourcesOnUpdate, resourcesTaken } from "../locations/resources.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { partsOf, TeamEventsService } from "./team-events.service.js";
 
-const withCount = { _count: { select: { events: true } }, organization: { select: { name: true } }, rooms: { select: { id: true }, orderBy: { name: "asc" } } } as const;
+const withCount = { _count: { select: { events: true } }, organization: { select: { name: true } }, rooms: { select: { id: true }, orderBy: { name: "asc" } }, ...RESOURCES_TAKEN } as const;
 
 type TypeRow = Prisma.TeamEventTypeGetPayload<{ include: typeof withCount }>;
 
@@ -43,6 +44,8 @@ export class EventTypesService {
       locationId: type.locationId,
       // Its usual rooms (issue #563), its location's.
       roomIds: type.rooms.map((room) => room.id),
+      // Its usual resources (issue #564).
+      resources: resourcesTaken(type.resources),
       eventCount: type._count.events,
     };
   }
@@ -93,9 +96,10 @@ export class EventTypesService {
     const location = dto.locationId ? await eventLocation(this.prisma, owner, dto.locationId) : null;
     const editingTeamIds = (await this.editingTeams(owner, dto.editingTeamIds ?? undefined)) ?? [];
     const rooms = roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds ?? undefined));
+    const resources = resourcesOnCreate(await eventResources(this.prisma, owner, dto.resources));
     const type = await this.saving(() =>
       this.prisma.client.teamEventType.create({
-        data: { ...owner, name: dto.name, startTime: dto.startTime ?? null, durationMinutes: dto.durationMinutes ?? null, callMinutes: dto.callMinutes ?? null, parts, withSet: dto.withSet ?? true, editingTeamIds, locationId: location?.id ?? null, rooms },
+        data: { ...owner, name: dto.name, startTime: dto.startTime ?? null, durationMinutes: dto.durationMinutes ?? null, callMinutes: dto.callMinutes ?? null, parts, withSet: dto.withSet ?? true, editingTeamIds, locationId: location?.id ?? null, rooms, resources },
         include: withCount,
       }),
     );
@@ -108,10 +112,11 @@ export class EventTypesService {
     const location = dto.locationId ? await eventLocation(this.prisma, owner, dto.locationId) : null;
     const editingTeamIds = await this.editingTeams(owner, dto.editingTeamIds);
     const rooms = roomsOnUpdate(await eventRooms(this.prisma, dto.locationId === undefined ? before.locationId : dto.locationId, dto.roomIds ?? undefined, dto.locationId !== undefined && dto.locationId !== before.locationId));
+    const resources = resourcesOnUpdate(await eventResources(this.prisma, owner, dto.resources));
     const type = await this.saving(() =>
       this.prisma.client.teamEventType.update({
         where: { id: typeId },
-        data: { name: dto.name, startTime: dto.startTime, durationMinutes: dto.durationMinutes, callMinutes: dto.callMinutes, parts, withSet: dto.withSet, editingTeamIds, locationId: dto.locationId === undefined ? undefined : (location?.id ?? null), rooms },
+        data: { name: dto.name, startTime: dto.startTime, durationMinutes: dto.durationMinutes, callMinutes: dto.callMinutes, parts, withSet: dto.withSet, editingTeamIds, locationId: dto.locationId === undefined ? undefined : (location?.id ?? null), rooms, resources },
         include: withCount,
       }),
     );

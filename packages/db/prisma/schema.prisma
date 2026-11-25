@@ -730,6 +730,8 @@ model Team {
   brands               Brand[]
   // Where its events take place (issue #320).
   locations            Location[]
+  // What its events book besides rooms (issue #564): the van, the PA.
+  resources            Resource[]
   // Its own Songverse Sonic server for its songs' stems (issue #300).
   sonicServer          SonicServer?
   // A Bible in its members' sidebar (issue #310), turned on by its admins.
@@ -810,6 +812,8 @@ model Organization {
   brands          Brand[]
   // Where its events take place (issue #320), offered to its groups' events too.
   locations       Location[]
+  // What its events book besides rooms (issue #564), offered to its groups' events too.
+  resources       Resource[]
   // Its own Songverse Sonic server for its teams' songs' stems (issue #300).
   sonicServer     SonicServer?
   // A Bible in its teams' members' sidebar (issue #310), turned on by its admins.
@@ -1582,6 +1586,8 @@ model TeamEvent {
   location          Location?             @relation(fields: [locationId], references: [id], onDelete: SetNull)
   // The venue's rooms it takes (issue #563).
   rooms             Room[]                @relation("TeamEventRooms")
+  // The resources it takes, and how many (issue #564).
+  resources         EventResource[]
 
   @@unique([organizationEventId, teamId])
   @@index([teamId])
@@ -1621,6 +1627,8 @@ model OrganizationEvent {
   location     Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
   // The venue's rooms it takes (issue #563).
   rooms        Room[]       @relation("OrganizationEventRooms")
+  // The resources it takes, and how many (issue #564).
+  resources    EventResource[]
 
   @@index([organizationId])
   @@index([locationId])
@@ -1653,6 +1661,8 @@ model TeamEventType {
   location     Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
   // Its usual rooms (issue #563).
   rooms        Room[]        @relation("TeamEventTypeRooms")
+  // Its usual resources (issue #564).
+  resources    EventResource[]
   events       TeamEvent[]
 
   @@unique([teamId, name])
@@ -3810,6 +3820,8 @@ model Location {
   screens            Screen[]
   // Its rooms (issue #563), if it has any.
   rooms              Room[]
+  // The resources kept there (issue #564).
+  resources          Resource[]
 
   @@index([ownerTeamId])
   @@index([ownerOrganizationId])
@@ -3834,6 +3846,50 @@ model Room {
   eventTypes         TeamEventType[]     @relation("TeamEventTypeRooms")
 
   @@index([locationId])
+}
+
+// Something an organisation or a team owns that events book besides rooms
+// (issue #564): the van, the portable PA, a screen on wheels - maybe kept at
+// one of its venues, and how many there are (a booking takes some of them,
+// #565).
+model Resource {
+  id                  String   @id @default(cuid())
+  name                String
+  quantity            Int      @default(1)
+  locationId          String?
+  ownerTeamId         String?
+  ownerOrganizationId String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  location     Location?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  team         Team?           @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
+  organization Organization?   @relation(fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
+  uses         EventResource[]
+
+  @@index([ownerTeamId])
+  @@index([ownerOrganizationId])
+}
+
+// How many of a resource an event, an organisation's event or an event type
+// takes (issue #564): exactly one of the three.
+model EventResource {
+  id                  String  @id @default(cuid())
+  resourceId          String
+  quantity            Int     @default(1)
+  teamEventId         String?
+  organizationEventId String?
+  eventTypeId         String?
+
+  resource          Resource           @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  teamEvent         TeamEvent?         @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  organizationEvent OrganizationEvent? @relation(fields: [organizationEventId], references: [id], onDelete: Cascade)
+  eventType         TeamEventType?     @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([teamEventId, resourceId])
+  @@unique([organizationEventId, resourceId])
+  @@unique([eventTypeId, resourceId])
+  @@index([resourceId])
 }
 
 // Server backups (issue #119), edited in Admin > Backups: where the Worker

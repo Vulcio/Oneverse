@@ -19,6 +19,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LocationField, useLocations } from "../components/locations";
+import { resourceChoices, ResourcesField, useResources } from "../components/resources";
 import { MoveDateDialog } from "../components/move-date-dialog";
 import { HostLink, usePlanning } from "../host";
 import { loadOrganizationEventsPage } from "../loaders";
@@ -527,6 +528,9 @@ function OrganizationEventDialog({
   const [locationId, setLocationId] = useState(event?.locationId ?? "");
   // The venue's rooms it takes (issue #563).
   const [roomIds, setRoomIds] = useState<string[]>(event?.rooms?.map((room) => room.id) ?? []);
+  // The resources it takes (issue #564), the organisation's.
+  const resources = useResources({ organizationId: organization.id });
+  const [resourceUses, setResourceUses] = useState(resourceChoices(event?.resources));
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
@@ -550,6 +554,7 @@ function OrganizationEventDialog({
     const typeLocation = locations.find((one) => one.id === type.locationId);
     setLocationId(typeLocation?.id ?? "");
     setRoomIds(typeLocation ? (type.roomIds ?? []) : []);
+    setResourceUses(resourceChoices(type.resources));
     setPlace(typeLocation?.name ?? "");
     if (typeLocation) setTimeZone(typeLocation.timeZone);
     setWithSet(type.withSet);
@@ -575,8 +580,8 @@ function OrganizationEventDialog({
     run(() => {
       const timing = { title, date, startTime, durationMinutes: Number(duration), timeZone, note: note || null, repeat: everyWeeks ? { everyWeeks: Number(everyWeeks), until: until || null } : null };
       return event
-        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], withSet, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
-        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], hostUserId, withSet, needs: needsBody() });
+        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], resources: resourceUses, withSet, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
+        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], resources: resourceUses, hostUserId, withSet, needs: needsBody() });
     });
 
   return (
@@ -668,6 +673,7 @@ function OrganizationEventDialog({
               if (change.timeZone) setTimeZone(change.timeZone);
             }}
           />
+          <ResourcesField resources={resources} value={resourceUses} onChange={setResourceUses} />
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="org-event-place">{t("teamCalendar.place")}</Label>
             <Input id="org-event-place" value={place} maxLength={200} onChange={(e) => setPlace(e.target.value)} />
@@ -800,6 +806,7 @@ function OrganizationEventDialog({
                     withSet,
                     editingTeamIds: needs.filter((need) => need.editsSet).map((need) => need.teamId),
                     ...(locationId ? { locationId, roomIds } : {}),
+                    resources: resourceUses,
                     parts: partsFromNeeds(needsBody()),
                   }),
                 )

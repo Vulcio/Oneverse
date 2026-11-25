@@ -3,6 +3,7 @@ import { eventDatePath, addDays, asksOpenTo, MUSIC_LEADER, partKey, withAsks, ca
 import { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { eventLocation, eventRooms, roomsOnCreate, roomsOnUpdate } from "../locations/locations.service.js";
+import { eventResources, RESOURCES_TAKEN, resourcesOnCreate, resourcesOnUpdate, resourcesTaken } from "../locations/resources.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
 import type { CreateTeamEventDto, SetTeamEventDateAsksDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
@@ -10,7 +11,7 @@ import type { CreateTeamEventDto, SetTeamEventDateAsksDto, UpdateTeamCalendarDto
 /** The longest range of dates asked for at once. */
 const MAX_RANGE_DAYS = 400;
 
-export type EventRow = Prisma.TeamEventGetPayload<{ include: { dates: { include: { setlist: { select: { id: true; _count: { select: { items: true } } } } } }; rooms: { select: { id: true; name: true } } } }>;
+export type EventRow = Prisma.TeamEventGetPayload<{ include: { dates: { include: { setlist: { select: { id: true; _count: { select: { items: true } } } } } }; rooms: { select: { id: true; name: true } }; resources: { select: { resourceId: true; quantity: true; resource: { select: { name: true } } } } } }>;
 
 export const day = (date: string) => new Date(`${date}T00:00:00.000Z`);
 export const dateText = (date: Date) => date.toISOString().slice(0, 10);
@@ -77,7 +78,7 @@ export function rehearsalDatesOf(rehearsal: EventRow, parent: EventRow, from: st
   return rehearsalDates(timingOf(parent), { daysBefore: rehearsal.daysBefore ?? 0, startTime: rehearsal.startTime, durationMinutes: rehearsal.durationMinutes }, from, to, changesOf(parent));
 }
 
-export const withDates = { dates: { include: { setlist: { select: { id: true, _count: { select: { items: true } } } } } }, rooms: { select: { id: true, name: true }, orderBy: { name: "asc" } } } as const;
+export const withDates = { dates: { include: { setlist: { select: { id: true, _count: { select: { items: true } } } } } }, rooms: { select: { id: true, name: true }, orderBy: { name: "asc" } }, ...RESOURCES_TAKEN } as const;
 
 /**
  * A team's calendar (issue #235): its events, the dates they fall on, and
@@ -162,6 +163,8 @@ export class TeamEventsService {
       locationId: event.locationId,
       // The rooms of its location it takes (issue #563).
       rooms: event.rooms,
+      // The resources it takes, and how many (issue #564).
+      resources: resourcesTaken(event.resources),
       note: event.note,
       repeat: event.rehearsalForId ? null : (timingOf(event).repeat ?? null),
       parts: partsOf(event),
@@ -294,6 +297,7 @@ export class TeamEventsService {
         place: dto.place || location?.name || null,
         locationId: location?.id ?? null,
         rooms: roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds)),
+        resources: resourcesOnCreate(await eventResources(this.prisma, { teamId }, dto.resources)),
         note: dto.note || null,
         repeatEveryWeeks: parent ? null : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: !parent && dto.repeat?.until ? day(dto.repeat.until) : null,
@@ -336,6 +340,7 @@ export class TeamEventsService {
         place: dto.place === undefined && location && location.id !== before.locationId ? location.name : dto.place,
         locationId: dto.locationId,
         rooms: roomsOnUpdate(await eventRooms(this.prisma, dto.locationId === undefined ? before.locationId : dto.locationId, dto.roomIds, dto.locationId !== undefined && dto.locationId !== before.locationId)),
+        resources: resourcesOnUpdate(await eventResources(this.prisma, { teamId }, dto.resources)),
         note: dto.note,
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,

@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LineupDialog, LineupLine, partOf, usePartLabel } from "./lineup";
 import { LocationField, useLocations } from "./locations";
+import { resourceChoices, ResourcesField, useResources } from "./resources";
 import { MoveDateDialog } from "./move-date-dialog";
 import { HostLink, usePlanning } from "../host";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
@@ -889,6 +890,9 @@ function EventDialog({
   const [locationId, setLocationId] = useState(event?.locationId ?? "");
   // The venue's rooms it takes (issue #563).
   const [roomIds, setRoomIds] = useState<string[]>(event?.rooms?.map((room) => room.id) ?? []);
+  // The resources it takes (issue #564).
+  const resources = useResources({ teamId });
+  const [resourceUses, setResourceUses] = useState(resourceChoices(event?.resources));
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
@@ -915,6 +919,7 @@ function EventDialog({
     // Its roles open to the groups that fill them (issue #549), unless the type says who.
     setParts(withFillingGroups(partsForTeam(type.parts, teamId), openToTeams));
     setWithSet(type.withSet);
+    if (type.resources?.length) setResourceUses(resourceChoices(type.resources));
     // Where its events usually are (issue #559).
     const typeLocation = locations.find((one) => one.id === type.locationId);
     if (typeLocation) {
@@ -940,6 +945,7 @@ function EventDialog({
           place: place || null,
           locationId: locationId || null,
           roomIds: locationId ? roomIds : [],
+          resources: resourceUses,
           note: note || null,
           rehearsalFor: { eventId: parentEvent.id, daysBefore: Number(daysBefore) },
         }
@@ -953,6 +959,7 @@ function EventDialog({
           place: place || null,
           locationId: locationId || null,
           roomIds: locationId ? roomIds : [],
+          resources: resourceUses,
           note: note || null,
           repeat,
           parts: parts.map(partBody),
@@ -1085,6 +1092,7 @@ function EventDialog({
               if (change.timeZone && !parentEvent) setTimeZone(change.timeZone);
             }}
           />
+          <ResourcesField resources={resources} value={resourceUses} onChange={setResourceUses} />
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="event-place">{t("teamCalendar.place")}</Label>
             <Input id="event-place" value={place} maxLength={200} onChange={(e) => setPlace(e.target.value)} />

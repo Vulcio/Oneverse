@@ -8,6 +8,7 @@ import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { AnnouncementsCard, type AnnouncementsActions } from "../components/announcements-card";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
+import { ResourcesCard } from "../components/resources";
 import { OrganizationSetupCard } from "../components/organization-setup";
 import { OrganizationComingUp } from "../components/organization-coming-up";
 import { OrganizationEventTypesButton } from "../components/organization-event-types";
@@ -240,6 +241,7 @@ export function OrganizationPage({
             {adminCards}
             {/* Where its events take place (issue #320). */}
             <LocationsCard owner={{ organizationId: organization.id }} />
+            <ResourcesCard owner={{ organizationId: organization.id }} />
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">{t("organizations.details")}</CardTitle>

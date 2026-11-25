@@ -121,6 +121,10 @@ Une organisation a aussi un lien de calendrier, dans le [Calendrier](/fr/plan/#c
 
 Où ont lieu les événements de l'organisation - une église, une salle, un campus : ses administrateurs les ajoutent sous **Sites** sur sa page, avec **Ajouter un site** (un **Nom**, une **Adresse (facultatif)**, un **Fuseau horaire**, peut-être **Chez quelqu'un**), **Modifier** et **Retirer**, et les salles de chacun avec **Ajouter une salle**. Ses événements en choisissent un avec **Site** dans leur fenêtre, ce qui remplit le lieu et le fuseau horaire, et les salles qu'ils prennent ; la part de chaque équipe le suit ; un modèle le garde aussi. Les événements propres à ses équipes peuvent aussi les utiliser, à côté de ceux de l'équipe (voir [Sites](/fr/teams/#sites)).
 
+## Ressources
+
+Ce que les événements de l'organisation réservent en plus des salles - le minibus, la sono portable : ses administrateurs les ajoutent sous **Ressources** sur sa page, avec **Ajouter une ressource** (un **Nom**, **Combien**, et où ils sont **Rangé à**). Ses événements les prennent avec **Ressources** dans leur fenêtre, une fois pour toutes leurs équipes ; les événements propres à ses équipes peuvent aussi les prendre (voir [Ressources](/fr/teams/#ressources)).
+
 ## Ses rôles propres
 
 Ses administrateurs créent des rôles à elle sous **Rôles** sur sa page, avec **Nouveau rôle** - le même éditeur que [Administration > Rôles](/fr/admin/#rôles), avec seulement ce qu'il revient à l'organisation de permettre, et valable seulement chez elle :

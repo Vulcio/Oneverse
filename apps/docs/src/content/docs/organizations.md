@@ -121,6 +121,10 @@ An organisation has a calendar link too, in Oneverse Plan's [Calendar](/plan/#ca
 
 Where the organisation's events take place - a church, a hall, a campus: its admins add them under **Venues** on its page, with **Add venue** (a **Name**, an **Address (optional)**, a **Time zone**, maybe **At someone's home**), **Edit** and **Remove**, and the rooms in each with **Add room**. Its events pick one with **Venue** in their dialog, which fills the place and the time zone, and the rooms they take; each team's part follows it, and an event type keeps it too. Its teams' own events can use them as well, beside the team's own (see [Venues](/teams/#venues)).
 
+## Resources
+
+What the organisation's events book besides rooms - the van, the portable PA: its admins add them under **Resources** on its page, with **Add resource** (a **Name**, **How many**, and where they're **Kept at**). Its events take them with **Resources** in their dialog, once for all their teams; its teams' own events can take them too (see [Resources](/teams/#resources)).
+
 ## Its own roles
 
 Its admins make roles of their own under **Roles** on its page, with **New role** - the same editor as [Admin > Roles](/admin/#roles), with only what's the organisation's to allow, and counting only in it:

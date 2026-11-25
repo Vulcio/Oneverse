@@ -200,6 +200,17 @@ const fr: typeof en = {
     atHome: "Chez quelqu'un",
     atHomeHint: "Son adresse ne va qu'à ceux qui voient ses événements, pas dans les liens de calendrier.",
   },
+  resources: {
+    title: "Ressources",
+    description: "Ce que ses événements réservent en plus des salles : le minibus, la sono portable, un écran sur roulettes - combien, et où ils sont rangés.",
+    add: "Ajouter une ressource",
+    empty: "Aucune ressource pour l'instant.",
+    quantity: "Combien",
+    keptAt: "Rangé à {{venue}}",
+    keptAtLabel: "Rangé à",
+    nowhere: "Nulle part en particulier",
+    howMany: "Combien de {{name}}",
+  },
   brands: {
     title: "Marques",
     description: "Les logos, couleurs, polices, fonds et liens de vos équipes et organisations, pour les modèles et les widgets.",

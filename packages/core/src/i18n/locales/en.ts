@@ -200,6 +200,17 @@ const en = {
     atHome: "At someone's home",
     atHomeHint: "Its address goes only to those who see its events, not into calendar links.",
   },
+  resources: {
+    title: "Resources",
+    description: "What its events book besides rooms: the van, the portable PA, a screen on wheels - how many, and where they're kept.",
+    add: "Add resource",
+    empty: "No resources yet.",
+    quantity: "How many",
+    keptAt: "Kept at {{venue}}",
+    keptAtLabel: "Kept at",
+    nowhere: "Nowhere in particular",
+    howMany: "How many {{name}}",
+  },
   brands: {
     title: "Brands",
     description: "Your teams' and organisations' logos, colours, fonts, backgrounds and links, for templates and widgets to use.",

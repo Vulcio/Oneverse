@@ -1,6 +1,7 @@
 // Venues (locations, issue #320) in the app: a team's admin adds one on the team's page, with its address and
 // time zone, and a room in it (issue #563); a new event picks it, which fills its place and time zone, and one of
-// its rooms, and its date shows the room and the place. Edited, then removed: the event keeps its place.
+// its rooms, and its date shows the room and the place; a resource (issue #564) kept there, taken by another
+// event. Edited, then removed: the event keeps its place.
 import { chromium } from "playwright";
 import { PLANIVERSE, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -53,6 +54,27 @@ try {
     if (event.rooms?.[0]?.name !== "Main hall") throw new Error(`no room saved: ${JSON.stringify(event)}`);
   });
 
+  await step("a resource (issue #564), taken by an event", async () => {
+    const resources = page.getByTestId("resources-card");
+    await resources.getByTestId("resource-add").click();
+    const form = resources.getByTestId("resource-form");
+    await form.getByLabel("Name").fill("Projector");
+    await form.getByLabel("How many").fill("2");
+    await form.getByLabel("Kept at").selectOption({ label: "Riverside church" });
+    await form.getByRole("button", { name: "Save" }).click();
+    await resources.locator('[data-testid="resource-row"][data-resource="Projector"]').getByText("Kept at Riverside church").waitFor();
+    await page.getByTestId("calendar-new-event").click();
+    const dialog = page.getByTestId("event-dialog");
+    await dialog.getByLabel("Title").fill("Film night");
+    const projector = dialog.locator('[data-testid="event-resource"][data-resource="Projector"]');
+    await projector.getByRole("checkbox").check();
+    await projector.getByTestId("event-resource-quantity").fill("2");
+    await dialog.getByRole("button", { name: "Save event" }).click();
+    await dialog.waitFor({ state: "detached" });
+    const film = (await api(admin, "GET", `/teams/${team.id}/events`)).find((one) => one.title === "Film night");
+    if (film?.resources?.[0]?.name !== "Projector" || film.resources[0].quantity !== 2) throw new Error(`no resource saved: ${JSON.stringify(film)}`);
+  });
+
   await step("edited, then removed: the event keeps its place", async () => {
     await card().getByRole("button", { name: "Edit" }).click();
     await card().getByTestId("location-form").getByLabel("Name").fill("Riverside");
@@ -61,7 +83,7 @@ try {
     await card().getByRole("button", { name: "Remove", exact: true }).click();
     await card().getByRole("button", { name: "Remove", exact: true }).click();
     await card().getByText("No venues yet.").waitFor();
-    const [event] = await api(admin, "GET", `/teams/${team.id}/events`);
+    const event = (await api(admin, "GET", `/teams/${team.id}/events`)).find((one) => one.title === "Evening service");
     if (event.locationId !== null || event.place !== "Riverside church" || event.rooms?.length) throw new Error(JSON.stringify(event));
   });
 } finally {

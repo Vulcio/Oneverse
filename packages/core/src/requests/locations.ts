@@ -55,3 +55,32 @@ export const UpdateRoomSchema = z.strictObject({
   teardownMinutes: optional(minutes),
 });
 export type UpdateRoomRequest = z.input<typeof UpdateRoomSchema>;
+
+/** POST /resources (issue #564): something a team (`teamId`) or an organisation (`organizationId`) owns that events book. */
+export const CreateResourceSchema = z
+  .strictObject({
+    name: requiredText(80),
+    quantity: optional(z.number().int().min(1).max(1000)).describe("How many there are; 1 when left out"),
+    locationId: optional(id).describe("The venue it's kept at: one of its owner's"),
+    teamId: optional(id),
+    organizationId: optional(id),
+  })
+  .refine((value) => !!value.teamId !== !!value.organizationId, "A resource belongs to a team or an organisation: give teamId or organizationId");
+export type CreateResourceRequest = z.input<typeof CreateResourceSchema>;
+
+/** PATCH /resources/:id: a field left out keeps its value; locationId null clears it. */
+export const UpdateResourceSchema = z.strictObject({
+  name: optional(requiredText(80)),
+  quantity: optional(z.number().int().min(1).max(1000)),
+  locationId: id.nullable().optional(),
+});
+export type UpdateResourceRequest = z.input<typeof UpdateResourceSchema>;
+
+/** GET /resources: a team's (its own and its organisation's), an organisation's, or every one the user can use. */
+export const ResourcesQuerySchema = LocationsQuerySchema;
+
+/** The resources an event or an event type takes (issue #564), and how many of each. */
+export const EventResourcesSchema = z
+  .array(z.strictObject({ resourceId: id, quantity: optional(z.number().int().min(1).max(1000)) }))
+  .max(30)
+  .describe("Resources it takes (issue #564): its owner's, or its organisation's; [] takes none");
