@@ -4,6 +4,7 @@ import { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { eventLocation, eventRooms, roomsOnCreate, roomsOnUpdate } from "../locations/locations.service.js";
 import { eventResources, RESOURCES_TAKEN, resourcesOnCreate, resourcesOnUpdate, resourcesTaken } from "../locations/resources.service.js";
+import { clashingDates, eventClashes, refuseClashes } from "../locations/bookings.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
 import type { CreateTeamEventDto, SetTeamEventDateAsksDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
@@ -285,33 +286,39 @@ export class TeamEventsService {
     const parent = dto.rehearsalFor ? await this.rehearsalParent(teamId, dto.rehearsalFor.eventId) : null;
     // Where it takes place (issue #320): its place is the location's name unless given.
     const location = dto.locationId ? await eventLocation(this.prisma, { teamId }, dto.locationId) : null;
-    const event = await this.prisma.client.teamEvent.create({
-      data: {
-        teamId,
-        title: dto.title,
-        date: day(dto.date),
-        startTime: dto.startTime,
-        durationMinutes: dto.durationMinutes ?? 90,
-        callMinutes: dto.callMinutes ?? null,
-        timeZone: dto.timeZone,
-        place: dto.place || location?.name || null,
-        locationId: location?.id ?? null,
-        rooms: roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds)),
-        resources: resourcesOnCreate(await eventResources(this.prisma, { teamId }, dto.resources)),
-        note: dto.note || null,
-        repeatEveryWeeks: parent ? null : (dto.repeat?.everyWeeks ?? null),
-        repeatUntil: !parent && dto.repeat?.until ? day(dto.repeat.until) : null,
-        parts: parent ? undefined : await this.checkParts(dto.parts, teamId),
-        rehearsalForId: parent?.id ?? null,
-        daysBefore: parent ? dto.rehearsalFor!.daysBefore : null,
-        organizationEventId,
-        typeId: (await this.checkType(teamId, dto.typeId)) ?? null,
-        // Left out: a set for a Songverse team, none for a group that only plans (issue #531).
-        withSet: dto.withSet ?? (await this.usesSongverse(teamId)),
-        editsSet: dto.editsSet ?? true,
-        createdByUserId: userId,
-      },
-      include: withDates,
+    const rooms = roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds));
+    const resources = resourcesOnCreate(await eventResources(this.prisma, { teamId }, dto.resources));
+    const event = await this.prisma.client.$transaction(async (tx) => {
+      const made = await tx.teamEvent.create({
+        data: {
+          teamId,
+          title: dto.title,
+          date: day(dto.date),
+          startTime: dto.startTime,
+          durationMinutes: dto.durationMinutes ?? 90,
+          callMinutes: dto.callMinutes ?? null,
+          timeZone: dto.timeZone,
+          place: dto.place || location?.name || null,
+          locationId: location?.id ?? null,
+          rooms,
+          resources,
+          note: dto.note || null,
+          repeatEveryWeeks: parent ? null : (dto.repeat?.everyWeeks ?? null),
+          repeatUntil: !parent && dto.repeat?.until ? day(dto.repeat.until) : null,
+          parts: parent ? undefined : await this.checkParts(dto.parts, teamId),
+          rehearsalForId: parent?.id ?? null,
+          daysBefore: parent ? dto.rehearsalFor!.daysBefore : null,
+          organizationEventId,
+          typeId: (await this.checkType(teamId, dto.typeId)) ?? null,
+          // Left out: a set for a Songverse team, none for a group that only plans (issue #531).
+          withSet: dto.withSet ?? (await this.usesSongverse(teamId)),
+          editsSet: dto.editsSet ?? true,
+          createdByUserId: userId,
+        },
+      });
+      // Its rooms and resources booked (issue #565); a group's part of an organisation's event books through it.
+      if (!organizationEventId) await this.book(tx, made.id, dto.skipClashes, !!made.repeatEveryWeeks);
+      return made;
     });
     await this.makeSets(event.id);
     return this.summary(await this.find(teamId, event.id));
@@ -327,33 +334,38 @@ export class TeamEventsService {
     const date = dto.date ?? dateText(before.date);
     if (repeat?.until && repeat.until < date) throw new BadRequestException(["repeat.until must not be before date"]);
     const location = dto.locationId ? await eventLocation(this.prisma, { teamId }, dto.locationId) : null;
-    await this.prisma.client.teamEvent.update({
-      where: { id: eventId },
-      data: {
-        title: dto.title,
-        date: dto.date ? day(dto.date) : undefined,
-        startTime: dto.startTime,
-        durationMinutes: dto.durationMinutes,
-        callMinutes: dto.callMinutes,
-        timeZone: dto.timeZone,
-        // Another location, no place given: the location's name.
-        place: dto.place === undefined && location && location.id !== before.locationId ? location.name : dto.place,
-        locationId: dto.locationId,
-        rooms: roomsOnUpdate(await eventRooms(this.prisma, dto.locationId === undefined ? before.locationId : dto.locationId, dto.roomIds, dto.locationId !== undefined && dto.locationId !== before.locationId)),
-        resources: resourcesOnUpdate(await eventResources(this.prisma, { teamId }, dto.resources)),
-        note: dto.note,
-        repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
-        repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
-        parts: await this.checkParts(dto.parts, teamId),
-        typeId: await this.checkType(teamId, dto.typeId),
-        withSet: dto.withSet,
-        editsSet: dto.editsSet,
-        ...(dto.rehearsalFor === undefined
-          ? {}
-          : dto.rehearsalFor === null
-            ? { rehearsalForId: null, daysBefore: null }
-            : { rehearsalForId: (await this.rehearsalParent(teamId, dto.rehearsalFor.eventId, eventId)).id, daysBefore: dto.rehearsalFor.daysBefore, repeatEveryWeeks: null, repeatUntil: null }),
-      },
+    const rooms = roomsOnUpdate(await eventRooms(this.prisma, dto.locationId === undefined ? before.locationId : dto.locationId, dto.roomIds, dto.locationId !== undefined && dto.locationId !== before.locationId));
+    const resources = resourcesOnUpdate(await eventResources(this.prisma, { teamId }, dto.resources));
+    await this.prisma.client.$transaction(async (tx) => {
+      const changed = await tx.teamEvent.update({
+        where: { id: eventId },
+        data: {
+          title: dto.title,
+          date: dto.date ? day(dto.date) : undefined,
+          startTime: dto.startTime,
+          durationMinutes: dto.durationMinutes,
+          callMinutes: dto.callMinutes,
+          timeZone: dto.timeZone,
+          // Another location, no place given: the location's name.
+          place: dto.place === undefined && location && location.id !== before.locationId ? location.name : dto.place,
+          locationId: dto.locationId,
+          rooms,
+          resources,
+          note: dto.note,
+          repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
+          repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
+          parts: await this.checkParts(dto.parts, teamId),
+          typeId: await this.checkType(teamId, dto.typeId),
+          withSet: dto.withSet,
+          editsSet: dto.editsSet,
+          ...(dto.rehearsalFor === undefined
+            ? {}
+            : dto.rehearsalFor === null
+              ? { rehearsalForId: null, daysBefore: null }
+              : { rehearsalForId: (await this.rehearsalParent(teamId, dto.rehearsalFor.eventId, eventId)).id, daysBefore: dto.rehearsalFor.daysBefore, repeatEveryWeeks: null, repeatUntil: null }),
+        },
+      });
+      if (!before.organizationEventId) await this.book(tx, eventId, dto.skipClashes, !!changed.repeatEveryWeeks);
     });
     const after = await this.find(teamId, eventId);
     // Coming dates the event no longer falls on: their sets leave it (deleted while empty), their changes go.
@@ -363,6 +375,12 @@ export class TeamEventsService {
       const rowDate = dateText(row.date);
       if (rowDate < today || eventFallsOn(timing, rowDate)) continue;
       await this.dropDate(row.id, row.setlist);
+    }
+    // Dates cancelled for their clashes (issue #565): their coming empty sets go.
+    for (const row of after.dates) {
+      if (!row.cancelled || dateText(row.date) < today || !row.setlist || row.setlist._count.items > 0) continue;
+      await this.prisma.client.teamEventDate.update({ where: { id: row.id }, data: { setlistId: null, setCreatedAt: null } });
+      await this.releaseSets([row.setlist.id]);
     }
     // No sets any more (issue #523): coming empty ones go, so they're made again if it changes back; sets with songs stay.
     if (before.withSet && !after.withSet) {
@@ -505,6 +523,18 @@ export class TeamEventsService {
     };
   }
 
+  /**
+   * Its rooms and resources booked (issue #565), inside the change's
+   * transaction: a clash refuses the change, or for a series asked to
+   * (`skip`), cancels its clashing dates.
+   */
+  private async book(tx: Prisma.TransactionClient, eventId: string, skip: boolean | null | undefined, series: boolean) {
+    const clashes = await eventClashes(tx, { teamEventId: eventId });
+    if (clashes.length === 0) return;
+    if (!skip || !series || clashes.dates === clashingDates(clashes).length) refuseClashes(clashes, clashes.dates);
+    for (const date of clashingDates(clashes)) await tx.teamEventDate.upsert({ where: { eventId_date: { eventId, date: day(date) } }, create: { eventId, date: day(date), cancelled: true }, update: { cancelled: true } });
+  }
+
   /** One date changed by itself: cancelled (its empty set deleted), another time or title (its set renamed). */
   async updateDate(teamId: string, eventId: string, date: string, dto: UpdateTeamEventDateDto, by: string | null = null, planned = false) {
     const event = await this.find(teamId, eventId);
@@ -517,9 +547,14 @@ export class TeamEventsService {
       startTime: dto.startTime === undefined ? undefined : dto.startTime === event.startTime ? null : dto.startTime,
       title: dto.title === undefined ? undefined : dto.title === event.title ? null : dto.title,
     };
-    let row = existing
-      ? await this.prisma.client.teamEventDate.update({ where: { id: existing.id }, data, include: withDates.dates.include })
-      : await this.prisma.client.teamEventDate.create({ data: { eventId, date: day(date), ...data }, include: withDates.dates.include });
+    let row = await this.prisma.client.$transaction(async (tx) => {
+      const written = existing
+        ? await tx.teamEventDate.update({ where: { id: existing.id }, data, include: withDates.dates.include })
+        : await tx.teamEventDate.create({ data: { eventId, date: day(date), ...data }, include: withDates.dates.include });
+      // Back, or at another time: its rooms and resources booked again (issue #565).
+      if (!written.cancelled && (dto.cancelled === false || dto.startTime !== undefined)) refuseClashes((await eventClashes(tx, { teamEventId: eventId })).filter((clash) => clash.date === date));
+      return written;
+    });
     if (row.cancelled && row.setlist && row.setlist._count.items === 0) {
       // Cleared, so the set comes back if the date does.
       const gone = row.setlist.id;
@@ -570,6 +605,8 @@ export class TeamEventsService {
         await tx.teamEventReminder.deleteMany({ where: { eventId: id, date: { in: [at.date, now.date] } } });
       }
       if (existing?.setlist) await tx.setlist.update({ where: { id: existing.setlist.id }, data: { eventDate: day(to) } });
+      // Its rooms and resources booked on the new day (issue #565).
+      refuseClashes((await eventClashes(tx, { teamEventId: eventId })).filter((clash) => clash.date === to));
     });
     const fresh = await this.find(teamId, eventId);
     const [shown] = eventDates(timingOf(fresh), to, to, changesOf(fresh));

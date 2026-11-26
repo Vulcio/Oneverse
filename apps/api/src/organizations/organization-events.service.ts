@@ -4,6 +4,7 @@ import { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { eventLocation, eventRooms, roomsOnCreate, roomsOnUpdate } from "../locations/locations.service.js";
 import { eventResources, RESOURCES_TAKEN, resourcesOnCreate, resourcesOnUpdate, resourcesTaken } from "../locations/resources.service.js";
+import { clashingDates, eventClashes, refuseClashes } from "../locations/bookings.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { AvailabilityService } from "../team-events/availability.service.js";
@@ -177,22 +178,22 @@ export class OrganizationEventsService {
     const location = row.locationId ? await this.prisma.client.location.findFirst({ where: { id: row.locationId, ownerOrganizationId: organizationId }, select: { id: true } }) : null;
     const event = await this.prisma.client.$transaction(async (tx) => {
       const made = await tx.organizationEvent.create({
-        data: {
-          organizationId,
-          title: row.title,
-          date: row.date,
-          startTime: row.startTime,
-          durationMinutes: row.durationMinutes,
-          timeZone: row.timeZone,
-          place: row.place,
-          locationId: location?.id ?? null,
-          note: row.note,
-          repeatEveryWeeks: row.repeatEveryWeeks,
-          repeatUntil: row.repeatUntil,
-          hostUserId: asker ? row.transferRequestedByUserId : viewer.id,
-          withSet: row.withSet,
-          createdByUserId: viewer.id,
-        },
+          data: {
+            organizationId,
+            title: row.title,
+            date: row.date,
+            startTime: row.startTime,
+            durationMinutes: row.durationMinutes,
+            timeZone: row.timeZone,
+            place: row.place,
+            locationId: location?.id ?? null,
+            note: row.note,
+            repeatEveryWeeks: row.repeatEveryWeeks,
+            repeatUntil: row.repeatUntil,
+            hostUserId: asker ? row.transferRequestedByUserId : viewer.id,
+            withSet: row.withSet,
+            createdByUserId: viewer.id,
+          },
       });
       await tx.teamEvent.update({ where: { id: row.id }, data: { organizationEventId: made.id, transferRequestedAt: null, transferRequestedByUserId: null } });
       return made;
@@ -215,29 +216,39 @@ export class OrganizationEventsService {
     await this.checkNeeds(organizationId, dto.needs);
     // Where it takes place (issue #320): its place is the location's name unless given.
     const location = dto.locationId ? await eventLocation(this.prisma, { organizationId }, dto.locationId) : null;
-    const event = await this.prisma.client.organizationEvent.create({
-      data: {
-        organizationId,
-        title: dto.title,
-        date: day(dto.date),
-        startTime: dto.startTime,
-        durationMinutes: dto.durationMinutes ?? 90,
-        timeZone: dto.timeZone,
-        place: dto.place || location?.name || null,
-        locationId: location?.id ?? null,
-        rooms: roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds)),
-        resources: resourcesOnCreate(await eventResources(this.prisma, { organizationId }, dto.resources)),
-        note: dto.note || null,
-        repeatEveryWeeks: dto.repeat?.everyWeeks ?? null,
-        repeatUntil: dto.repeat?.until ? day(dto.repeat.until) : null,
-        hostUserId: dto.hostUserId,
-        withSet: dto.withSet ?? true,
-        createdByUserId: viewer.id,
-      },
+    const rooms = roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds));
+    const resources = resourcesOnCreate(await eventResources(this.prisma, { organizationId }, dto.resources));
+    let skipped: string[] = [];
+    const event = await this.prisma.client.$transaction(async (tx) => {
+      const made = await tx.organizationEvent.create({
+        data: {
+          organizationId,
+          title: dto.title,
+          date: day(dto.date),
+          startTime: dto.startTime,
+          durationMinutes: dto.durationMinutes ?? 90,
+          timeZone: dto.timeZone,
+          place: dto.place || location?.name || null,
+          locationId: location?.id ?? null,
+          rooms,
+          resources,
+          note: dto.note || null,
+          repeatEveryWeeks: dto.repeat?.everyWeeks ?? null,
+          repeatUntil: dto.repeat?.until ? day(dto.repeat.until) : null,
+          hostUserId: dto.hostUserId,
+          withSet: dto.withSet ?? true,
+          createdByUserId: viewer.id,
+        },
+      });
+      // Its rooms and resources booked (issue #565), once for all its groups.
+      skipped = await this.book(tx, made.id, dto.skipClashes, !!made.repeatEveryWeeks && dto.needs.length > 0);
+      return made;
     });
     try {
       for (const need of await this.withEditors(dto.needs))
         await this.events.create(need.teamId, viewer.id, { ...this.timing(event), ...(dto.roomIds?.length ? { roomIds: dto.roomIds } : {}), parts: need.parts, callMinutes: need.callMinutes, withSet: event.withSet, editsSet: need.editsSet }, event.id);
+      // Its clashing dates, cancelled for every group.
+      await this.cancelDates(event.id, skipped, viewer.id);
     } catch (error) {
       // A group's part refused (one of its parts): none of it is kept.
       await this.prisma.client.organizationEvent.delete({ where: { id: event.id } });
@@ -282,24 +293,29 @@ export class OrganizationEventsService {
     const place = dto.place === undefined && location && location.id !== before.locationId ? location.name : dto.place;
     // Its rooms (issue #563), and every group's part's the same.
     const roomIds = await eventRooms(this.prisma, dto.locationId === undefined ? before.locationId : dto.locationId, dto.roomIds, dto.locationId !== undefined && dto.locationId !== before.locationId);
-    const after = await this.prisma.client.organizationEvent.update({
-      where: { id: eventId },
-      data: {
-        title: dto.title,
-        date: dto.date ? day(dto.date) : undefined,
-        startTime: dto.startTime,
-        durationMinutes: dto.durationMinutes,
-        timeZone: dto.timeZone,
-        place,
-        locationId: dto.locationId,
-        rooms: roomsOnUpdate(roomIds),
-        resources: resourcesOnUpdate(await eventResources(this.prisma, { organizationId }, dto.resources)),
-        note: dto.note,
-        repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
-        repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
-        hostUserId: dto.hostUserId,
-        withSet: dto.withSet,
-      },
+    let skipped: string[] = [];
+    const after = await this.prisma.client.$transaction(async (tx) => {
+      const changed = await tx.organizationEvent.update({
+        where: { id: eventId },
+        data: {
+          title: dto.title,
+          date: dto.date ? day(dto.date) : undefined,
+          startTime: dto.startTime,
+          durationMinutes: dto.durationMinutes,
+          timeZone: dto.timeZone,
+          place,
+          locationId: dto.locationId,
+          rooms: roomsOnUpdate(roomIds),
+          resources: resourcesOnUpdate(await eventResources(this.prisma, { organizationId }, dto.resources)),
+          note: dto.note,
+          repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
+          repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
+          hostUserId: dto.hostUserId,
+          withSet: dto.withSet,
+        },
+      });
+      skipped = await this.book(tx, eventId, dto.skipClashes, !!changed.repeatEveryWeeks && before.teamEvents.length > 0);
+      return changed;
     });
     const timing = {
       title: dto.title,
@@ -329,8 +345,29 @@ export class OrganizationEventsService {
       if (!before.teamEvents.some((part) => part.teamId === need.teamId))
         await this.events.create(need.teamId, viewer.id, { ...this.timing(after), roomIds: (await this.find(organizationId, eventId)).rooms.map((room) => room.id), parts: need.parts, callMinutes: need.callMinutes, withSet: after.withSet, editsSet: need.editsSet }, eventId);
     }
+    await this.cancelDates(eventId, skipped, viewer.id);
     if (after.hostUserId !== before.hostUserId) await this.tellHost(after, viewer.id);
     return this.summary(await this.find(organizationId, eventId), viewer, role);
+  }
+
+  /**
+   * Its rooms and resources booked (issue #565), inside the change's
+   * transaction: a clash refuses the change; for a series with groups asked
+   * to (`skip`), its clashing dates are returned, to be cancelled for every
+   * group once their parts are made.
+   */
+  private async book(tx: Prisma.TransactionClient, eventId: string, skip: boolean | null | undefined, canSkip: boolean): Promise<string[]> {
+    const clashes = await eventClashes(tx, { organizationEventId: eventId });
+    if (clashes.length === 0) return [];
+    if (!skip || !canSkip || clashes.dates === clashingDates(clashes).length) refuseClashes(clashes, clashes.dates);
+    return clashingDates(clashes);
+  }
+
+  /** Dates cancelled for every group's part (its clashing ones, issue #565). */
+  private async cancelDates(eventId: string, dates: readonly string[], by: string) {
+    if (dates.length === 0) return;
+    const parts = await this.prisma.client.teamEvent.findMany({ where: { organizationEventId: eventId }, select: { id: true, teamId: true } });
+    for (const part of parts) for (const date of dates) await this.events.updateDate(part.teamId, part.id, date, { cancelled: true }, by, true);
   }
 
   /** By its admins: each group's part goes (those signed up told), then the event. */

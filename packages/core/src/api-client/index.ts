@@ -1108,6 +1108,38 @@ export interface EventResourceUse {
   quantity: number;
 }
 
+/**
+ * A booking clash (issue #565): on the event's `date`, a room or resource it
+ * takes is already booked by another event (a 409 with code BOOKING_CLASH
+ * lists them in `clashes`).
+ */
+export interface BookingClash {
+  date: string;
+  kind: "room" | "resource";
+  id: string;
+  what: string;
+  eventId: string;
+  eventKind: "team" | "organization";
+  event: string;
+  owner: string;
+  heldOn: string;
+  startsAt: string;
+  endsAt: string;
+}
+
+/** Why a save was refused for its bookings (issue #565): the clashes, and how many of its coming dates are free (null: not said). */
+export interface BookingRefusal {
+  clashes: BookingClash[];
+  freeDates: number | null;
+}
+
+/** The clashes a refused save names (issue #565); null for any other error. */
+export function bookingClashes(error: unknown): BookingRefusal | null {
+  if (!(error instanceof ApiError) || error.code !== "BOOKING_CLASH") return null;
+  const { clashes, freeDates } = error.details ?? {};
+  return { clashes: Array.isArray(clashes) ? (clashes as BookingClash[]) : [], freeDates: typeof freeDates === "number" ? freeDates : null };
+}
+
 /** A widget's default look (issue #273): the user's own, or a team's. */
 export interface ScreenWidgetDefault {
   kind: ScreenWidgetKind;

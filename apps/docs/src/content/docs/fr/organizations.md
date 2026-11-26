@@ -123,7 +123,7 @@ Où ont lieu les événements de l'organisation - une église, une salle, un cam
 
 ## Ressources
 
-Ce que les événements de l'organisation réservent en plus des salles - le minibus, la sono portable : ses administrateurs les ajoutent sous **Ressources** sur sa page, avec **Ajouter une ressource** (un **Nom**, **Combien**, et où ils sont **Rangé à**). Ses événements les prennent avec **Ressources** dans leur fenêtre, une fois pour toutes leurs équipes ; les événements propres à ses équipes peuvent aussi les prendre (voir [Ressources](/fr/teams/#ressources)).
+Ce que les événements de l'organisation réservent en plus des salles - le minibus, la sono portable : ses administrateurs les ajoutent sous **Ressources** sur sa page, avec **Ajouter une ressource** (un **Nom**, **Combien**, et où ils sont **Rangé à**). Ses événements les prennent avec **Ressources** dans leur fenêtre, une fois pour toutes leurs équipes ; les événements propres à ses équipes peuvent aussi les prendre (voir [Ressources](/fr/teams/#ressources)). Une salle ou une ressource n'est jamais réservée deux fois en même temps : un événement qui créerait un conflit est refusé, en nommant celui qui la tient (voir [Réservations](/fr/teams/#réservations)).
 
 ## Ses rôles propres
 

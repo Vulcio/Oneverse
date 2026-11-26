@@ -75,7 +75,7 @@ A rehearsal ahead of each date: in **New event**, **Rehearsal for** picks the ev
 
 Where the team's events take place: its admins add them under **Venues** on the team's page, with **Add venue**: a **Name**, an **Address (optional)** and a **Time zone**. Tick **At someone's home** for a homegroup's house: its address then goes only to those who see its events, never into calendar links. **Edit** changes one, **Remove** takes it off (its events keep their place, without the venue). A team in an organisation can also use the organisation's venues (see [Venues](/organizations/#venues)).
 
-A venue may hold rooms - Main hall, Kids room 1: **Add room** under it, with a **Room name** and maybe a **Capacity**; **×** removes one (its events keep the venue).
+A venue may hold rooms - Main hall, Kids room 1: **Add room** under it, with a **Room name**, maybe a **Capacity**, and how long it takes to get ready and to clear: **Setup (minutes)** and **Teardown (minutes)**; **×** removes one (its events keep the venue).
 
 In **New event**, **Venue** picks one: the place becomes its name and the time zone its own; a venue with rooms then lists them, to tick those the event takes. Its dates show them before the place ("Main hall, Riverside church"), and calendar links give the rooms, the venue and its address. You can still type a place of your own beside it. An event type keeps its usual venue and rooms too.
 
@@ -84,6 +84,10 @@ In **New event**, **Venue** picks one: the place becomes its name and the time z
 What the team's events book besides rooms - the van, the portable PA, a screen on wheels: its admins add them under **Resources** on the team's page, with **Add resource**: a **Name**, **How many** there are, and where they're **Kept at** (one of its venues, or **Nowhere in particular**). A team in an organisation can also use the organisation's.
 
 In **New event**, **Resources** lists them: tick those the event takes, and how many when there are several. An event type keeps its usual ones too.
+
+### Bookings
+
+An event's dates book the rooms and resources it takes: a room from its setup time before the event to its teardown time after. A room is never booked twice at once, and a resource never more times at once than there are of it. Saving an event that would clash is refused: **Already booked** lists each room or resource, the date, and the event and team holding it. Ask them to change theirs, or choose another time, room or resource. For a series, **Book the free dates** saves it anyway, with its clashing dates cancelled. Bringing back a cancelled date, moving a date or changing its time is checked the same way. An organisation's event books once for all its teams.
 
 ### Your calendar link
 

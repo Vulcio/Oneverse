@@ -1,4 +1,4 @@
-import { addDays, wherePlace, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
+import { addDays, bookingClashes, type BookingRefusal, wherePlace, coversPart, EVENT_ROLES, fillingGroups, INSTRUMENTS, leadsSet, partsForTeam, localDate, partKey, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, Building2, CalendarArrowUp, CalendarClock, CalendarDays, CalendarPlus, CircleCheck, ExternalLink, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -20,6 +20,7 @@ import { Textarea } from "@oneverse/ui/components/textarea";
 import { LineupDialog, LineupLine, partOf, usePartLabel } from "./lineup";
 import { LocationField, useLocations } from "./locations";
 import { resourceChoices, ResourcesField, useResources } from "./resources";
+import { BookingClashes } from "./bookings";
 import { MoveDateDialog } from "./move-date-dialog";
 import { HostLink, usePlanning } from "../host";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
@@ -893,6 +894,7 @@ function EventDialog({
   // The resources it takes (issue #564).
   const resources = useResources({ teamId });
   const [resourceUses, setResourceUses] = useState(resourceChoices(event?.resources));
+  const [clashes, setClashes] = useState<BookingRefusal | null>(null);
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
@@ -930,9 +932,10 @@ function EventDialog({
     }
   };
 
-  const save = async () => {
+  const save = async (skipClashes = false) => {
     setBusy(true);
     setError(null);
+    setClashes(null);
     const repeat = everyWeeks ? { everyWeeks: Number(everyWeeks), until: until || null } : null;
     const body = parentEvent
       ? {
@@ -969,12 +972,16 @@ function EventDialog({
           ...(event?.rehearsalFor ? { rehearsalFor: null } : {}),
         };
     try {
+      const booking = skipClashes ? { skipClashes: true } : {};
       if (event && planned) await api.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody), callMinutes: call ? Number(call) : null });
-      else if (event) await api.updateTeamEvent(teamId, event.id, body);
-      else await api.createTeamEvent(teamId, { ...body, typeId: typeId || undefined });
+      else if (event) await api.updateTeamEvent(teamId, event.id, { ...body, ...booking });
+      else await api.createTeamEvent(teamId, { ...body, ...booking, typeId: typeId || undefined });
       await onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // Its rooms or resources already booked (issue #565): who has them, and for a series, its free dates.
+      const clashing = bookingClashes(err);
+      if (clashing) setClashes(clashing);
+      else setError(err instanceof Error ? err.message : String(err));
       setBusy(false);
     }
   };
@@ -1114,6 +1121,7 @@ function EventDialog({
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} />}
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
+        {clashes ? <BookingClashes clashes={clashes.clashes} busy={busy} onBookFree={!parentEvent && everyWeeks && clashes.freeDates !== 0 ? () => void save(true) : null} /> : null}
         {/* Moved to the organisation (issue #549), one-off or series: its admins accept it; dates, answers, line-ups and sets stay. */}
         {event && !planned && !event.rehearsalFor && organization ? (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-3 text-sm" data-testid="event-transfer">

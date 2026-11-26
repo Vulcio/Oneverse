@@ -1,4 +1,4 @@
-import { addDays, localDate, needsFromParts, partsFromNeeds, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type TeamEventType, type OrganizationEventTransfer, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
+import { addDays, bookingClashes, type BookingRefusal, localDate, needsFromParts, partsFromNeeds, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type TeamEventType, type OrganizationEventTransfer, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Ban, CalendarArrowUp, CalendarDays, CircleCheck, ExternalLink, MapPin, MoreHorizontal, Pencil, PencilLine, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LocationField, useLocations } from "../components/locations";
 import { resourceChoices, ResourcesField, useResources } from "../components/resources";
+import { BookingClashes } from "../components/bookings";
 import { MoveDateDialog } from "../components/move-date-dialog";
 import { HostLink, usePlanning } from "../host";
 import { loadOrganizationEventsPage } from "../loaders";
@@ -531,6 +532,7 @@ function OrganizationEventDialog({
   // The resources it takes (issue #564), the organisation's.
   const resources = useResources({ organizationId: organization.id });
   const [resourceUses, setResourceUses] = useState(resourceChoices(event?.resources));
+  const [clashes, setClashes] = useState<BookingRefusal | null>(null);
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
@@ -567,21 +569,26 @@ function OrganizationEventDialog({
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
     setError(null);
+    setClashes(null);
     try {
       await action();
       await onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // Its rooms or resources already booked (issue #565).
+      const clashing = bookingClashes(err);
+      if (clashing) setClashes(clashing);
+      else setError(err instanceof Error ? err.message : String(err));
       setBusy(false);
     }
   }
 
-  const save = () =>
+  const save = (skipClashes = false) =>
     run(() => {
+      const booking = skipClashes ? { skipClashes: true } : {};
       const timing = { title, date, startTime, durationMinutes: Number(duration), timeZone, note: note || null, repeat: everyWeeks ? { everyWeeks: Number(everyWeeks), until: until || null } : null };
       return event
-        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], resources: resourceUses, withSet, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
-        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], resources: resourceUses, hostUserId, withSet, needs: needsBody() });
+        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], resources: resourceUses, withSet, needs: needsBody(), ...booking, ...(isAdmin ? { hostUserId } : {}) })
+        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, roomIds: locationId ? roomIds : [], resources: resourceUses, hostUserId, withSet, needs: needsBody(), ...booking });
     });
 
   return (
@@ -787,6 +794,7 @@ function OrganizationEventDialog({
           </div>
         </form>
         {error ? <FieldError>{error}</FieldError> : null}
+        {clashes ? <BookingClashes clashes={clashes.clashes} busy={busy} onBookFree={everyWeeks && needs.length > 0 && clashes.freeDates !== 0 ? () => void save(true) : null} /> : null}
         {typeName !== null ? (
           <div className="flex items-end gap-2">
             <div className="flex flex-1 flex-col gap-1.5">

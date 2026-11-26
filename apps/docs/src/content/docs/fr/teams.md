@@ -77,7 +77,7 @@ Où ont lieu les événements de l'équipe : ses administrateurs les ajoutent so
 
 Cochez **Chez quelqu'un** pour la maison d'un groupe de maison : son adresse ne va alors qu'à ceux qui voient ses événements, jamais dans les liens de calendrier.
 
-Un site peut avoir des salles - Grande salle, Salle enfants 1 : **Ajouter une salle** dessous, avec un **Nom de la salle** et peut-être une **Capacité** ; **×** en retire une (ses événements gardent le site).
+Un site peut avoir des salles - Grande salle, Salle enfants 1 : **Ajouter une salle** dessous, avec un **Nom de la salle**, peut-être une **Capacité**, et le temps qu'il faut pour la préparer et la ranger : **Installation (minutes)** et **Rangement (minutes)** ; **×** en retire une (ses événements gardent le site).
 
 Dans **Nouvel événement**, **Site** en choisit un : le lieu devient son nom, et le fuseau horaire le sien ; un site qui a des salles les liste alors, pour cocher celles que prend l'événement. Ses dates les montrent avant le lieu (« Grande salle, Église du port »), et les liens de calendrier donnent les salles, le site et son adresse. Vous pouvez toujours écrire un lieu à vous à côté. Un type d'événement garde aussi son site et ses salles habituels.
 
@@ -86,6 +86,10 @@ Dans **Nouvel événement**, **Site** en choisit un : le lieu devient son nom, e
 Ce que les événements de l'équipe réservent en plus des salles - le minibus, la sono portable, un écran sur roulettes : ses administrateurs les ajoutent sous **Ressources** sur la page de l'équipe, avec **Ajouter une ressource** : un **Nom**, **Combien** il y en a, et où ils sont **Rangé à** (l'un de ses sites, ou **Nulle part en particulier**). Une équipe dans une organisation peut aussi utiliser celles de l'organisation.
 
 Dans **Nouvel événement**, **Ressources** les liste : cochez celles que prend l'événement, et combien quand il y en a plusieurs. Un type d'événement garde aussi ses ressources habituelles.
+
+### Réservations
+
+Les dates d'un événement réservent les salles et les ressources qu'il prend : une salle depuis son temps d'installation avant l'événement jusqu'à son temps de rangement après. Une salle n'est jamais réservée deux fois en même temps, ni une ressource plus de fois à la fois qu'il n'y en a. Enregistrer un événement qui créerait un conflit est refusé : **Déjà réservé** liste chaque salle ou ressource, la date, et l'événement et l'équipe qui la tiennent. Demandez-leur de changer le leur, ou choisissez une autre heure, une autre salle ou une autre ressource. Pour une série, **Réserver les dates libres** l'enregistre quand même, ses dates en conflit annulées. Rétablir une date annulée, déplacer une date ou changer son heure est vérifié de la même façon. Un événement de l'organisation réserve une seule fois pour toutes ses équipes.
 
 ### Votre lien de calendrier
 

@@ -210,6 +210,9 @@ function Rooms({ location, onChanged, onError }: { location: EventLocation; onCh
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [capacity, setCapacity] = useState("");
+  // Held before and after each event that takes it (bookings, issue #565).
+  const [setup, setSetup] = useState("");
+  const [teardown, setTeardown] = useState("");
   const [busy, setBusy] = useState(false);
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
@@ -232,6 +235,8 @@ function Rooms({ location, onChanged, onError }: { location: EventLocation; onCh
           <DoorOpen className="size-3 text-muted-foreground" aria-hidden />
           {room.name}
           {room.capacity ? <span className="text-muted-foreground">· {t("locations.capacityOf", { count: room.capacity })}</span> : null}
+          {room.setupMinutes ? <span className="text-muted-foreground">· {t("locations.setupOf", { count: room.setupMinutes })}</span> : null}
+          {room.teardownMinutes ? <span className="text-muted-foreground">· {t("locations.teardownOf", { count: room.teardownMinutes })}</span> : null}
           {location.canEdit ? (
             <button type="button" className="ml-0.5 text-muted-foreground hover:text-destructive" aria-label={t("locations.removeRoom", { name: room.name })} disabled={busy} onClick={() => void run(() => api.removeRoom(location.id, room.id))}>
               <X className="size-3" />
@@ -245,16 +250,20 @@ function Rooms({ location, onChanged, onError }: { location: EventLocation; onCh
           data-testid="room-form"
           onSubmit={(submitted) => {
             submitted.preventDefault();
-            void run(() => api.addRoom(location.id, { name: name.trim(), ...(capacity ? { capacity: Number(capacity) } : {}) })).then((done) => {
+            void run(() => api.addRoom(location.id, { name: name.trim(), ...(capacity ? { capacity: Number(capacity) } : {}), ...(setup ? { setupMinutes: Number(setup) } : {}), ...(teardown ? { teardownMinutes: Number(teardown) } : {}) })).then((done) => {
               if (!done) return;
               setName("");
               setCapacity("");
+              setSetup("");
+              setTeardown("");
               setAdding(false);
             });
           }}
         >
           <Input className="h-8 w-36 text-xs" value={name} maxLength={80} required autoFocus placeholder={t("locations.roomName")} aria-label={t("locations.roomName")} onChange={(e) => setName(e.target.value)} data-testid="room-name" />
           <Input className="h-8 w-24 text-xs" type="number" min={1} value={capacity} placeholder={t("locations.capacity")} aria-label={t("locations.capacity")} onChange={(e) => setCapacity(e.target.value)} data-testid="room-capacity" />
+          <Input className="h-8 w-36 text-xs" type="number" min={0} max={1440} value={setup} placeholder={t("locations.setup")} aria-label={t("locations.setup")} onChange={(e) => setSetup(e.target.value)} data-testid="room-setup" />
+          <Input className="h-8 w-36 text-xs" type="number" min={0} max={1440} value={teardown} placeholder={t("locations.teardown")} aria-label={t("locations.teardown")} onChange={(e) => setTeardown(e.target.value)} data-testid="room-teardown" />
           <Button type="submit" size="sm" disabled={busy || !name.trim()} data-testid="room-save">
             {t("locations.save")}
           </Button>

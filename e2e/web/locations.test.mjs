@@ -1,7 +1,8 @@
 // Venues (locations, issue #320) in the app: a team's admin adds one on the team's page, with its address and
 // time zone, and a room in it (issue #563); a new event picks it, which fills its place and time zone, and one of
 // its rooms, and its date shows the room and the place; a resource (issue #564) kept there, taken by another
-// event. Edited, then removed: the event keeps its place.
+// event. The hall booked again at the same time is refused, naming who has it, and a series books its free dates
+// (issue #565). Edited, then removed: the event keeps its place.
 import { chromium } from "playwright";
 import { PLANIVERSE, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -30,12 +31,14 @@ try {
     await card().getByText("2 Quay Road · America/New York").waitFor();
   });
 
-  await step("a room in it, with its capacity (issue #563)", async () => {
+  await step("a room in it, with its capacity (issue #563) and setup time (issue #565)", async () => {
     await card().getByTestId("room-add").click();
     await card().getByTestId("room-name").fill("Main hall");
     await card().getByTestId("room-capacity").fill("200");
+    await card().getByTestId("room-setup").fill("30");
     await card().getByTestId("room-save").click();
     await card().locator('[data-testid="location-room"][data-room="Main hall"]').getByText("200 people").waitFor();
+    await card().locator('[data-testid="location-room"][data-room="Main hall"]').getByText("setup 30 min").waitFor();
   });
 
   await step("a new event picks it: its place and time zone follow", async () => {
@@ -73,6 +76,23 @@ try {
     await dialog.waitFor({ state: "detached" });
     const film = (await api(admin, "GET", `/teams/${team.id}/events`)).find((one) => one.title === "Film night");
     if (film?.resources?.[0]?.name !== "Projector" || film.resources[0].quantity !== 2) throw new Error(`no resource saved: ${JSON.stringify(film)}`);
+  });
+
+  await step("the hall already booked then (issue #565): who has it, and a series books its free dates", async () => {
+    await page.getByTestId("calendar-new-event").click();
+    const dialog = page.getByTestId("event-dialog");
+    await dialog.getByLabel("Title").fill("Youth night");
+    await dialog.getByTestId("event-location").selectOption({ label: "Riverside church" });
+    await dialog.locator('[data-testid="event-room"][data-room="Main hall"]').getByRole("checkbox").check();
+    await dialog.locator("#event-repeat").selectOption("1");
+    await dialog.getByRole("button", { name: "Save event" }).click();
+    const clashes = dialog.getByTestId("booking-clashes");
+    await clashes.getByText("Already booked").waitFor();
+    await clashes.getByTestId("booking-clash").filter({ hasText: `Main hall on` }).filter({ hasText: `Evening service (Locations ${stamp})` }).waitFor();
+    await clashes.getByTestId("booking-book-free").click();
+    await dialog.waitFor({ state: "detached" });
+    const youth = (await api(admin, "GET", `/teams/${team.id}/events`)).find((one) => one.title === "Youth night");
+    if (!youth?.repeat) throw new Error(`series not saved: ${JSON.stringify(youth)}`);
   });
 
   await step("edited, then removed: the event keeps its place", async () => {

@@ -123,7 +123,7 @@ Where the organisation's events take place - a church, a hall, a campus: its adm
 
 ## Resources
 
-What the organisation's events book besides rooms - the van, the portable PA: its admins add them under **Resources** on its page, with **Add resource** (a **Name**, **How many**, and where they're **Kept at**). Its events take them with **Resources** in their dialog, once for all their teams; its teams' own events can take them too (see [Resources](/teams/#resources)).
+What the organisation's events book besides rooms - the van, the portable PA: its admins add them under **Resources** on its page, with **Add resource** (a **Name**, **How many**, and where they're **Kept at**). Its events take them with **Resources** in their dialog, once for all their teams; its teams' own events can take them too (see [Resources](/teams/#resources)). A room or resource is never booked twice at once: an event that would clash is refused, naming the event holding it (see [Bookings](/teams/#bookings)).
 
 ## Its own roles
 
