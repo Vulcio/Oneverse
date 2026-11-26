@@ -5,11 +5,14 @@ import type { AuthenticatedUser } from "../common/types/authenticated-request.js
 import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesIn, capabilitiesOf, screenManagerScope } from "../roles/capabilities.js";
+import { bookingsOf } from "../locations/bookings.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { SetlistsService } from "../setlists/setlists.service.js";
 
 /** How long a pairing code waits to be confirmed. */
 export const PAIRING_TTL_S = 10 * 60;
+/** A screen on wheels (issue #566) goes to the event its resource is booked for this long before it starts. */
+const WHEELED_LEAD_MINUTES = 60;
 import { SCREEN_CHANNEL, screenOnlineKey, screenReportKey } from "./screen-channel.js";
 import { giveBackScreen, NOT_BORROWED, type BorrowedFrom } from "./borrowed-screens.js";
 import { templateLayout, templateLook, TEMPLATE_PARTS_SELECT, type TemplateParts } from "./screen-templates.js";
@@ -61,6 +64,10 @@ const SCREEN_SELECT = {
   kind: true,
   locationId: true,
   location: { select: { id: true, name: true, timeZone: true } },
+  roomId: true,
+  room: { select: { id: true, name: true } },
+  resourceId: true,
+  resource: { select: { id: true, name: true } },
   owner: { select: { displayName: true } },
   ownerTeam: { select: { name: true } },
   ownerOrganization: { select: { name: true } },
@@ -147,7 +154,7 @@ export class ScreensService {
    * or (issue #222) a team's or an organisation's they run - its token
    * waiting for it to claim.
    */
-  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string; locationId?: string; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; lasts?: ScreenPairingLength }) {
+  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string; locationId?: string; roomId?: string; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; lasts?: ScreenPairingLength }) {
     const { code, pairingId, pairing } = await this.waiting(input);
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
@@ -155,9 +162,11 @@ export class ScreensService {
     const owner = await this.ownerFor(user, change.owner, true);
     // Following a location (issue #320): one its owner's events can take.
     const locationId = change.setMode === "LOCATION" ? await this.assertLocation(owner, change.locationId) : null;
+    // ...maybe in one of its rooms (issue #566).
+    const roomId = locationId && change.roomId ? await this.assertRoom(locationId, change.roomId) : null;
     const token = `scr_${randomBytes(32).toString("base64url")}`;
     let screen = await this.prisma.client.screen.create({
-      data: { name: change.name, kind: pairing.kind ?? "SCREEN", mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: locationId ? null : (change.setlistId ?? null), locationId, setByUserId: user.id, ...owner, tokenHash: hash(token), expiresAt: screenPairingEnds(change.lasts ?? "unlimited"), ...lookChange(change), ...scriptureLookChange(change) },
+      data: { name: change.name, kind: pairing.kind ?? "SCREEN", mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: locationId ? null : (change.setlistId ?? null), locationId, roomId, setByUserId: user.id, ...owner, tokenHash: hash(token), expiresAt: screenPairingEnds(change.lasts ?? "unlimited"), ...lookChange(change), ...scriptureLookChange(change) },
       select: SCREEN_SELECT,
     });
     if (locationId) screen = await this.followLocation(screen);
@@ -383,26 +392,55 @@ export class ScreensService {
    * event there that's on now, or the next one today - as pickDaySet picks
    * the set of the day - in the location's time zone; moved there (and told)
    * when it changed. Without a location (removed since), no set.
+   * In a room (issue #566): the events taking that room, or no room (the
+   * whole venue). A screen on wheels, while its resource is held for an
+   * event (from an hour before): that event's set, wherever it is.
    */
-  async followLocation<T extends { id: string; setlistId: string | null; setMode: SetMode; locationId: string | null; location: { timeZone: string } | null; setlist: unknown }>(screen: T, now = new Date()): Promise<T> {
+  async followLocation<T extends { id: string; setlistId: string | null; setMode: SetMode; locationId: string | null; location: { timeZone: string } | null; roomId?: string | null; resourceId?: string | null; setlist: unknown }>(screen: T, now = new Date()): Promise<T> {
     if (screen.setMode !== "LOCATION") return screen;
     let target: string | null = null;
     if (screen.locationId && screen.location) {
       const today = localDate(now, screen.location.timeZone);
-      const rows = await this.prisma.client.teamEventDate.findMany({
-        where: { date: new Date(`${today}T00:00:00.000Z`), cancelled: false, setlistId: { not: null }, event: { locationId: screen.locationId } },
-        select: { setlistId: true, startTime: true, event: { select: { startTime: true } } },
-      });
-      target = pickDaySet(
-        rows.map((row) => ({ id: row.setlistId!, name: null, eventDate: today, startTime: row.startTime ?? row.event.startTime, fromEvent: true, teamName: null })),
-        today,
-        localTime(now, screen.location.timeZone),
-      );
+      const wheeled = screen.resourceId ? await this.bookedSet(screen.resourceId, today, now) : undefined;
+      if (wheeled !== undefined) target = wheeled;
+      else {
+        const inRoom = screen.roomId ? { OR: [{ rooms: { some: { id: screen.roomId } } }, { rooms: { none: {} } }] } : {};
+        const rows = await this.prisma.client.teamEventDate.findMany({
+          where: { date: new Date(`${today}T00:00:00.000Z`), cancelled: false, setlistId: { not: null }, event: { locationId: screen.locationId, ...inRoom } },
+          select: { setlistId: true, startTime: true, event: { select: { startTime: true } } },
+        });
+        target = pickDaySet(
+          rows.map((row) => ({ id: row.setlistId!, name: null, eventDate: today, startTime: row.startTime ?? row.event.startTime, fromEvent: true, teamName: null })),
+          today,
+          localTime(now, screen.location.timeZone),
+        );
+      }
     }
     if (target === screen.setlistId) return screen;
     const updated = await this.prisma.client.screen.update({ where: { id: screen.id }, data: { setlistId: target, setlistPickedOn: null }, select: SCREEN_SELECT });
     await redis().publish(SCREEN_CHANNEL, screen.id);
     return { ...screen, setlistId: updated.setlistId, setlist: updated.setlist };
+  }
+
+  /**
+   * A screen on wheels (issue #566): the set of the event its resource is
+   * held for now - from WHEELED_LEAD_MINUTES before until it ends - or null
+   * when that event has no set; undefined when it isn't held (it's in its room).
+   * An organisation's event: the first of its groups' sets that date.
+   */
+  private async bookedSet(resourceId: string, today: string, now: Date): Promise<string | null | undefined> {
+    const at = now.getTime();
+    const held = (await bookingsOf(this.prisma.client, [], [resourceId], today, today)).find(
+      (one) => new Date(one.heldFrom).getTime() - WHEELED_LEAD_MINUTES * 60_000 <= at && at < new Date(one.heldUntil).getTime(),
+    );
+    if (!held) return undefined;
+    const date = new Date(`${held.date}T00:00:00.000Z`);
+    const row = await this.prisma.client.teamEventDate.findFirst({
+      where: { date, cancelled: false, setlistId: { not: null }, event: held.eventKind === "team" ? { id: held.eventId } : { organizationEventId: held.eventId } },
+      select: { setlistId: true },
+      orderBy: { event: { createdAt: "asc" } },
+    });
+    return row?.setlistId ?? null;
   }
 
   /** followLocation for a screen by its id: one in LOCATION mode moves to the event on now. */
@@ -415,15 +453,32 @@ export class ScreensService {
   private async assertLocation(owner: Owned, locationId: string | undefined): Promise<string> {
     if (!locationId) throw new BadRequestException(["locationId must name the location it follows when setMode is LOCATION"]);
     const location = await this.prisma.client.location.findUnique({ where: { id: locationId }, select: { ownerTeamId: true, ownerOrganizationId: true } });
-    let usable = false;
-    if (location && owner.ownerTeamId) {
-      const team = await this.prisma.client.team.findUnique({ where: { id: owner.ownerTeamId }, select: { organizationId: true } });
-      usable = location.ownerTeamId === owner.ownerTeamId || (!!location.ownerOrganizationId && location.ownerOrganizationId === team?.organizationId);
-    } else if (location && owner.ownerOrganizationId) {
-      usable = location.ownerOrganizationId === owner.ownerOrganizationId;
-    }
-    if (!usable) throw new BadRequestException(["locationId must be one of the screen's team's or organisation's locations"]);
+    if (!location || !(await this.usableBy(owner, location))) throw new BadRequestException(["locationId must be one of the screen's team's or organisation's locations"]);
     return locationId;
+  }
+
+  /** A room a screen in LOCATION mode is in (issue #566): one of the location's. */
+  private async assertRoom(locationId: string, roomId: string): Promise<string> {
+    const room = await this.prisma.client.room.findUnique({ where: { id: roomId }, select: { locationId: true } });
+    if (!room || room.locationId !== locationId) throw new BadRequestException(["roomId must be one of the rooms of the location it follows"]);
+    return roomId;
+  }
+
+  /** The resource a screen on wheels is (issue #566): its owner's (a team's own or its organisation's, an organisation's own), and no other screen's. */
+  private async assertResource(owner: Owned, resourceId: string, screenId: string): Promise<string> {
+    const resource = await this.prisma.client.resource.findUnique({ where: { id: resourceId }, select: { ownerTeamId: true, ownerOrganizationId: true, screen: { select: { id: true } } } });
+    if (!resource || !(await this.usableBy(owner, resource))) throw new BadRequestException(["resourceId must be one of the screen's team's or organisation's resources"]);
+    if (resource.screen && resource.screen.id !== screenId) throw new BadRequestException(["resourceId is another screen already"]);
+    return resourceId;
+  }
+
+  /** Whether a screen of this owner may use something a team or an organisation owns: its team's own or its organisation's, an organisation's own. */
+  private async usableBy(owner: Owned, owned: { ownerTeamId: string | null; ownerOrganizationId: string | null }): Promise<boolean> {
+    if (owner.ownerTeamId) {
+      const team = await this.prisma.client.team.findUnique({ where: { id: owner.ownerTeamId }, select: { organizationId: true } });
+      return owned.ownerTeamId === owner.ownerTeamId || (!!owned.ownerOrganizationId && owned.ownerOrganizationId === team?.organizationId);
+    }
+    return !!owner.ownerOrganizationId && owned.ownerOrganizationId === owner.ownerOrganizationId;
   }
 
   /** A screen on its owner's set of the day: picked on it today, else pickDaySet's; moved there (and told) when it changed. */
@@ -497,9 +552,9 @@ export class ScreensService {
    * leads the set it shows, gives it another set (one they can edit) - it
    * then reads that set as them.
    */
-  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string | null; locationId?: string | null; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean; remoteKeys?: boolean; lasts?: ScreenPairingLength }) {
+  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string | null; locationId?: string | null; roomId?: string | null; resourceId?: string | null; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean; remoteKeys?: boolean; lasts?: ScreenPairingLength }) {
     const { screen, canManage } = await this.changeable(user, screenId);
-    const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId" || key === "setMode" || key === "locationId");
+    const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId" || key === "setMode" || key === "locationId" || key === "roomId");
     if (!canManage && !onlySet) throw new ForbiddenException("Only whoever manages this screen changes more than its set");
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
@@ -510,6 +565,17 @@ export class ScreensService {
     // Following a location (issue #320): the one given, or the one it had; checked against its owner (maybe the new one).
     const setMode = change.setMode ?? (change.setlistId ? "FIXED" : screen.setMode);
     const locationId = setMode === "LOCATION" ? await this.assertLocation(owner ?? screen, change.locationId ?? screen.locationId ?? undefined) : change.locationId === null ? null : undefined;
+    // Its room (issue #566): one of that location's; another location (or none) leaves the old room behind.
+    const roomId =
+      change.roomId === null || locationId === null
+        ? null
+        : change.roomId !== undefined
+          ? await this.assertRoom(locationId ?? screen.locationId ?? "", change.roomId)
+          : locationId !== undefined && locationId !== screen.locationId
+            ? null
+            : undefined;
+    // A screen on wheels (issue #566): one of its owner's resources, and no other screen's.
+    const resourceId = change.resourceId ? await this.assertResource(owner ?? screen, change.resourceId, screen.id) : change.resourceId;
     let updated = await this.prisma.client.screen.update({
       where: { id: screen.id },
       data: {
@@ -525,8 +591,10 @@ export class ScreensService {
         // A set put on it is fixed; the day's set is worked out when it next loads (issue #274).
         ...(change.setMode !== undefined ? { setMode: change.setMode, ...(change.setMode === "DAY" && change.setlistId === undefined && { setlistPickedOn: null }) } : change.setlistId ? { setMode: "FIXED" as const } : {}),
         ...(locationId !== undefined && { locationId }),
+        ...(roomId !== undefined && { roomId }),
+        ...(resourceId !== undefined && { resourceId }),
         // Its set changed in its settings while borrowed (issue #480): that's what it shows now, nothing to give back.
-        ...((change.setlistId !== undefined || change.setMode !== undefined || change.locationId !== undefined) && NOT_BORROWED),
+        ...((change.setlistId !== undefined || change.setMode !== undefined || change.locationId !== undefined || change.roomId !== undefined) && NOT_BORROWED),
         ...lookChange(change),
         ...scriptureLookChange(change),
       },
@@ -789,6 +857,8 @@ function present(
     setMode: SetMode;
     kind: ScreenKind;
     location: { id: string; name: string } | null;
+    room?: { id: string; name: string } | null;
+    resource?: { id: string; name: string } | null;
     createdAt: Date;
     borrowedUntil?: Date | null;
     setBy?: { displayName: string } | null;
@@ -816,6 +886,8 @@ function present(
     setMode: screen.setMode,
     kind: screen.kind,
     location: screen.location ? { id: screen.location.id, name: screen.location.name } : null,
+    room: screen.room ?? null,
+    resource: screen.resource ?? null,
     createdAt: screen.createdAt.toISOString(),
     themeId: screen.themeId,
     themeTemplate: screen.themeTemplate,

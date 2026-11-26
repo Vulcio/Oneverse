@@ -88,6 +88,7 @@
 "api/resources": 1,
 "api/bookings": 1,
 "api/booking-approvals": 1,
+"api/screens-follow-a-room": 1,
 "web/bookings": 1,
 "api/reminders": 4,
 "api/roles": 1,

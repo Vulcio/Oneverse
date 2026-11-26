@@ -12,6 +12,10 @@ const screenFields = {
   setMode: z.enum(["FIXED", "DAY", "LOCATION"]),
   /** The location it follows (issue #320): one of its owner's, or its team's organisation's. */
   locationId: z.string().min(1).max(40),
+  /** The room of that location it's in (issue #566): it follows the events taking it, and those taking no room. */
+  roomId: z.string().min(1).max(40),
+  /** A screen on wheels (issue #566): the resource it is, one of its owner's; booked for an event, it follows that event meanwhile. */
+  resourceId: z.string().min(1).max(40),
   /** A saved theme (issue #194); null for none. */
   themeId: z.string().min(1).max(40).nullable(),
   /** A built-in theme by its id ("concert"); null for none. A screen has one or the other, else the default look. */
@@ -47,6 +51,7 @@ export const ConfirmScreenPairingSchema = z
   setMode: optional(screenFields.setMode).describe("FIXED (the default): the set given; DAY: its owner's set of the day (issue #274), setlistId left out; LOCATION: the set of the event on now at `locationId` (issue #320)"),
   setlistId: optional(screenFields.setlistId),
   locationId: optional(screenFields.locationId),
+  roomId: optional(screenFields.roomId).describe("In LOCATION mode, the room of `locationId` it's in (issue #566); left out: the whole venue"),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
   scriptureThemeId: screenFields.themeId.optional().describe("Its template for a Bible passage without one of its own (issue #402)"),
@@ -75,6 +80,8 @@ export const UpdateScreenSchema = z.strictObject({
   setMode: optional(screenFields.setMode),
   setlistId: screenFields.setlistId.nullable().optional(),
   locationId: screenFields.locationId.nullable().optional().describe("The location it follows in LOCATION mode (issue #320)"),
+  roomId: screenFields.roomId.nullable().optional().describe("The room of that location it's in (issue #566); null: the whole venue. Another location given clears it"),
+  resourceId: screenFields.resourceId.nullable().optional().describe("A screen on wheels (issue #566): the resource it is; null: none"),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
   scriptureThemeId: screenFields.themeId.optional().describe("Its template for a Bible passage without one of its own (issue #402); null: its look for songs"),

@@ -1000,6 +1000,10 @@ export interface ScreenSummary {
   kind?: "SCREEN" | "PULSE";
   /** The location it follows in LOCATION mode (issue #320). */
   location?: { id: string; name: string } | null;
+  /** The room of that location it's in (issue #566): it follows the events taking it, and those taking no room. */
+  room?: { id: string; name: string } | null;
+  /** A screen on wheels (issue #566): the resource it is. */
+  resource?: { id: string; name: string } | null;
   /** Connected now (issue #267); left out where it isn't known (a screen's own view of itself). */
   online?: boolean;
   createdAt: string;

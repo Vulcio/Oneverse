@@ -3497,6 +3497,14 @@ model Screen {
   // LOCATION (issue #320): the set of the event at this location that's on
   // now, or next today - worked out in the location's time zone.
   locationId          String?
+  // In LOCATION mode, the room of that venue it's in (issue #566): it follows
+  // the events taking that room, and those taking no room (the whole venue).
+  // None: every event at the venue.
+  roomId              String?
+  // A screen on wheels (issue #566): this resource. Booked for an event date,
+  // it follows that event while it's held (from an hour before), then goes
+  // back to its room.
+  resourceId          String?       @unique
   // Who put its set on it: it reads the set as they would.
   setByUserId         String?
   // Its look (issue #194): a saved theme, or a built-in one by its id ("concert"); neither, the default.
@@ -3536,6 +3544,8 @@ model Screen {
   theme             ScreenTheme?  @relation("ScreenLook", fields: [themeId], references: [id], onDelete: SetNull)
   scriptureTheme    ScreenTheme?  @relation("ScreenScriptureLook", fields: [scriptureThemeId], references: [id], onDelete: SetNull)
   location          Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  room              Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  resource          Resource?     @relation(fields: [resourceId], references: [id], onDelete: SetNull)
 
   @@index([ownerUserId])
   @@index([ownerTeamId])
@@ -3859,6 +3869,9 @@ model Room {
   organizationEvents OrganizationEvent[] @relation("OrganizationEventRooms")
   eventTypes         TeamEventType[]     @relation("TeamEventTypeRooms")
 
+  // Screens that are in it (issue #566).
+  screens            Screen[]
+
   @@index([locationId])
 }
 
@@ -3885,6 +3898,8 @@ model Resource {
   managerTeam  Team?           @relation("ResourceManagers", fields: [managerTeamId], references: [id], onDelete: SetNull)
   uses         EventResource[]
   approvals    BookingApproval[]
+  // The screen it is, a screen on wheels (issue #566).
+  screen       Screen?
 
   @@index([ownerTeamId])
   @@index([ownerOrganizationId])

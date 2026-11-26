@@ -32,6 +32,14 @@ A set put on a screen from **Screens**, in its tile's **Settings**, is fixed ins
 
 A team's or an organisation's screen can follow one of its [venues](/teams/#venues) instead: pick **Events at Main campus (automatic)** as its **Set**. It then shows the set of the event taking place there now (started within three hours), else the next one there today, worked out in the location's time zone; it moves on by itself when the next event starts. A lobby TV or a Pulse that stays at a church is set up this way once. Its tile says "At Main campus: Sunday service", or that there's no event there now.
 
+#### In a room
+
+When the venue has rooms, the screen's **Settings** also ask for its **Room**. In a room, it shows only the events in that room, plus those that book no room at all (they're the whole venue's): the kids room's TV shows the kids club while the main hall's shows the service. **The whole venue** keeps it on every event there. Its tile then says "At Kids room, Main campus: Kids club".
+
+#### A screen on wheels
+
+A screen that moves from room to room can be one of your [resources](/teams/#resources): add it there ("Rolling TV"), then pick it under **Screen on wheels** in the screen's **Settings**. It's booked for an event like any resource, and from an hour before that event until it ends, the screen shows that event's set, wherever it is. The rest of the time it's back in its room.
+
 ### The screen's menu
 
 The screen has a menu of its own, for whoever stands by it, even while a set is presented. To open it, press **OK three times** quickly on the remote (or Enter on a keyboard), hold OK for about a second, or press the remote's **Menu** key. With a mouse, **double-click** or right-click the screen; on a touch screen, **press and hold**. A single OK or a single click never opens it, so it doesn't appear over the words by accident. On a screen following the day's set, a single OK still opens the list of sets, half a second later, once no second press follows.

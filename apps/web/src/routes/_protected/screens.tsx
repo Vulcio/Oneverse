@@ -1,4 +1,4 @@
-import { composeBuiltInTemplate, screenTemplateFor, formatScreenCode, SCREEN_ROLES, type ScreenRole, normalizeScreenCode, SCREEN_PAIRING_LENGTHS, SCREEN_SWITCHABLE_LAYERS, type ScreenPairingLength, SCREEN_TEMPLATES, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenTier, type ScreenThemeSummary, type SetlistSummary } from "@oneverse/core";
+import { composeBuiltInTemplate, screenTemplateFor, formatScreenCode, SCREEN_ROLES, type ScreenRole, normalizeScreenCode, SCREEN_PAIRING_LENGTHS, SCREEN_SWITCHABLE_LAYERS, type ScreenPairingLength, SCREEN_TEMPLATES, type Resource, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenTier, type ScreenThemeSummary, type SetlistSummary } from "@oneverse/core";
 import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { Building2, MonitorCheck, MonitorUp, Plus, Radio, Settings2, User, Users, type LucideIcon } from "lucide-react";
 import { Fragment, useEffect, useState, type FormEvent } from "react";
@@ -346,6 +346,9 @@ const LOCATION_SET = "__location__:";
 const setValue = (screen: Pick<ScreenSummary, "setMode" | "setlistId" | "location">) =>
   screen.setMode === "DAY" ? DAY_SET : screen.setMode === "LOCATION" && screen.location ? `${LOCATION_SET}${screen.location.id}` : (screen.setlistId ?? "");
 
+/** Where a screen following a venue is (issue #566): its room there, else the venue. */
+const placeName = (screen: Pick<ScreenSummary, "location" | "room">) => (screen.room ? `${screen.room.name}, ${screen.location?.name ?? ""}` : (screen.location?.name ?? ""));
+
 /** What the set select's value asks of a screen. */
 function setChange(value: string): { setMode: "DAY" } | { setMode: "LOCATION"; locationId: string } | { setMode: "FIXED"; setlistId: string | null } {
   if (value === DAY_SET) return { setMode: "DAY" };
@@ -624,8 +627,8 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
               : t("screens.daySetNone")
             : screen.setMode === "LOCATION" && screen.location
               ? screen.setlist
-                ? t("screens.locationSetNow", { location: screen.location.name, set: setlistTitle(screen.setlist, t, i18n.language) })
-                : t("screens.locationSetNone", { location: screen.location.name })
+                ? t("screens.locationSetNow", { location: placeName(screen), set: setlistTitle(screen.setlist, t, i18n.language) })
+                : t("screens.locationSetNone", { location: placeName(screen) })
             : screen.setlist
               ? setlistTitle(screen.setlist, t, i18n.language)
               : t("screens.noSet")}
@@ -731,6 +734,64 @@ function ownsIt(screen: ScreenSummary, owners: ScreenOwnerChoice[]): boolean {
   return owners.some((owner) => owner.kind !== "user" && owner.kind === screen.owner.kind && owner.id === screen.owner.id);
 }
 
+/**
+ * Where a screen following a venue is (issue #566): one of its rooms (the
+ * events taking it, and those taking no room) or the whole venue; and,
+ * for a team's or an organisation's screen, the resource it is when it's
+ * on wheels - booked for an event, it follows that event meanwhile.
+ */
+function ScreenPlace({ screen, onChange }: { screen: ScreenSummary; onChange: (data: { roomId?: string | null; resourceId?: string | null }) => void }) {
+  const { t } = useTranslation();
+  const { locations } = Route.useLoaderData();
+  const rooms = locations.find((one) => one.id === screen.location?.id)?.rooms ?? [];
+  const [resources, setResources] = useState<Resource[]>([]);
+  const owner = screen.owner;
+  useEffect(() => {
+    if (owner.kind === "user") return;
+    let live = true;
+    apiClient
+      .listResources(owner.kind === "team" ? { teamId: owner.id } : { organizationId: owner.id })
+      .then((list) => live && setResources(list))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [owner.kind, owner.id]);
+  return (
+    <>
+      {rooms.length > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`screen-room-${screen.id}`}>{t("screens.room")}</Label>
+          <NativeSelect id={`screen-room-${screen.id}`} data-testid="screen-room" value={screen.room?.id ?? ""} onChange={(event) => onChange({ roomId: event.target.value || null })}>
+            <option value="">{t("screens.wholeVenue")}</option>
+            {rooms.map((room) => (
+              <option key={room.id} value={room.id}>
+                {room.name}
+              </option>
+            ))}
+          </NativeSelect>
+          <p className="text-xs text-muted-foreground">{t("screens.roomHint")}</p>
+        </div>
+      ) : null}
+      {resources.length > 0 || screen.resource ? (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`screen-resource-${screen.id}`}>{t("screens.onWheels")}</Label>
+          <NativeSelect id={`screen-resource-${screen.id}`} data-testid="screen-resource" value={screen.resource?.id ?? ""} onChange={(event) => onChange({ resourceId: event.target.value || null })}>
+            <option value="">{t("screens.notOnWheels")}</option>
+            {screen.resource && !resources.some((one) => one.id === screen.resource?.id) ? <option value={screen.resource.id}>{screen.resource.name}</option> : null}
+            {resources.map((resource) => (
+              <option key={resource.id} value={resource.id}>
+                {resource.name}
+              </option>
+            ))}
+          </NativeSelect>
+          <p className="text-xs text-muted-foreground">{t("screens.onWheelsHint")}</p>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose }: { screen: ScreenSummary; sets: SetlistSummary[]; themes: ScreenThemeSummary[]; owners: ScreenOwnerChoice[]; onChanged: () => Promise<void>; onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const [name, setName] = useState(screen.name);
@@ -785,6 +846,7 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
                 <p className="text-sm">{screen.setlist ? setlistTitle(screen.setlist, t, i18n.language) : t("screens.noSet")}</p>
               )}
             </div>
+            {screen.setMode === "LOCATION" && screen.location ? <ScreenPlace screen={screen} onChange={(data) => void change(data)} /> : null}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={`screen-theme-${screen.id}`}>{t("screens.themeSongs")}</Label>
               <ThemeSelect

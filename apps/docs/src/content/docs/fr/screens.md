@@ -32,6 +32,14 @@ Une liste mise sur un écran depuis **Écrans**, dans les **Réglages** de sa vi
 
 L'écran d'une équipe ou d'une organisation peut plutôt suivre un de ses [sites](/fr/teams/#sites) : choisissez **Événements à Campus principal (automatique)** comme **Liste**. Il affiche alors la liste de l'événement qui s'y déroule (commencé depuis moins de trois heures), sinon le prochain de la journée à cet endroit, calculé dans le fuseau horaire du site ; il passe tout seul au suivant quand il commence. Une télé d'accueil ou un Pulse qui reste dans une église se règle ainsi une fois pour toutes. Sa vignette indique « À Campus principal : Culte du dimanche », ou qu'il n'y a pas d'événement en ce moment.
 
+#### Dans une salle
+
+Quand le site a des salles, les **Réglages** de l'écran demandent aussi sa **Salle**. Dans une salle, il ne montre que les événements de cette salle, plus ceux qui ne réservent aucune salle (ils concernent tout le site) : la télé de la salle des enfants montre le club des enfants pendant que celle de la grande salle montre le culte. **Tout le lieu** le laisse sur tous les événements du site. Sa vignette indique alors « À Salle des enfants, Campus principal : Club des enfants ».
+
+#### Un écran mobile
+
+Un écran qui passe d'une salle à l'autre peut être une de vos [ressources](/fr/teams/#ressources) : ajoutez-le là (« Télé sur roulettes »), puis choisissez-le sous **Écran mobile** dans les **Réglages** de l'écran. Il se réserve pour un événement comme toute ressource, et d'une heure avant cet événement jusqu'à sa fin, l'écran montre sa liste, où qu'il soit. Le reste du temps, il revient à sa salle.
+
 ### Le menu de l'écran
 
 L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une liste est présentée. Pour l'ouvrir, appuyez **trois fois sur OK** rapidement sur la télécommande (ou Entrée sur un clavier), maintenez OK environ une seconde, ou appuyez sur la touche **Menu** de la télécommande. Avec une souris, **double-cliquez** ou faites un clic droit sur l'écran ; sur un écran tactile, **appuyez longuement**. Un seul appui sur OK ou un simple clic ne l'ouvre jamais : il n'apparaît pas par accident par-dessus les paroles. Sur un écran qui suit la liste du jour, un seul appui sur OK ouvre toujours la liste des listes, une demi-seconde plus tard, quand aucun second appui ne suit.

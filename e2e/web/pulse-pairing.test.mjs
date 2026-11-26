@@ -1,6 +1,7 @@
 // Pairing a Oneverse Pulse in Screens (issue #320): a code a Pulse asked for says so, and names it "Pulse"; set to
 // follow one of the organisation's locations it's on the event on there now, and its tile shows a Pulse badge and
-// "At <location>: <set>". Its settings move it back to a set of one's own.
+// "At <location>: <set>". Its settings put it in one of the venue's rooms and make it a screen on wheels (issue #566),
+// then move it back to a set of one's own.
 import { chromium } from "playwright";
 import { API, WEB, call, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -15,6 +16,8 @@ const music = (await call(lead, "POST", "/teams", { name: `Pulse web music ${sta
 await call(lead, "PUT", `/teams/${music.id}/organization`, { organizationId: org.id });
 await call(lead, "POST", "/locations", { name: `Campus ${stamp}`, timeZone: "UTC", organizationId: org.id });
 const location = (await call(lead, "GET", `/locations?organizationId=${org.id}`)).body[0];
+await call(lead, "POST", `/locations/${location.id}/rooms`, { name: "Main hall" });
+const trolley = (await call(lead, "POST", "/resources", { name: "Rolling TV", organizationId: org.id })).body;
 const now = new Date();
 const today = now.toISOString().slice(0, 10);
 const started = new Date(Math.max(now.getTime() - 10 * 60_000, new Date(`${today}T00:00:00Z`).getTime())).toISOString().slice(11, 16);
@@ -40,6 +43,19 @@ try {
     const tile = page.getByTestId("screens-list").getByTestId("screen-Pulse");
     await tile.getByTestId("screen-pulse").waitFor();
     await tile.getByTestId("screen-set").getByText(`At Campus ${stamp}: Service ${stamp}`, { exact: false }).waitFor();
+  });
+
+  await step("its settings put it in a room, as a screen on wheels (issue #566): an event booking no room still shows", async () => {
+    const tile = page.getByTestId("screens-list").getByTestId("screen-Pulse");
+    await tile.getByTestId("screen-settings").click();
+    const dialog = page.getByTestId("screen-dialog");
+    await dialog.getByTestId("screen-room").selectOption({ label: "Main hall" });
+    await tile.getByTestId("screen-set").getByText(`At Main hall, Campus ${stamp}: Service ${stamp}`, { exact: false }).waitFor();
+    await dialog.getByTestId("screen-resource").selectOption({ label: "Rolling TV" });
+    await page.waitForFunction(() => document.querySelector('[data-testid="screen-resource"]')?.value !== "");
+    const [screen] = (await call(lead, "GET", "/screens")).body.filter((one) => one.kind === "PULSE");
+    if (screen?.room?.name !== "Main hall" || screen.resource?.id !== trolley.id) throw new Error(JSON.stringify(screen));
+    await page.getByTestId("screen-dialog-done").click();
   });
 
   await step("its settings put a set of one's own on it", async () => {
