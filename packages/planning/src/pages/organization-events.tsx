@@ -793,6 +793,12 @@ function OrganizationEventDialog({
             ) : null}
           </div>
         </form>
+        {/* Its rooms and resources whose booking waits for a manager's approval (issue #565). */}
+        {event?.awaitingApproval?.length ? (
+          <p className="text-xs text-muted-foreground" data-testid="event-awaiting-approval">
+            {t("bookings.awaiting", { names: event.awaitingApproval.join(", ") })}
+          </p>
+        ) : null}
         {error ? <FieldError>{error}</FieldError> : null}
         {clashes ? <BookingClashes clashes={clashes.clashes} busy={busy} onBookFree={everyWeeks && needs.length > 0 && clashes.freeDates !== 0 ? () => void save(true) : null} /> : null}
         {typeName !== null ? (

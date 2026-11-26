@@ -87,7 +87,13 @@ In **New event**, **Resources** lists them: tick those the event takes, and how 
 
 ### Bookings
 
-An event's dates book the rooms and resources it takes: a room from its setup time before the event to its teardown time after. A room is never booked twice at once, and a resource never more times at once than there are of it. Saving an event that would clash is refused: **Already booked** lists each room or resource, the date, and the event and team holding it. Ask them to change theirs, or choose another time, room or resource. For a series, **Book the free dates** saves it anyway, with its clashing dates cancelled. Bringing back a cancelled date, moving a date or changing its time is checked the same way. An organisation's event books once for all its teams.
+An event's dates book the rooms and resources it takes: a room from its setup time before the event to its teardown time after. A room is never booked twice at once, and a resource never more times at once than there are of it. Saving an event that would clash is refused: **Already booked** lists each room or resource, the date, and the event and team holding it. **Ask** them (the button names the event) with a message: its team's admins and whoever made it are told. Or choose another time, room or resource. For a series, **Book the free dates** saves it anyway, with its clashing dates cancelled. Bringing back a cancelled date, moving a date or changing its time is checked the same way. An organisation's event books once for all its teams.
+
+**Bookings** beside a venue (or a resource) shows its calendar: each day, which event holds which room and when, setup and teardown included. Everyone who sees the venue sees it.
+
+A room or resource can need approval: tick **Bookings need approval** when adding or changing it (click a room's name to change it), and choose who gives it, **Its admins** or another team's admins (a Facilities team, say). An event that takes it then asks for it: the request holds the slot, the event shows **Waiting for approval**, and its managers are told. They find it under **Bookings to approve** on their team's or organisation's page: **Approve** keeps it, **Decline** takes it off the event. Whoever asked is told either way. A manager's own events need no approval.
+
+To block a room - a cleaning day, a wedding - make an event that takes it with **Make a set for each date** off; save it as an event type (Room booking, say) to do it again quickly.
 
 ### Your calendar link
 

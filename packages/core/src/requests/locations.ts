@@ -44,6 +44,8 @@ export const CreateRoomSchema = z.strictObject({
   capacity: optional(z.number().int().min(1).max(100000)),
   setupMinutes: optional(minutes).describe("Held this long before an event, by default"),
   teardownMinutes: optional(minutes).describe("Held this long after an event, by default"),
+  needsApproval: optional(z.boolean()).describe("Its bookings wait for a manager's approval (issue #565)"),
+  managerTeamId: id.nullable().optional().describe("The team whose admins approve its bookings (a Facilities team, in its owner's organisation); null or left out: its owner's admins"),
 });
 export type CreateRoomRequest = z.input<typeof CreateRoomSchema>;
 
@@ -53,6 +55,8 @@ export const UpdateRoomSchema = z.strictObject({
   capacity: clearableInt(1, 100000),
   setupMinutes: optional(minutes),
   teardownMinutes: optional(minutes),
+  needsApproval: optional(z.boolean()).describe("Its bookings wait for a manager's approval (issue #565)"),
+  managerTeamId: id.nullable().optional().describe("The team whose admins approve its bookings (a Facilities team, in its owner's organisation); null or left out: its owner's admins"),
 });
 export type UpdateRoomRequest = z.input<typeof UpdateRoomSchema>;
 
@@ -62,6 +66,8 @@ export const CreateResourceSchema = z
     name: requiredText(80),
     quantity: optional(z.number().int().min(1).max(1000)).describe("How many there are; 1 when left out"),
     locationId: optional(id).describe("The venue it's kept at: one of its owner's"),
+    needsApproval: optional(z.boolean()).describe("Its bookings wait for a manager's approval (issue #565)"),
+    managerTeamId: id.nullable().optional().describe("The team whose admins approve its bookings (a Facilities team, in its owner's organisation); null or left out: its owner's admins"),
     teamId: optional(id),
     organizationId: optional(id),
   })
@@ -73,6 +79,8 @@ export const UpdateResourceSchema = z.strictObject({
   name: optional(requiredText(80)),
   quantity: optional(z.number().int().min(1).max(1000)),
   locationId: id.nullable().optional(),
+  needsApproval: optional(z.boolean()).describe("Its bookings wait for a manager's approval (issue #565)"),
+  managerTeamId: id.nullable().optional().describe("The team whose admins approve its bookings (a Facilities team, in its owner's organisation); null or left out: its owner's admins"),
 });
 export type UpdateResourceRequest = z.input<typeof UpdateResourceSchema>;
 
@@ -84,3 +92,20 @@ export const EventResourcesSchema = z
   .array(z.strictObject({ resourceId: id, quantity: optional(z.number().int().min(1).max(1000)) }))
   .max(30)
   .describe("Resources it takes (issue #564): its owner's, or its organisation's; [] takes none");
+
+/**
+ * POST /bookings/ask (issue #565): someone whose event clashes asks the
+ * holding event's organisers to free a room or resource on a date.
+ */
+export const AskBookingSchema = z.strictObject({
+  eventId: id.describe("The event holding it"),
+  eventKind: z.enum(["team", "organization"]),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD"),
+  kind: z.enum(["room", "resource"]),
+  id: id.describe("The room's or resource's"),
+  message: optional(z.string().trim().max(500)),
+});
+export type AskBookingRequest = z.input<typeof AskBookingSchema>;
+
+/** GET /bookings/requests: the bookings waiting for the user's approval, maybe only a team's or an organisation's rooms and resources. */
+export const BookingRequestsQuerySchema = LocationsQuerySchema;

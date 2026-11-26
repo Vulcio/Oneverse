@@ -1,8 +1,9 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import type { CreateLocationRequest, CreateRoomRequest, UpdateLocationRequest, UpdateRoomRequest } from "@oneverse/core";
+import { daysBetween, type CreateLocationRequest, type CreateRoomRequest, type UpdateLocationRequest, type UpdateRoomRequest } from "@oneverse/core";
 import type { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { bookingsOf } from "./bookings.js";
 
 const LOCATION_SELECT = {
   id: true,
@@ -14,7 +15,7 @@ const LOCATION_SELECT = {
   ownerOrganizationId: true,
   team: { select: { name: true } },
   organization: { select: { name: true } },
-  rooms: { select: { id: true, name: true, capacity: true, setupMinutes: true, teardownMinutes: true }, orderBy: { name: "asc" } },
+  rooms: { select: { id: true, name: true, capacity: true, setupMinutes: true, teardownMinutes: true, needsApproval: true, managerTeamId: true, managerTeam: { select: { name: true } } }, orderBy: { name: "asc" } },
 } as const;
 type LocationRow = Prisma.LocationGetPayload<{ select: typeof LOCATION_SELECT }>;
 export type Owner = { ownerTeamId: string | null; ownerOrganizationId: string | null };
@@ -102,6 +103,18 @@ export class LocationsService {
     return present(location, canEdit(user, scope, location));
   }
 
+  /**
+   * Its rooms' bookings (issue #565) from `from` to `to`: whoever sees the
+   * venue sees which events hold its rooms, and when.
+   */
+  async bookings(user: AuthenticatedUser, locationId: string, from: string, to: string) {
+    const scope = await ownerScope(this.prisma, user);
+    const location = await this.prisma.client.location.findUnique({ where: { id: locationId }, select: { ownerTeamId: true, ownerOrganizationId: true, rooms: { select: { id: true } } } });
+    if (!location || !canSee(user, scope, location)) throw new NotFoundException("Location not found");
+    checkRange(from, to);
+    return bookingsOf(this.prisma.client, location.rooms.map((room) => room.id), [], from, to);
+  }
+
   async create(user: AuthenticatedUser, data: CreateLocationRequest) {
     const scope = await ownerScope(this.prisma, user);
     const owner = { ownerTeamId: data.teamId ?? null, ownerOrganizationId: data.teamId ? null : (data.organizationId ?? null) };
@@ -131,18 +144,20 @@ export class LocationsService {
 
   /** A room of a venue (issue #563), by its owner's admins. */
   async addRoom(user: AuthenticatedUser, locationId: string, data: CreateRoomRequest) {
-    await this.changeable(user, locationId);
+    const location = await this.changeable(user, locationId);
+    const managerTeamId = data.managerTeamId ? await managerTeam(this.prisma, location, data.managerTeamId) : null;
     await this.prisma.client.room.create({
-      data: { locationId, name: data.name, capacity: data.capacity ?? null, setupMinutes: data.setupMinutes ?? 0, teardownMinutes: data.teardownMinutes ?? 0 },
+      data: { locationId, name: data.name, capacity: data.capacity ?? null, setupMinutes: data.setupMinutes ?? 0, teardownMinutes: data.teardownMinutes ?? 0, needsApproval: data.needsApproval ?? false, managerTeamId },
     });
     return this.get(user, locationId);
   }
 
   async updateRoom(user: AuthenticatedUser, locationId: string, roomId: string, change: UpdateRoomRequest) {
-    await this.changeable(user, locationId);
+    const location = await this.changeable(user, locationId);
+    const managerTeamId = change.managerTeamId ? await managerTeam(this.prisma, location, change.managerTeamId) : change.managerTeamId;
     const { count } = await this.prisma.client.room.updateMany({
       where: { id: roomId, locationId },
-      data: { name: change.name ?? undefined, capacity: change.capacity, setupMinutes: change.setupMinutes ?? undefined, teardownMinutes: change.teardownMinutes ?? undefined },
+      data: { name: change.name ?? undefined, capacity: change.capacity, setupMinutes: change.setupMinutes ?? undefined, teardownMinutes: change.teardownMinutes ?? undefined, needsApproval: change.needsApproval ?? undefined, managerTeamId },
     });
     if (count === 0) throw new NotFoundException("Room not found");
     return this.get(user, locationId);
@@ -197,10 +212,33 @@ function present(location: LocationRow, canEdit: boolean) {
     address: location.address,
     timeZone: location.timeZone,
     home: location.home,
-    rooms: location.rooms,
+    // Each with whose approval its bookings wait for (issue #565): its manager team, else its owner's admins.
+    rooms: location.rooms.map(({ managerTeam, ...room }) => ({ ...room, managerTeam: room.managerTeamId ? { id: room.managerTeamId, name: managerTeam?.name ?? "" } : null })),
     owner: location.ownerTeamId
       ? { kind: "team" as const, id: location.ownerTeamId, name: location.team?.name ?? "" }
       : { kind: "organization" as const, id: location.ownerOrganizationId!, name: location.organization?.name ?? "" },
     canEdit,
   };
+}
+
+/** A calendar's range: `to` not before `from`, at most a year and a bit. */
+export function checkRange(from: string, to: string) {
+  if (to < from) throw new BadRequestException(["to must not be before from"]);
+  if (daysBetween(from, to) > 400) throw new BadRequestException(["from and to must be at most 400 days apart"]);
+}
+
+/**
+ * The team whose admins approve a room's or resource's bookings (issue
+ * #565): its owner team itself, or a team of its owner's organisation (or
+ * of its owner team's).
+ */
+export async function managerTeam(prisma: PrismaService, owned: Owner, teamId: string): Promise<string> {
+  let organizationId = owned.ownerOrganizationId;
+  if (owned.ownerTeamId) {
+    if (teamId === owned.ownerTeamId) return teamId;
+    organizationId = (await prisma.client.team.findUnique({ where: { id: owned.ownerTeamId }, select: { organizationId: true } }))?.organizationId ?? null;
+  }
+  const team = organizationId ? await prisma.client.team.findFirst({ where: { id: teamId, organizationId }, select: { id: true } }) : null;
+  if (!team) throw new BadRequestException(["managerTeamId must be a team of its owner's organisation"]);
+  return team.id;
 }

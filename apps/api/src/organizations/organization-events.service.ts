@@ -5,6 +5,8 @@ import type { AuthenticatedUser } from "../common/types/authenticated-request.js
 import { eventLocation, eventRooms, roomsOnCreate, roomsOnUpdate } from "../locations/locations.service.js";
 import { eventResources, RESOURCES_TAKEN, resourcesOnCreate, resourcesOnUpdate, resourcesTaken } from "../locations/resources.service.js";
 import { clashingDates, eventClashes, refuseClashes } from "../locations/bookings.js";
+import { AWAITING_APPROVAL, awaitingApproval, syncApprovals } from "../locations/booking-approvals.js";
+import { BookingsService } from "../locations/bookings.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { AvailabilityService } from "../team-events/availability.service.js";
@@ -21,6 +23,7 @@ const withGroups = {
   host: { select: { id: true, displayName: true } },
   rooms: { select: { id: true, name: true }, orderBy: { name: "asc" } },
   ...RESOURCES_TAKEN,
+  ...AWAITING_APPROVAL,
   teamEvents: { select: { id: true, teamId: true, parts: true, callMinutes: true, withSet: true, editsSet: true, team: { select: { name: true, color: true, avatarUrl: true, usesSongverse: true } } }, orderBy: { team: { name: "asc" } } },
 } as const;
 type Row = Prisma.OrganizationEventGetPayload<{ include: typeof withGroups }>;
@@ -42,6 +45,7 @@ export class OrganizationEventsService {
     private readonly notifications: NotificationsService,
     private readonly types: EventTypesService,
     private readonly feeds: CalendarFeedService,
+    private readonly bookings: BookingsService,
   ) {}
 
   /** The viewer's role in the organisation; not in it: not found. */
@@ -80,6 +84,7 @@ export class OrganizationEventsService {
       rooms: event.rooms,
       // The resources it takes, and how many (issue #564): the organisation's, booked once for all its groups.
       resources: resourcesTaken(event.resources),
+      awaitingApproval: awaitingApproval(event.bookingApprovals),
       note: event.note,
       repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null,
       host: event.host,
@@ -218,7 +223,7 @@ export class OrganizationEventsService {
     const location = dto.locationId ? await eventLocation(this.prisma, { organizationId }, dto.locationId) : null;
     const rooms = roomsOnCreate(await eventRooms(this.prisma, location?.id ?? null, dto.roomIds));
     const resources = resourcesOnCreate(await eventResources(this.prisma, { organizationId }, dto.resources));
-    let skipped: string[] = [];
+    let booked = { skipped: [] as string[], requested: [] as string[] };
     const event = await this.prisma.client.$transaction(async (tx) => {
       const made = await tx.organizationEvent.create({
         data: {
@@ -241,19 +246,20 @@ export class OrganizationEventsService {
         },
       });
       // Its rooms and resources booked (issue #565), once for all its groups.
-      skipped = await this.book(tx, made.id, dto.skipClashes, !!made.repeatEveryWeeks && dto.needs.length > 0);
+      booked = await this.book(tx, made.id, dto.skipClashes, !!made.repeatEveryWeeks && dto.needs.length > 0, viewer.id);
       return made;
     });
     try {
       for (const need of await this.withEditors(dto.needs))
         await this.events.create(need.teamId, viewer.id, { ...this.timing(event), ...(dto.roomIds?.length ? { roomIds: dto.roomIds } : {}), parts: need.parts, callMinutes: need.callMinutes, withSet: event.withSet, editsSet: need.editsSet }, event.id);
       // Its clashing dates, cancelled for every group.
-      await this.cancelDates(event.id, skipped, viewer.id);
+      await this.cancelDates(event.id, booked.skipped, viewer.id);
     } catch (error) {
       // A group's part refused (one of its parts): none of it is kept.
       await this.prisma.client.organizationEvent.delete({ where: { id: event.id } });
       throw error;
     }
+    await this.bookings.tellManagers(booked.requested, viewer.id);
     await this.tellHost(event, viewer.id);
     return this.summary(await this.find(organizationId, event.id), viewer, role);
   }
@@ -293,7 +299,7 @@ export class OrganizationEventsService {
     const place = dto.place === undefined && location && location.id !== before.locationId ? location.name : dto.place;
     // Its rooms (issue #563), and every group's part's the same.
     const roomIds = await eventRooms(this.prisma, dto.locationId === undefined ? before.locationId : dto.locationId, dto.roomIds, dto.locationId !== undefined && dto.locationId !== before.locationId);
-    let skipped: string[] = [];
+    let booked = { skipped: [] as string[], requested: [] as string[] };
     const after = await this.prisma.client.$transaction(async (tx) => {
       const changed = await tx.organizationEvent.update({
         where: { id: eventId },
@@ -314,7 +320,7 @@ export class OrganizationEventsService {
           withSet: dto.withSet,
         },
       });
-      skipped = await this.book(tx, eventId, dto.skipClashes, !!changed.repeatEveryWeeks && before.teamEvents.length > 0);
+      booked = await this.book(tx, eventId, dto.skipClashes, !!changed.repeatEveryWeeks && before.teamEvents.length > 0, viewer.id);
       return changed;
     });
     const timing = {
@@ -345,7 +351,8 @@ export class OrganizationEventsService {
       if (!before.teamEvents.some((part) => part.teamId === need.teamId))
         await this.events.create(need.teamId, viewer.id, { ...this.timing(after), roomIds: (await this.find(organizationId, eventId)).rooms.map((room) => room.id), parts: need.parts, callMinutes: need.callMinutes, withSet: after.withSet, editsSet: need.editsSet }, eventId);
     }
-    await this.cancelDates(eventId, skipped, viewer.id);
+    await this.cancelDates(eventId, booked.skipped, viewer.id);
+    await this.bookings.tellManagers(booked.requested, viewer.id);
     if (after.hostUserId !== before.hostUserId) await this.tellHost(after, viewer.id);
     return this.summary(await this.find(organizationId, eventId), viewer, role);
   }
@@ -354,13 +361,13 @@ export class OrganizationEventsService {
    * Its rooms and resources booked (issue #565), inside the change's
    * transaction: a clash refuses the change; for a series with groups asked
    * to (`skip`), its clashing dates are returned, to be cancelled for every
-   * group once their parts are made.
+   * group once their parts are made, with the approvals it asks for.
    */
-  private async book(tx: Prisma.TransactionClient, eventId: string, skip: boolean | null | undefined, canSkip: boolean): Promise<string[]> {
+  private async book(tx: Prisma.TransactionClient, eventId: string, skip: boolean | null | undefined, canSkip: boolean, userId: string): Promise<{ skipped: string[]; requested: string[] }> {
     const clashes = await eventClashes(tx, { organizationEventId: eventId });
-    if (clashes.length === 0) return [];
-    if (!skip || !canSkip || clashes.dates === clashingDates(clashes).length) refuseClashes(clashes, clashes.dates);
-    return clashingDates(clashes);
+    if (clashes.length > 0 && (!skip || !canSkip || clashes.dates === clashingDates(clashes).length)) refuseClashes(clashes, clashes.dates);
+    // Rooms and resources that need approval: asked for once for all its groups.
+    return { skipped: clashingDates(clashes), requested: await syncApprovals(tx, { organizationEventId: eventId }, userId) };
   }
 
   /** Dates cancelled for every group's part (its clashing ones, issue #565). */

@@ -154,6 +154,9 @@ export const TeamEventDatesQuerySchema = z.strictObject({
 });
 export type TeamEventDatesQuery = z.input<typeof TeamEventDatesQuerySchema>;
 
+/** A venue's or a resource's bookings (issue #565), from `from` to `to`. */
+export const BookingsQuerySchema = TeamEventDatesQuerySchema;
+
 export const UpdateTeamCalendarSchema = z.strictObject({
   setsAheadWeeks: z
     .number()

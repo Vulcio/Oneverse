@@ -2874,6 +2874,9 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a part with its own name", args: ["SCHEDULE_DECLINED", { event: "Morning service", date: "2026-10-18", team: "Worship team", partName: "Slides", by: "Sam" }, "en"] },
           { name: "the set is ready", args: ["SET_READY", { event: "Morning service", date: "2026-10-18", team: "Worship team", count: 6 }, "en"] },
           { name: "someone asks to edit a date's set (issue #578)", args: ["SET_EDIT_REQUESTED", { by: "Sam", set: "Morning service" }, "en"] },
+          { name: "asked to free a room (issue #565)", args: ["BOOKING_ASKED", { by: "Sam", what: "Main hall", date: "2026-12-06", event: "Youth night", note: "could you take the kids room?" }, "en"] },
+          { name: "a booking waits for approval, in French", args: ["BOOKING_REQUESTED", { by: "Sam", what: "Grande salle", date: "2026-12-06", event: "Soirée jeunes" }, "fr"] },
+          { name: "a booking declined", args: ["BOOKING_DECLINED", { by: "Alex", what: "Van", event: "Outreach" }, "en"] },
           { name: "an ask to edit granted, in French", args: ["SET_EDIT_GRANTED", { by: "Ana", set: "Culte du matin" }, "fr"] },
           {
             name: "an announcement, in the reader's language (issue #536)",

@@ -5,6 +5,8 @@ import { NotificationsService, type NotificationInput } from "../notifications/n
 import { eventLocation, eventRooms, roomsOnCreate, roomsOnUpdate } from "../locations/locations.service.js";
 import { eventResources, RESOURCES_TAKEN, resourcesOnCreate, resourcesOnUpdate, resourcesTaken } from "../locations/resources.service.js";
 import { clashingDates, eventClashes, refuseClashes } from "../locations/bookings.js";
+import { AWAITING_APPROVAL, awaitingApproval, syncApprovals } from "../locations/booking-approvals.js";
+import { BookingsService } from "../locations/bookings.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
 import type { CreateTeamEventDto, SetTeamEventDateAsksDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
@@ -12,7 +14,7 @@ import type { CreateTeamEventDto, SetTeamEventDateAsksDto, UpdateTeamCalendarDto
 /** The longest range of dates asked for at once. */
 const MAX_RANGE_DAYS = 400;
 
-export type EventRow = Prisma.TeamEventGetPayload<{ include: { dates: { include: { setlist: { select: { id: true; _count: { select: { items: true } } } } } }; rooms: { select: { id: true; name: true } }; resources: { select: { resourceId: true; quantity: true; resource: { select: { name: true } } } } } }>;
+export type EventRow = Prisma.TeamEventGetPayload<{ include: { dates: { include: { setlist: { select: { id: true; _count: { select: { items: true } } } } } }; rooms: { select: { id: true; name: true } }; resources: { select: { resourceId: true; quantity: true; resource: { select: { name: true } } } }; bookingApprovals: { select: { status: true; room: { select: { name: true } }; resource: { select: { name: true } } } } } }>;
 
 export const day = (date: string) => new Date(`${date}T00:00:00.000Z`);
 export const dateText = (date: Date) => date.toISOString().slice(0, 10);
@@ -79,7 +81,7 @@ export function rehearsalDatesOf(rehearsal: EventRow, parent: EventRow, from: st
   return rehearsalDates(timingOf(parent), { daysBefore: rehearsal.daysBefore ?? 0, startTime: rehearsal.startTime, durationMinutes: rehearsal.durationMinutes }, from, to, changesOf(parent));
 }
 
-export const withDates = { dates: { include: { setlist: { select: { id: true, _count: { select: { items: true } } } } } }, rooms: { select: { id: true, name: true }, orderBy: { name: "asc" } }, ...RESOURCES_TAKEN } as const;
+export const withDates = { dates: { include: { setlist: { select: { id: true, _count: { select: { items: true } } } } } }, rooms: { select: { id: true, name: true }, orderBy: { name: "asc" } }, ...RESOURCES_TAKEN, ...AWAITING_APPROVAL } as const;
 
 /**
  * A team's calendar (issue #235): its events, the dates they fall on, and
@@ -93,6 +95,7 @@ export class TeamEventsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly bookings: BookingsService,
   ) {}
 
   /** Who signed up for an event's coming dates, from `today` (signedUpFor): each date and its people. */
@@ -166,6 +169,8 @@ export class TeamEventsService {
       rooms: event.rooms,
       // The resources it takes, and how many (issue #564).
       resources: resourcesTaken(event.resources),
+      // Its rooms and resources whose booking waits for approval (issue #565).
+      awaitingApproval: awaitingApproval(event.bookingApprovals),
       note: event.note,
       repeat: event.rehearsalForId ? null : (timingOf(event).repeat ?? null),
       parts: partsOf(event),
@@ -317,9 +322,10 @@ export class TeamEventsService {
         },
       });
       // Its rooms and resources booked (issue #565); a group's part of an organisation's event books through it.
-      if (!organizationEventId) await this.book(tx, made.id, dto.skipClashes, !!made.repeatEveryWeeks);
-      return made;
+      const requested = organizationEventId ? [] : await this.book(tx, made.id, dto.skipClashes, !!made.repeatEveryWeeks, userId);
+      return { ...made, requested };
     });
+    await this.bookings.tellManagers(event.requested, userId);
     await this.makeSets(event.id);
     return this.summary(await this.find(teamId, event.id));
   }
@@ -336,7 +342,7 @@ export class TeamEventsService {
     const location = dto.locationId ? await eventLocation(this.prisma, { teamId }, dto.locationId) : null;
     const rooms = roomsOnUpdate(await eventRooms(this.prisma, dto.locationId === undefined ? before.locationId : dto.locationId, dto.roomIds, dto.locationId !== undefined && dto.locationId !== before.locationId));
     const resources = resourcesOnUpdate(await eventResources(this.prisma, { teamId }, dto.resources));
-    await this.prisma.client.$transaction(async (tx) => {
+    const requested = await this.prisma.client.$transaction(async (tx) => {
       const changed = await tx.teamEvent.update({
         where: { id: eventId },
         data: {
@@ -365,8 +371,9 @@ export class TeamEventsService {
               : { rehearsalForId: (await this.rehearsalParent(teamId, dto.rehearsalFor.eventId, eventId)).id, daysBefore: dto.rehearsalFor.daysBefore, repeatEveryWeeks: null, repeatUntil: null }),
         },
       });
-      if (!before.organizationEventId) await this.book(tx, eventId, dto.skipClashes, !!changed.repeatEveryWeeks);
+      return before.organizationEventId ? [] : await this.book(tx, eventId, dto.skipClashes, !!changed.repeatEveryWeeks, by);
     });
+    await this.bookings.tellManagers(requested, by);
     const after = await this.find(teamId, eventId);
     // Coming dates the event no longer falls on: their sets leave it (deleted while empty), their changes go.
     const today = localDate(new Date(), after.timeZone);
@@ -528,11 +535,14 @@ export class TeamEventsService {
    * transaction: a clash refuses the change, or for a series asked to
    * (`skip`), cancels its clashing dates.
    */
-  private async book(tx: Prisma.TransactionClient, eventId: string, skip: boolean | null | undefined, series: boolean) {
+  private async book(tx: Prisma.TransactionClient, eventId: string, skip: boolean | null | undefined, series: boolean, userId: string | null): Promise<string[]> {
     const clashes = await eventClashes(tx, { teamEventId: eventId });
-    if (clashes.length === 0) return;
-    if (!skip || !series || clashes.dates === clashingDates(clashes).length) refuseClashes(clashes, clashes.dates);
-    for (const date of clashingDates(clashes)) await tx.teamEventDate.upsert({ where: { eventId_date: { eventId, date: day(date) } }, create: { eventId, date: day(date), cancelled: true }, update: { cancelled: true } });
+    if (clashes.length > 0) {
+      if (!skip || !series || clashes.dates === clashingDates(clashes).length) refuseClashes(clashes, clashes.dates);
+      for (const date of clashingDates(clashes)) await tx.teamEventDate.upsert({ where: { eventId_date: { eventId, date: day(date) } }, create: { eventId, date: day(date), cancelled: true }, update: { cancelled: true } });
+    }
+    // Rooms and resources that need approval: asked for, holding the slot meanwhile.
+    return syncApprovals(tx, { teamEventId: eventId }, userId);
   }
 
   /** One date changed by itself: cancelled (its empty set deleted), another time or title (its set renamed). */

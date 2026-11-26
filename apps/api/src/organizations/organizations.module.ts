@@ -1,3 +1,4 @@
+import { LocationsModule } from "../locations/locations.module.js";
 import { Module } from "@nestjs/common";
 import { OrganizationSignupController } from "./organization-signup.controller.js";
 import { NotificationsModule } from "../notifications/notifications.module.js";
@@ -12,7 +13,7 @@ import { GroupsService } from "./groups.service.js";
 import { OrganizationsService } from "./organizations.service.js";
 
 @Module({
-  imports: [StorageModule, TeamEventsModule, NotificationsModule],
+  imports: [StorageModule, TeamEventsModule, NotificationsModule, LocationsModule],
   controllers: [OrganizationsController, OrganizationSignupController, TeamOrganizationController, AdminOrganizationsController, GroupsController, OrganizationEventsController],
   providers: [OrganizationsService, GroupsService, TeamsService, OrganizationEventsService],
 })

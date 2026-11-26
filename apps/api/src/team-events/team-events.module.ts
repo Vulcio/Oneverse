@@ -1,4 +1,5 @@
 import { BullModule } from "@nestjs/bullmq";
+import { LocationsModule } from "../locations/locations.module.js";
 import { Module } from "@nestjs/common";
 import { TEAM_EVENTS_QUEUE } from "../jobs/jobs.constants.js";
 import { NotificationsModule } from "../notifications/notifications.module.js";
@@ -14,7 +15,7 @@ import { TeamEventsProcessor, TeamEventsScheduler } from "./team-events.processo
 import { TeamEventsService } from "./team-events.service.js";
 
 @Module({
-  imports: [BullModule.registerQueue({ name: TEAM_EVENTS_QUEUE }), NotificationsModule],
+  imports: [BullModule.registerQueue({ name: TEAM_EVENTS_QUEUE }), NotificationsModule, LocationsModule],
   controllers: [TeamEventsController, MyCalendarController, MyCalendarFeedController, CalendarFeedController],
   providers: [TeamEventsService, EventTypesService, AvailabilityService, RemindersService, LineupService, CalendarFeedService, TeamEventsProcessor, TeamEventsScheduler],
   // For an organisation's events (issue #241): each group's part is one of its team events.

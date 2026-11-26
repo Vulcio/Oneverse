@@ -1120,6 +1120,12 @@ function EventDialog({
           {makesSets && !parentEvent && !planned && withSet ? <EditsSetField id="event-edits-set" checked={editsSet} onChange={setEditsSet} /> : null}
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} openToTeams={openToTeams} />}
         </form>
+        {/* Its rooms and resources whose booking waits for a manager's approval (issue #565). */}
+        {event?.awaitingApproval?.length ? (
+          <p className="text-xs text-muted-foreground" data-testid="event-awaiting-approval">
+            {t("bookings.awaiting", { names: event.awaitingApproval.join(", ") })}
+          </p>
+        ) : null}
         {error ? <FieldError>{error}</FieldError> : null}
         {clashes ? <BookingClashes clashes={clashes.clashes} busy={busy} onBookFree={!parentEvent && everyWeeks && clashes.freeDates !== 0 ? () => void save(true) : null} /> : null}
         {/* Moved to the organisation (issue #549), one-off or series: its admins accept it; dates, answers, line-ups and sets stay. */}

@@ -397,6 +397,9 @@ model User {
   organizationRequests         OrganizationRequest[] @relation("OrganizationRequestsMade")
   organizationRequestsReviewed OrganizationRequest[] @relation("OrganizationRequestsReviewed")
   songInfoRefreshes            SongInfoRefresh[]     @relation("SongInfoRefreshRequestedBy")
+  // Bookings asked for, and those decided as a room's or resource's manager (issue #565).
+  bookingsRequested            BookingApproval[]     @relation("BookingRequestedBy")
+  bookingsDecided              BookingApproval[]     @relation("BookingDecidedBy")
 
   @@index([email])
 }
@@ -732,6 +735,9 @@ model Team {
   locations            Location[]
   // What its events book besides rooms (issue #564): the van, the PA.
   resources            Resource[]
+  // Rooms and resources whose bookings its admins approve (issue #565): a Facilities team.
+  managedRooms         Room[]               @relation("RoomManagers")
+  managedResources     Resource[]           @relation("ResourceManagers")
   // Its own Songverse Sonic server for its songs' stems (issue #300).
   sonicServer          SonicServer?
   // A Bible in its members' sidebar (issue #310), turned on by its admins.
@@ -1586,6 +1592,8 @@ model TeamEvent {
   location          Location?             @relation(fields: [locationId], references: [id], onDelete: SetNull)
   // The venue's rooms it takes (issue #563).
   rooms             Room[]                @relation("TeamEventRooms")
+  // Its bookings waiting for, or given, a manager's approval (issue #565).
+  bookingApprovals  BookingApproval[]
   // The resources it takes, and how many (issue #564).
   resources         EventResource[]
 
@@ -1627,6 +1635,7 @@ model OrganizationEvent {
   location     Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
   // The venue's rooms it takes (issue #563).
   rooms        Room[]       @relation("OrganizationEventRooms")
+  bookingApprovals BookingApproval[]
   // The resources it takes, and how many (issue #564).
   resources    EventResource[]
 
@@ -3837,10 +3846,15 @@ model Room {
   capacity        Int?
   setupMinutes    Int      @default(0)
   teardownMinutes Int      @default(0)
+  // Its bookings wait for a manager's approval (issue #565): its owner's admins, or managerTeamId's.
+  needsApproval   Boolean  @default(false)
+  managerTeamId   String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   location           Location            @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  managerTeam        Team?               @relation("RoomManagers", fields: [managerTeamId], references: [id], onDelete: SetNull)
+  approvals          BookingApproval[]
   teamEvents         TeamEvent[]         @relation("TeamEventRooms")
   organizationEvents OrganizationEvent[] @relation("OrganizationEventRooms")
   eventTypes         TeamEventType[]     @relation("TeamEventTypeRooms")
@@ -3859,13 +3873,18 @@ model Resource {
   locationId          String?
   ownerTeamId         String?
   ownerOrganizationId String?
+  // Its bookings wait for a manager's approval (issue #565), as a room's.
+  needsApproval       Boolean  @default(false)
+  managerTeamId       String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   location     Location?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
   team         Team?           @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
   organization Organization?   @relation(fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
+  managerTeam  Team?           @relation("ResourceManagers", fields: [managerTeamId], references: [id], onDelete: SetNull)
   uses         EventResource[]
+  approvals    BookingApproval[]
 
   @@index([ownerTeamId])
   @@index([ownerOrganizationId])
@@ -3890,6 +3909,42 @@ model EventResource {
   @@unique([organizationEventId, resourceId])
   @@unique([eventTypeId, resourceId])
   @@index([resourceId])
+}
+
+// A booking of a room or resource that needs approval (issue #565): asked
+// for when an event takes it (holding the slot meanwhile), approved by its
+// manager; declined, the event gives it up and the row goes. One per event
+// (an organisation's for all its groups) and room or resource.
+model BookingApproval {
+  id                  String                @id @default(cuid())
+  roomId              String?
+  resourceId          String?
+  teamEventId         String?
+  organizationEventId String?
+  status              BookingApprovalStatus @default(REQUESTED)
+  requestedByUserId   String?
+  decidedByUserId     String?
+  decidedAt           DateTime?
+  createdAt           DateTime              @default(now())
+
+  room              Room?              @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  resource          Resource?          @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  teamEvent         TeamEvent?         @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  organizationEvent OrganizationEvent? @relation(fields: [organizationEventId], references: [id], onDelete: Cascade)
+  requestedBy       User?              @relation("BookingRequestedBy", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  decidedBy         User?              @relation("BookingDecidedBy", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([teamEventId, roomId])
+  @@unique([teamEventId, resourceId])
+  @@unique([organizationEventId, roomId])
+  @@unique([organizationEventId, resourceId])
+  @@index([roomId])
+  @@index([resourceId])
+}
+
+enum BookingApprovalStatus {
+  REQUESTED
+  APPROVED
 }
 
 // Server backups (issue #119), edited in Admin > Backups: where the Worker

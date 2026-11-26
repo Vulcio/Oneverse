@@ -65,6 +65,13 @@ export const NOTIFICATION_KINDS = [
   // One's ask to edit a date's set is granted, or declined (to the one who asked).
   "SET_EDIT_GRANTED",
   "SET_EDIT_DECLINED",
+  // Someone whose event clashes asks one's event to free a room or resource (issue #565).
+  "BOOKING_ASKED",
+  // A booking of a room or resource one manages waits for approval (issue #565).
+  "BOOKING_REQUESTED",
+  // A booking one asked for is approved, or declined (the event gave the room or resource up).
+  "BOOKING_APPROVED",
+  "BOOKING_DECLINED",
   // Someone joins a team one runs through its invite link (to its admins).
   "TEAM_JOINED",
   // One is made an admin of a team, or a member again.
@@ -129,6 +136,8 @@ export interface NotificationData {
   note?: string;
   /** An organisation's name (issue #364). */
   organization?: string;
+  /** A room's or a resource's name (bookings, issue #565). */
+  what?: string;
   /** The request to connect it's about: accepted or declined from the notification. */
   connectionId?: string;
   /** An announcement's own words (issue #536), by language ("en", "fr"): the reader's, else English, else the first. */
@@ -212,6 +221,9 @@ export function notificationText(kind: NotificationKind, data: NotificationData,
     access: data.canEdit === undefined ? "" : data.canEdit ? messages.notifications.toEdit : messages.notifications.toView,
     note: data.note ?? "",
     organization: data.organization ?? "",
+    what: data.what ?? "",
+    // What they wrote, after the rest: ": could you move to the kids room?".
+    message: data.note ? `: ${data.note}` : "",
     // An announcement's own words (issue #536), in the reader's language.
     ...(ANNOUNCEMENT_KINDS.includes(kind) ? { title: announcementText(data.texts, locale)?.title ?? "", body: announcementText(data.texts, locale)?.body ?? "" } : {}),
   };

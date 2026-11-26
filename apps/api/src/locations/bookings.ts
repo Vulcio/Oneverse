@@ -190,9 +190,13 @@ export function bookingClashes(subject: Holder, others: readonly Holder[]): Book
 
 /** The bookings that may meet an event's dates: others taking any of its rooms or resources, not over before `from`. */
 async function othersTaking(db: Prisma.TransactionClient, subject: Holder, from: string, to: string): Promise<Holder[]> {
-  const roomIds = subject.rooms.map((room) => room.id);
-  const resourceIds = subject.resources.map((use) => use.resourceId);
-  const taking = [...(roomIds.length ? [{ rooms: { some: { id: { in: roomIds } } } }] : []), ...(resourceIds.length ? [{ resources: { some: { resourceId: { in: resourceIds } } } }] : [])];
+  return holdersTaking(db, subject.rooms.map((room) => room.id), subject.resources.map((use) => use.resourceId), from, to);
+}
+
+/** The events taking any of these rooms or resources, with their dates from `from` to `to`. */
+async function holdersTaking(db: Prisma.TransactionClient, roomIds: readonly string[], resourceIds: readonly string[], from: string, to: string): Promise<Holder[]> {
+  if (roomIds.length === 0 && resourceIds.length === 0) return [];
+  const taking = [...(roomIds.length ? [{ rooms: { some: { id: { in: [...roomIds] } } } }] : []), ...(resourceIds.length ? [{ resources: { some: { resourceId: { in: [...resourceIds] } } } }] : [])];
   const since = new Date(`${addDays(from, -1)}T00:00:00.000Z`);
   // Not over: a series going on, a date on or after `from` (a one-off, or a date moved there), or a rehearsal (its event's dates).
   const coming = [{ date: { gte: since } }, { repeatEveryWeeks: { not: null }, OR: [{ repeatUntil: null }, { repeatUntil: { gte: since } }] }];
@@ -258,3 +262,49 @@ export function refuseClashes(clashes: readonly BookingClash[], dates?: number):
 
 /** The dates of an event that clash, once each. */
 export const clashingDates = (clashes: readonly BookingClash[]) => [...new Set(clashes.map((clash) => clash.date))].sort();
+
+/** One booking on a room's or a resource's calendar: when the event holds it (setup and teardown included), and which event. */
+export interface Booking {
+  kind: "room" | "resource";
+  /** The room's or resource's id and name. */
+  id: string;
+  what: string;
+  /** How many of a resource it takes. */
+  quantity: number;
+  date: string;
+  startsAt: string;
+  endsAt: string;
+  /** From its setup to its teardown (a room's); a resource's are its start and end. */
+  heldFrom: string;
+  heldUntil: string;
+  eventId: string;
+  eventKind: "team" | "organization";
+  event: string;
+  owner: string;
+}
+
+/**
+ * A room's or a resource's calendar (issue #565): every booking of these
+ * rooms and resources from `from` to `to`, in order.
+ */
+export async function bookingsOf(db: Prisma.TransactionClient, roomIds: readonly string[], resourceIds: readonly string[], from: string, to: string): Promise<Booking[]> {
+  const rooms = new Set(roomIds);
+  const resources = new Set(resourceIds);
+  const out: Booking[] = [];
+  for (const holder of await holdersTaking(db, roomIds, resourceIds, from, to)) {
+    const event = { eventId: holder.eventId, eventKind: holder.kind, owner: holder.owner };
+    for (const date of holder.dates) {
+      if (date.date < from || date.date > to) continue;
+      const when = { date: date.date, startsAt: date.startsAt, endsAt: date.endsAt, event: date.title || holder.title, ...event };
+      for (const room of holder.rooms) {
+        if (!rooms.has(room.id)) continue;
+        const [heldFrom, heldUntil] = heldWindow(date, room);
+        out.push({ kind: "room", id: room.id, what: room.name, quantity: 1, heldFrom: new Date(heldFrom).toISOString(), heldUntil: new Date(heldUntil).toISOString(), ...when });
+      }
+      for (const use of holder.resources) {
+        if (resources.has(use.resourceId)) out.push({ kind: "resource", id: use.resourceId, what: use.name, quantity: use.quantity, heldFrom: date.startsAt, heldUntil: date.endsAt, ...when });
+      }
+    }
+  }
+  return out.sort((a, b) => a.heldFrom.localeCompare(b.heldFrom) || a.what.localeCompare(b.what));
+}

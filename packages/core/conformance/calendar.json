@@ -896,6 +896,57 @@
           }
         },
         {
+          "name": "asked to free a room (issue #565)",
+          "args": [
+            "BOOKING_ASKED",
+            {
+              "by": "Sam",
+              "what": "Main hall",
+              "date": "2026-12-06",
+              "event": "Youth night",
+              "note": "could you take the kids room?"
+            },
+            "en"
+          ],
+          "expected": {
+            "title": "Sam asks for Main hall on Sun, Dec 6",
+            "body": "Youth night has it booked: could you take the kids room?"
+          }
+        },
+        {
+          "name": "a booking waits for approval, in French",
+          "args": [
+            "BOOKING_REQUESTED",
+            {
+              "by": "Sam",
+              "what": "Grande salle",
+              "date": "2026-12-06",
+              "event": "Soirée jeunes"
+            },
+            "fr"
+          ],
+          "expected": {
+            "title": "Sam demande à réserver Grande salle",
+            "body": "Soirée jeunes, à partir du dim. 6 déc. : acceptez ou refusez"
+          }
+        },
+        {
+          "name": "a booking declined",
+          "args": [
+            "BOOKING_DECLINED",
+            {
+              "by": "Alex",
+              "what": "Van",
+              "event": "Outreach"
+            },
+            "en"
+          ],
+          "expected": {
+            "title": "Van isn't booked for Outreach",
+            "body": "Declined by Alex: the event no longer takes it"
+          }
+        },
+        {
           "name": "an ask to edit granted, in French",
           "args": [
             "SET_EDIT_GRANTED",
@@ -1201,6 +1252,22 @@
               "email": true,
               "push": true
             },
+            "BOOKING_ASKED": {
+              "email": true,
+              "push": true
+            },
+            "BOOKING_REQUESTED": {
+              "email": true,
+              "push": true
+            },
+            "BOOKING_APPROVED": {
+              "email": true,
+              "push": true
+            },
+            "BOOKING_DECLINED": {
+              "email": true,
+              "push": true
+            },
             "TEAM_JOINED": {
               "email": true,
               "push": true
@@ -1399,6 +1466,22 @@
               "push": true
             },
             "SET_EDIT_DECLINED": {
+              "email": true,
+              "push": true
+            },
+            "BOOKING_ASKED": {
+              "email": true,
+              "push": true
+            },
+            "BOOKING_REQUESTED": {
+              "email": true,
+              "push": true
+            },
+            "BOOKING_APPROVED": {
+              "email": true,
+              "push": true
+            },
+            "BOOKING_DECLINED": {
               "email": true,
               "push": true
             },
@@ -1608,6 +1691,22 @@
                 "push": true
               },
               "SET_EDIT_DECLINED": {
+                "email": true,
+                "push": true
+              },
+              "BOOKING_ASKED": {
+                "email": true,
+                "push": true
+              },
+              "BOOKING_REQUESTED": {
+                "email": true,
+                "push": true
+              },
+              "BOOKING_APPROVED": {
+                "email": true,
+                "push": true
+              },
+              "BOOKING_DECLINED": {
                 "email": true,
                 "push": true
               },

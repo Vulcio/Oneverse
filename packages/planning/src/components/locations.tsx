@@ -1,5 +1,5 @@
 import type { EventLocation, LocationRoom } from "@oneverse/core";
-import { DoorOpen, House, MapPin, X } from "lucide-react";
+import { DoorOpen, House, MapPin, ShieldCheck, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -9,6 +9,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { usePlanning } from "../host";
+import { ApprovalFields, BookingsButton, useManagerTeams } from "./bookings";
 import { FieldError } from "@oneverse/ui/components/field";
 
 type Owner = { teamId: string } | { organizationId: string };
@@ -170,9 +171,10 @@ export function LocationsCard({ owner }: { owner: Owner }) {
                       {location.name}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">{[location.address, location.timeZone.replaceAll("_", " ")].filter(Boolean).join(" · ")}</p>
-                    <Rooms location={location} onChanged={load} onError={setError} />
+                    <Rooms location={location} owner={owner} onChanged={load} onError={setError} />
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    {location.rooms?.length ? <BookingsButton title={location.name} load={(from, to) => api.locationBookings(location.id, from, to)} /> : null}
                     <Button variant="ghost" size="sm" onClick={() => setEditing(location.id)}>
                       {t("locations.edit")}
                     </Button>
@@ -203,26 +205,21 @@ export function LocationsCard({ owner }: { owner: Owner }) {
   );
 }
 
-/** A venue's rooms (issue #563): each with its capacity, removed with ×; a new one by name. */
-function Rooms({ location, onChanged, onError }: { location: EventLocation; onChanged: () => Promise<unknown>; onError: (message: string) => void }) {
+/** A venue's rooms (issue #563): each with its capacity, setup and teardown times and approval (issue #565), changed by clicking it, removed with ×; a new one by name. */
+function Rooms({ location, owner, onChanged, onError }: { location: EventLocation; owner: Owner; onChanged: () => Promise<unknown>; onError: (message: string) => void }) {
   const { api } = usePlanning();
   const { t } = useTranslation();
-  const [adding, setAdding] = useState(false);
-  const [name, setName] = useState("");
-  const [capacity, setCapacity] = useState("");
-  // Held before and after each event that takes it (bookings, issue #565).
-  const [setup, setSetup] = useState("");
-  const [teardown, setTeardown] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const managerTeams = useManagerTeams(owner);
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
     try {
       await action();
       await onChanged();
-      return true;
+      setEditing(null);
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
-      return false;
     } finally {
       setBusy(false);
     }
@@ -230,53 +227,78 @@ function Rooms({ location, onChanged, onError }: { location: EventLocation; onCh
   const rooms: LocationRoom[] = location.rooms ?? [];
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1.5" data-testid="location-rooms">
-      {rooms.map((room) => (
-        <span key={room.id} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs" data-testid="location-room" data-room={room.name}>
-          <DoorOpen className="size-3 text-muted-foreground" aria-hidden />
-          {room.name}
-          {room.capacity ? <span className="text-muted-foreground">· {t("locations.capacityOf", { count: room.capacity })}</span> : null}
-          {room.setupMinutes ? <span className="text-muted-foreground">· {t("locations.setupOf", { count: room.setupMinutes })}</span> : null}
-          {room.teardownMinutes ? <span className="text-muted-foreground">· {t("locations.teardownOf", { count: room.teardownMinutes })}</span> : null}
-          {location.canEdit ? (
-            <button type="button" className="ml-0.5 text-muted-foreground hover:text-destructive" aria-label={t("locations.removeRoom", { name: room.name })} disabled={busy} onClick={() => void run(() => api.removeRoom(location.id, room.id))}>
-              <X className="size-3" />
-            </button>
-          ) : null}
-        </span>
-      ))}
-      {!location.canEdit ? null : adding ? (
-        <form
-          className="flex flex-wrap items-center gap-1.5"
-          data-testid="room-form"
-          onSubmit={(submitted) => {
-            submitted.preventDefault();
-            void run(() => api.addRoom(location.id, { name: name.trim(), ...(capacity ? { capacity: Number(capacity) } : {}), ...(setup ? { setupMinutes: Number(setup) } : {}), ...(teardown ? { teardownMinutes: Number(teardown) } : {}) })).then((done) => {
-              if (!done) return;
-              setName("");
-              setCapacity("");
-              setSetup("");
-              setTeardown("");
-              setAdding(false);
-            });
-          }}
-        >
-          <Input className="h-8 w-36 text-xs" value={name} maxLength={80} required autoFocus placeholder={t("locations.roomName")} aria-label={t("locations.roomName")} onChange={(e) => setName(e.target.value)} data-testid="room-name" />
-          <Input className="h-8 w-24 text-xs" type="number" min={1} value={capacity} placeholder={t("locations.capacity")} aria-label={t("locations.capacity")} onChange={(e) => setCapacity(e.target.value)} data-testid="room-capacity" />
-          <Input className="h-8 w-36 text-xs" type="number" min={0} max={1440} value={setup} placeholder={t("locations.setup")} aria-label={t("locations.setup")} onChange={(e) => setSetup(e.target.value)} data-testid="room-setup" />
-          <Input className="h-8 w-36 text-xs" type="number" min={0} max={1440} value={teardown} placeholder={t("locations.teardown")} aria-label={t("locations.teardown")} onChange={(e) => setTeardown(e.target.value)} data-testid="room-teardown" />
-          <Button type="submit" size="sm" disabled={busy || !name.trim()} data-testid="room-save">
-            {t("locations.save")}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
-            {t("locations.cancel")}
-          </Button>
-        </form>
+      {rooms.map((room) =>
+        editing === room.id ? (
+          <RoomForm key={room.id} initial={room} teams={managerTeams} busy={busy} onCancel={() => setEditing(null)} onSave={(data) => void run(() => api.updateRoom(location.id, room.id, { ...data, capacity: data.capacity ?? null, managerTeamId: data.managerTeamId ?? null }))} />
+        ) : (
+          <span key={room.id} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs" data-testid="location-room" data-room={room.name}>
+            <DoorOpen className="size-3 text-muted-foreground" aria-hidden />
+            {location.canEdit ? (
+              <button type="button" className="hover:underline" aria-label={t("locations.editRoom", { name: room.name })} onClick={() => setEditing(room.id)}>
+                {room.name}
+              </button>
+            ) : (
+              room.name
+            )}
+            {room.capacity ? <span className="text-muted-foreground">· {t("locations.capacityOf", { count: room.capacity })}</span> : null}
+            {room.setupMinutes ? <span className="text-muted-foreground">· {t("locations.setupOf", { count: room.setupMinutes })}</span> : null}
+            {room.teardownMinutes ? <span className="text-muted-foreground">· {t("locations.teardownOf", { count: room.teardownMinutes })}</span> : null}
+            {room.needsApproval ? (
+              <span className="inline-flex items-center gap-0.5 text-muted-foreground" data-testid="room-approval">
+                · <ShieldCheck className="size-3" aria-hidden />
+                {room.managerTeam ? t("bookings.teamAdmins", { team: room.managerTeam.name }) : t("bookings.itsAdmins")}
+              </span>
+            ) : null}
+            {location.canEdit ? (
+              <button type="button" className="ml-0.5 text-muted-foreground hover:text-destructive" aria-label={t("locations.removeRoom", { name: room.name })} disabled={busy} onClick={() => void run(() => api.removeRoom(location.id, room.id))}>
+                <X className="size-3" />
+              </button>
+            ) : null}
+          </span>
+        ),
+      )}
+      {!location.canEdit ? null : editing === "new" ? (
+        <RoomForm teams={managerTeams} busy={busy} onCancel={() => setEditing(null)} onSave={(data) => void run(() => api.addRoom(location.id, { ...data, capacity: data.capacity ?? undefined, managerTeamId: data.managerTeamId ?? undefined }))} />
       ) : (
-        <Button variant="ghost" size="sm" onClick={() => setAdding(true)} data-testid="room-add">
+        <Button variant="ghost" size="sm" onClick={() => setEditing("new")} data-testid="room-add">
           {t("locations.addRoom")}
         </Button>
       )}
     </div>
+  );
+}
+
+type RoomData = { name: string; capacity: number | null; setupMinutes: number; teardownMinutes: number; needsApproval: boolean; managerTeamId: string | null };
+
+function RoomForm({ initial, teams, busy, onSave, onCancel }: { initial?: LocationRoom; teams: { id: string; name: string }[]; busy: boolean; onSave: (data: RoomData) => void; onCancel: () => void }) {
+  const { t } = useTranslation();
+  const [name, setName] = useState(initial?.name ?? "");
+  const [capacity, setCapacity] = useState(initial?.capacity ? String(initial.capacity) : "");
+  // Held before and after each event that takes it (bookings, issue #565).
+  const [setup, setSetup] = useState(initial?.setupMinutes ? String(initial.setupMinutes) : "");
+  const [teardown, setTeardown] = useState(initial?.teardownMinutes ? String(initial.teardownMinutes) : "");
+  const [approval, setApproval] = useState({ needsApproval: initial?.needsApproval ?? false, managerTeamId: initial?.managerTeamId ?? "" });
+  return (
+    <form
+      className="flex w-full flex-wrap items-center gap-1.5"
+      data-testid="room-form"
+      onSubmit={(submitted) => {
+        submitted.preventDefault();
+        onSave({ name: name.trim(), capacity: capacity ? Number(capacity) : null, setupMinutes: Number(setup) || 0, teardownMinutes: Number(teardown) || 0, needsApproval: approval.needsApproval, managerTeamId: approval.needsApproval && approval.managerTeamId ? approval.managerTeamId : null });
+      }}
+    >
+      <Input className="h-8 w-36 text-xs" value={name} maxLength={80} required autoFocus placeholder={t("locations.roomName")} aria-label={t("locations.roomName")} onChange={(e) => setName(e.target.value)} data-testid="room-name" />
+      <Input className="h-8 w-24 text-xs" type="number" min={1} value={capacity} placeholder={t("locations.capacity")} aria-label={t("locations.capacity")} onChange={(e) => setCapacity(e.target.value)} data-testid="room-capacity" />
+      <Input className="h-8 w-36 text-xs" type="number" min={0} max={1440} value={setup} placeholder={t("locations.setup")} aria-label={t("locations.setup")} onChange={(e) => setSetup(e.target.value)} data-testid="room-setup" />
+      <Input className="h-8 w-36 text-xs" type="number" min={0} max={1440} value={teardown} placeholder={t("locations.teardown")} aria-label={t("locations.teardown")} onChange={(e) => setTeardown(e.target.value)} data-testid="room-teardown" />
+      <ApprovalFields id={initial?.id ?? "new-room"} needsApproval={approval.needsApproval} managerTeamId={approval.managerTeamId} teams={teams} onChange={setApproval} />
+      <Button type="submit" size="sm" disabled={busy || !name.trim()} data-testid="room-save">
+        {t("locations.save")}
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+        {t("locations.cancel")}
+      </Button>
+    </form>
   );
 }
 

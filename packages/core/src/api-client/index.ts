@@ -54,7 +54,7 @@ import type { RecordingChord } from "../recording/chords.js";
 import type { RecordingAnalysis } from "../recording/analysis-check.js";
 import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
-import type { CreateLocationRequest, CreateResourceRequest, CreateRoomRequest, UpdateLocationRequest, UpdateResourceRequest, UpdateRoomRequest } from "../requests/locations.js";
+import type { AskBookingRequest, CreateLocationRequest, CreateResourceRequest, CreateRoomRequest, UpdateLocationRequest, UpdateResourceRequest, UpdateRoomRequest } from "../requests/locations.js";
 import type { z } from "zod";
 import type { BibleUpdateSchema, YouVersionSearchQuerySchema } from "../requests/scriptures.js";
 import type { SetItemPassage } from "../screens/index.js";
@@ -1080,6 +1080,10 @@ export interface LocationRoom {
   /** Held this long before and after an event, by default (bookings, issue #565). */
   setupMinutes: number;
   teardownMinutes: number;
+  /** Its bookings wait for approval (issue #565): by its manager team's admins, else its owner's. */
+  needsApproval?: boolean;
+  managerTeamId?: string | null;
+  managerTeam?: { id: string; name: string } | null;
 }
 
 /** A room an event takes. */
@@ -1097,8 +1101,46 @@ export interface Resource {
   /** The venue it's kept at. */
   location: { id: string; name: string } | null;
   owner: { kind: "team" | "organization"; id: string; name: string };
+  /** Its bookings wait for approval (issue #565): by its manager team's admins, else its owner's. */
+  needsApproval?: boolean;
+  managerTeam?: { id: string; name: string } | null;
   /** Its owner's admins change it. */
   canEdit: boolean;
+}
+
+/** One booking on a room's or a resource's calendar (issue #565). */
+export interface Booking {
+  kind: "room" | "resource";
+  id: string;
+  what: string;
+  quantity: number;
+  date: string;
+  startsAt: string;
+  endsAt: string;
+  /** From the room's setup to its teardown. */
+  heldFrom: string;
+  heldUntil: string;
+  eventId: string;
+  eventKind: "team" | "organization";
+  event: string;
+  owner: string;
+}
+
+/** A booking waiting for the user's approval (issue #565). */
+export interface BookingRequest {
+  id: string;
+  kind: "room" | "resource";
+  what: string;
+  venue: string | null;
+  eventId: string;
+  eventKind: "team" | "organization";
+  event: string;
+  owner: string;
+  /** Its first date, and whether it repeats. */
+  date: string;
+  repeats: boolean;
+  requestedBy: string | null;
+  requestedAt: string;
 }
 
 /** How many of a resource an event takes. */
@@ -1731,6 +1773,8 @@ export interface TeamEvent {
   rooms?: EventRoom[];
   /** The resources it takes, and how many (issue #564). */
   resources?: EventResourceUse[];
+  /** Its rooms and resources whose booking waits for a manager's approval (issue #565), by name. */
+  awaitingApproval?: string[];
   note: string | null;
   repeat: EventRepeat | null;
   /** The parts it needs (issue #235, phase 7). */
@@ -1823,6 +1867,8 @@ export interface OrganizationEvent {
   rooms?: EventRoom[];
   /** The resources it takes, and how many (issue #564). */
   resources?: EventResourceUse[];
+  /** Its rooms and resources whose booking waits for a manager's approval (issue #565), by name. */
+  awaitingApproval?: string[];
   note: string | null;
   repeat: EventRepeat | null;
   host: { id: string; displayName: string } | null;
@@ -4277,6 +4323,13 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     createResource: (data: CreateResourceRequest) => request<Resource>("/resources", { method: "POST", body: JSON.stringify(data) }),
     updateResource: (resourceId: string, data: UpdateResourceRequest) => request<Resource>(`/resources/${resourceId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteResource: (resourceId: string) => request<void>(`/resources/${resourceId}`, { method: "DELETE" }),
+    /** Bookings (issue #565): a venue's rooms' and a resource's calendars, asking an event to free one, and approvals. */
+    locationBookings: (locationId: string, from: string, to: string) => request<Booking[]>(`/locations/${locationId}/bookings?from=${from}&to=${to}`),
+    resourceBookings: (resourceId: string, from: string, to: string) => request<Booking[]>(`/resources/${resourceId}/bookings?from=${from}&to=${to}`),
+    askBooking: (data: AskBookingRequest) => request<{ told: number }>("/bookings/ask", { method: "POST", body: JSON.stringify(data) }),
+    listBookingRequests: (owner?: { teamId: string } | { organizationId: string }) => request<BookingRequest[]>(`/bookings/requests${owner ? `?${"teamId" in owner ? `teamId=${owner.teamId}` : `organizationId=${owner.organizationId}`}` : ""}`),
+    approveBooking: (approvalId: string) => request<void>(`/bookings/requests/${approvalId}/approve`, { method: "POST" }),
+    declineBooking: (approvalId: string) => request<void>(`/bookings/requests/${approvalId}/decline`, { method: "POST" }),
     uploadBrandAsset: (brandId: string, kind: BrandAssetKind, file: Blob, filename: string, name?: string) => {
       const form = new FormData();
       form.append("file", file, filename);

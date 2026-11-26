@@ -1,5 +1,5 @@
 import type { EventLocation, EventResourceUse, Resource } from "@oneverse/core";
-import { Package } from "lucide-react";
+import { Package, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -10,6 +10,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { usePlanning } from "../host";
+import { ApprovalFields, BookingsButton, useManagerTeams } from "./bookings";
 
 type Owner = { teamId: string } | { organizationId: string };
 
@@ -93,6 +94,7 @@ export function ResourcesCard({ owner }: { owner: Owner }) {
   const [error, setError] = useState<string | null>(null);
   const ownerId = "teamId" in owner ? owner.teamId : owner.organizationId;
   const key = JSON.stringify(owner);
+  const managerTeams = useManagerTeams(owner);
 
   // Its own only: a team's list also holds its organisation's.
   const load = async () => {
@@ -140,7 +142,7 @@ export function ResourcesCard({ owner }: { owner: Owner }) {
             {resources.map((resource) =>
               editing === resource.id ? (
                 <li key={resource.id} className="py-2 first:pt-0">
-                  <ResourceEditor initial={resource} venues={venues} busy={busy === resource.id} onCancel={() => setEditing(null)} onSave={(data) => run(resource.id, () => api.updateResource(resource.id, { ...data, locationId: data.locationId || null }))} />
+                  <ResourceEditor initial={resource} venues={venues} teams={managerTeams} busy={busy === resource.id} onCancel={() => setEditing(null)} onSave={(data) => run(resource.id, () => api.updateResource(resource.id, { ...data, locationId: data.locationId || null }))} />
                 </li>
               ) : (
                 <li key={resource.id} className="flex items-start justify-between gap-2 py-2 first:pt-0" data-testid="resource-row" data-resource={resource.name}>
@@ -150,8 +152,15 @@ export function ResourcesCard({ owner }: { owner: Owner }) {
                       {resource.quantity > 1 ? <span className="text-muted-foreground"> ×{resource.quantity}</span> : null}
                     </p>
                     {resource.location ? <p className="truncate text-xs text-muted-foreground">{t("resources.keptAt", { venue: resource.location.name })}</p> : null}
+                    {resource.needsApproval ? (
+                      <p className="flex items-center gap-1 truncate text-xs text-muted-foreground" data-testid="resource-approval">
+                        <ShieldCheck className="size-3" aria-hidden />
+                        {t("bookings.approvedBy")}: {resource.managerTeam ? t("bookings.teamAdmins", { team: resource.managerTeam.name }) : t("bookings.itsAdmins")}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    <BookingsButton title={resource.name} load={(from, to) => api.resourceBookings(resource.id, from, to)} />
                     <Button variant="ghost" size="sm" onClick={() => edit(resource.id)}>
                       {t("locations.edit")}
                     </Button>
@@ -170,7 +179,7 @@ export function ResourcesCard({ owner }: { owner: Owner }) {
           </ul>
         ) : null}
         {editing === "new" ? (
-          <ResourceEditor venues={venues} busy={busy === "new"} onCancel={() => setEditing(null)} onSave={(data) => run("new", () => api.createResource({ name: data.name, quantity: data.quantity, ...(data.locationId ? { locationId: data.locationId } : {}), ...owner }))} />
+          <ResourceEditor venues={venues} teams={managerTeams} busy={busy === "new"} onCancel={() => setEditing(null)} onSave={(data) => run("new", () => api.createResource({ name: data.name, quantity: data.quantity, ...(data.locationId ? { locationId: data.locationId } : {}), needsApproval: data.needsApproval, ...(data.managerTeamId ? { managerTeamId: data.managerTeamId } : {}), ...owner }))} />
         ) : (
           <Button variant="outline" size="sm" className="self-start" onClick={() => edit("new")} data-testid="resource-add">
             {t("resources.add")}
@@ -182,8 +191,9 @@ export function ResourcesCard({ owner }: { owner: Owner }) {
   );
 }
 
-function ResourceEditor({ initial, venues, busy, onSave, onCancel }: { initial?: Resource; venues: EventLocation[]; busy: boolean; onSave: (data: { name: string; quantity: number; locationId: string }) => void; onCancel: () => void }) {
+function ResourceEditor({ initial, venues, teams, busy, onSave, onCancel }: { initial?: Resource; venues: EventLocation[]; teams: { id: string; name: string }[]; busy: boolean; onSave: (data: { name: string; quantity: number; locationId: string; needsApproval: boolean; managerTeamId: string | null }) => void; onCancel: () => void }) {
   const { t } = useTranslation();
+  const [approval, setApproval] = useState({ needsApproval: initial?.needsApproval ?? false, managerTeamId: initial?.managerTeam?.id ?? "" });
   const [name, setName] = useState(initial?.name ?? "");
   const [quantity, setQuantity] = useState(String(initial?.quantity ?? 1));
   const [locationId, setLocationId] = useState(initial?.location?.id ?? "");
@@ -194,7 +204,7 @@ function ResourceEditor({ initial, venues, busy, onSave, onCancel }: { initial?:
       data-testid="resource-form"
       onSubmit={(submitted) => {
         submitted.preventDefault();
-        onSave({ name: name.trim(), quantity: Math.max(1, Number(quantity) || 1), locationId });
+        onSave({ name: name.trim(), quantity: Math.max(1, Number(quantity) || 1), locationId, needsApproval: approval.needsApproval, managerTeamId: approval.needsApproval && approval.managerTeamId ? approval.managerTeamId : null });
       }}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-3">
@@ -220,6 +230,7 @@ function ResourceEditor({ initial, venues, busy, onSave, onCancel }: { initial?:
           </NativeSelect>
         </div>
       ) : null}
+      <ApprovalFields id={id} needsApproval={approval.needsApproval} managerTeamId={approval.managerTeamId} teams={teams} onChange={setApproval} />
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={busy || !name.trim()}>
           {t("locations.save")}

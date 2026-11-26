@@ -3,7 +3,8 @@ import type { CreateResourceRequest, UpdateResourceRequest } from "@oneverse/cor
 import type { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { canEdit, canSee, ownerScope } from "./locations.service.js";
+import { bookingsOf } from "./bookings.js";
+import { canEdit, canSee, checkRange, managerTeam, ownerScope } from "./locations.service.js";
 
 const RESOURCE_SELECT = {
   id: true,
@@ -12,6 +13,9 @@ const RESOURCE_SELECT = {
   locationId: true,
   ownerTeamId: true,
   ownerOrganizationId: true,
+  needsApproval: true,
+  managerTeamId: true,
+  managerTeam: { select: { name: true } },
   location: { select: { name: true } },
   team: { select: { name: true } },
   organization: { select: { name: true } },
@@ -87,7 +91,8 @@ export class ResourcesService {
     const owner = { ownerTeamId: data.teamId ?? null, ownerOrganizationId: data.teamId ? null : (data.organizationId ?? null) };
     if (!canEdit(user, scope, owner)) throw new ForbiddenException(data.teamId ? "Only the team's admins add resources for it" : "Only the organisation's admins add resources for it");
     const locationId = data.locationId ? await this.venueOf(owner, data.locationId) : null;
-    const row = await this.prisma.client.resource.create({ data: { name: data.name, quantity: data.quantity ?? 1, locationId, ...owner }, select: RESOURCE_SELECT });
+    const managerTeamId = data.managerTeamId ? await managerTeam(this.prisma, owner, data.managerTeamId) : null;
+    const row = await this.prisma.client.resource.create({ data: { name: data.name, quantity: data.quantity ?? 1, locationId, needsApproval: data.needsApproval ?? false, managerTeamId, ...owner }, select: RESOURCE_SELECT });
     return present(row, true);
   }
 
@@ -96,10 +101,19 @@ export class ResourcesService {
     const locationId = change.locationId ? await this.venueOf(before, change.locationId) : change.locationId;
     const row = await this.prisma.client.resource.update({
       where: { id: resourceId },
-      data: { name: change.name ?? undefined, quantity: change.quantity ?? undefined, locationId },
+      data: { name: change.name ?? undefined, quantity: change.quantity ?? undefined, locationId, needsApproval: change.needsApproval ?? undefined, managerTeamId: change.managerTeamId ? await managerTeam(this.prisma, before, change.managerTeamId) : change.managerTeamId },
       select: RESOURCE_SELECT,
     });
     return present(row, true);
+  }
+
+  /** Its bookings (issue #565) from `from` to `to`, for whoever sees it. */
+  async bookings(user: AuthenticatedUser, resourceId: string, from: string, to: string) {
+    const scope = await ownerScope(this.prisma, user);
+    const row = await this.prisma.client.resource.findUnique({ where: { id: resourceId }, select: { ownerTeamId: true, ownerOrganizationId: true } });
+    if (!row || !canSee(user, scope, row)) throw new NotFoundException("Resource not found");
+    checkRange(from, to);
+    return bookingsOf(this.prisma.client, [], [resourceId], from, to);
   }
 
   /** Events that took it no longer do. */
@@ -130,6 +144,8 @@ function present(row: ResourceRow, canEditIt: boolean) {
     name: row.name,
     quantity: row.quantity,
     location: row.locationId ? { id: row.locationId, name: row.location?.name ?? "" } : null,
+    needsApproval: row.needsApproval,
+    managerTeam: row.managerTeamId ? { id: row.managerTeamId, name: row.managerTeam?.name ?? "" } : null,
     owner: row.ownerTeamId ? { kind: "team" as const, id: row.ownerTeamId, name: row.team?.name ?? "" } : { kind: "organization" as const, id: row.ownerOrganizationId!, name: row.organization?.name ?? "" },
     canEdit: canEditIt,
   };

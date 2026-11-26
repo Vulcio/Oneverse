@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { CreateResourceSchema, ResourcesQuerySchema, UpdateResourceSchema } from "@oneverse/core";
+import { BookingsQuerySchema, CreateResourceSchema, ResourcesQuerySchema, UpdateResourceSchema } from "@oneverse/core";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { zodDto } from "../common/zod-validation.js";
@@ -9,6 +9,7 @@ import { ResourcesService } from "./resources.service.js";
 class CreateResourceDto extends zodDto(CreateResourceSchema) {}
 class UpdateResourceDto extends zodDto(UpdateResourceSchema) {}
 class ResourcesQueryDto extends zodDto(ResourcesQuerySchema) {}
+class BookingsQueryDto extends zodDto(BookingsQuerySchema) {}
 
 /** Resources (issue #564): what an organisation or a team owns that its events book besides rooms. */
 @ApiTags("resources")
@@ -21,6 +22,12 @@ export class ResourcesController {
   @ApiOperation({ summary: "Resources", description: "Those a team's events can take (`teamId`: its own and its organisation's), an organisation's (`organizationId`), else every one the user can use. Each with `canEdit`: its owner's admins." })
   list(@Query() query: ResourcesQueryDto, @SignedIn() user: AuthenticatedUser): ReturnType<ResourcesService["list"]> {
     return this.resources.list(user, query);
+  }
+
+  @Get(":resourceId/bookings")
+  @ApiOperation({ summary: "A resource's bookings (issue #565)", description: "Every booking of it from `from` to `to`: the date, when, how many, and the event and its team or organisation. For whoever sees the resource." })
+  bookings(@Param("resourceId") resourceId: string, @Query() query: BookingsQueryDto, @SignedIn() user: AuthenticatedUser): ReturnType<ResourcesService["bookings"]> {
+    return this.resources.bookings(user, resourceId, query.from, query.to);
   }
 
   @Post()
