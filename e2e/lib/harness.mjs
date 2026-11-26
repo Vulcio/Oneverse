@@ -286,6 +286,11 @@ export async function chooseView(p, view) {
   const on = p.locator(`button[data-testid="chart-view-${view}"][aria-pressed="true"]`);
   for (let i = 0; i < 20 && !(await on.isVisible()); i++) {
     if (!(await tab.isVisible())) {
+      // A view that needs the song's files (PDF) shows its tab once they've loaded: the picker only on a narrow page.
+      if (!(await picker.isVisible())) {
+        await tab.waitFor({ timeout: 1000 }).catch(() => {});
+        continue;
+      }
       await picker.click();
       await tab.click();
       return;
