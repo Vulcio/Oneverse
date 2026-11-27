@@ -1,4 +1,4 @@
-// API-level smoke test for self-service profile: display name, avatar, storage usage, email change.
+// API-level smoke test for self-service profile: display name (first and last), theme, avatar, storage usage, email change.
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { STORAGE_DIR, API, ORIGIN, LOG, stamp, sql, check, finish } from "../lib/harness.mjs";
@@ -44,6 +44,24 @@ check("blank display name rejected", res.status === 400, String(res.status));
 const session = await (await fetch(`${API}/api/auth/get-session`, { headers: { cookie, Origin: ORIGIN } })).json();
 check("session reflects new name", session?.user?.name === "New Name", session?.user?.name);
 
+// a name in two parts, and light or dark on the account (issue #540)
+check("a name never set in two is split at its first space", me.firstName === "New" && me.lastName === "Name", `${me.firstName}|${me.lastName}`);
+me = await (await call("PATCH", "/users/me", { firstName: " Jean Paul ", lastName: "Martin" })).json();
+check("first and last name kept, joined as the name others see", me.firstName === "Jean Paul" && me.lastName === "Martin" && me.displayName === "Jean Paul Martin", JSON.stringify([me.firstName, me.lastName, me.displayName]));
+res = await call("PATCH", "/users/me", { firstName: "", lastName: " " });
+check("both parts empty rejected", res.status === 400, String(res.status));
+me = await (await call("PATCH", "/users/me", { displayName: "One Name" })).json();
+check("a plain name resets the parts", me.firstName === "One" && me.lastName === "Name", `${me.firstName}|${me.lastName}`);
+check("no theme chosen yet", me.theme === null, String(me.theme));
+me = await (await call("PATCH", "/users/me", { theme: "dark" })).json();
+check("theme kept on the account", me.theme === "dark", String(me.theme));
+const themed = await (await fetch(`${API}/api/auth/get-session`, { headers: { cookie, Origin: ORIGIN } })).json();
+check("the session carries the theme", themed?.user?.theme === "dark", String(themed?.user?.theme));
+res = await call("PATCH", "/users/me", { theme: "sepia" });
+check("an unknown theme rejected", res.status === 400, String(res.status));
+me = await (await call("PATCH", "/users/me", { theme: "auto" })).json();
+check("auto follows each device", me.theme === "auto", String(me.theme));
+
 // storage usage
 const usage = await (await call("GET", "/users/me/storage")).json();
 check("storage usage with 50 MB default", usage.usedBytes === 0 && usage.limitBytes === 50 * 1024 * 1024, JSON.stringify(usage));
@@ -85,7 +103,7 @@ offset = readFileSync(LOG, "utf8").length;
 res = await fetch(`${API}/api/auth/change-email`, {
   method: "POST",
   headers: { "Content-Type": "application/json", Origin: ORIGIN, cookie },
-  body: JSON.stringify({ newEmail, callbackURL: `${ORIGIN}/account` }),
+  body: JSON.stringify({ newEmail, callbackURL: `${ORIGIN}/settings/account` }),
 });
 check("change-email request accepted", res.status === 200, String(res.status));
 const log1 = await waitForLink(offset, /To: um-profile-\d+@example\.com\nSubject: Approve your Songverse email change[\s\S]*?https?:\/\/[^\s]+?\/api\/auth\/verify-email\?token=[^\s]+/);

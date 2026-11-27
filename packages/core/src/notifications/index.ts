@@ -100,6 +100,31 @@ export const NOTIFICATION_KINDS = [
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
+/**
+ * The kinds in sections (issue #540), as settings show them: each turned on
+ * or off at once, or opened to choose kind by kind. Every kind is in exactly
+ * one; a new kind goes in the section it reads like. "running" is for those
+ * who run a team or an organisation, ORGANIZATION_REQUESTED for server admins.
+ */
+export const NOTIFICATION_SECTIONS = [
+  { key: "dates", kinds: ["EVENT_DATE_CANCELLED", "EVENT_DATE_CHANGED", "EVENT_DATE_MOVED", "EVENT_CANCELLED", "EVENT_TOMORROW", "SET_READY", "HOSTING"] },
+  { key: "lineups", kinds: ["SCHEDULED", "UNSCHEDULED", "ANSWERS_REQUESTED", "ANSWER_DEADLINE", "ANSWERED_FOR_YOU", "SWAP_OFFERED", "SWAP_TAKEN", "OFFER_CONFIRMED"] },
+  { key: "running", kinds: ["SCHEDULE_DECLINED", "VOLUNTEERED", "VOLUNTEER_WITHDREW", "OFFER_TO_CONFIRM", "TEAM_JOINED", "SET_JOINED", "SET_EDIT_REQUESTED", "SONG_OFFERED", "EVENT_TRANSFER_REQUESTED", "EVENT_TRANSFER_ACCEPTED", "EVENT_TRANSFER_DECLINED", "BOOKING_ASKED", "BOOKING_REQUESTED", "BOOKING_APPROVED", "BOOKING_DECLINED"] },
+  { key: "songs", kinds: ["SONG_SHARED", "SONGBOOK_SHARED", "NOTE_REPLY", "PART_RECORDED", "SUGGESTION_ACCEPTED", "SUGGESTION_DECLINED", "SUBMISSION_PUBLISHED", "SUBMISSION_RETURNED", "SET_EDIT_GRANTED", "SET_EDIT_DECLINED"] },
+  { key: "people", kinds: ["CONNECTION_REQUESTED", "CONNECTION_ACCEPTED", "TEAM_ROLE_CHANGED"] },
+  { key: "organizations", kinds: ["ORGANIZATION_REQUESTED", "ORGANIZATION_APPROVED", "ORGANIZATION_DECLINED"] },
+  { key: "news", kinds: ["ANNOUNCEMENT", "ORGANIZATION_ANNOUNCEMENT", "TEAM_ANNOUNCEMENT"] },
+] as const satisfies readonly { key: string; kinds: readonly NotificationKind[] }[];
+export type NotificationSectionKey = (typeof NOTIFICATION_SECTIONS)[number]["key"];
+
+/** The sections and kinds someone may get (issue #540): "running" only if they run a team or an organisation, a request for an organisation only for server admins. */
+export function notificationSectionsFor(who: { runsTeams: boolean; serverAdmin: boolean }): { key: NotificationSectionKey; kinds: NotificationKind[] }[] {
+  return NOTIFICATION_SECTIONS.filter((section) => section.key !== "running" || who.runsTeams || who.serverAdmin).map((section) => ({
+    key: section.key,
+    kinds: (section.kinds as readonly NotificationKind[]).filter((kind) => kind !== "ORGANIZATION_REQUESTED" || who.serverAdmin),
+  }));
+}
+
 /** A notification's details: what its words are made of. */
 export interface NotificationData {
   event?: string;

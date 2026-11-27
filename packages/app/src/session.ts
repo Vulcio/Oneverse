@@ -18,6 +18,8 @@ export interface AppSession {
   locale: LocaleValue;
   /** Calendars' first day of the week (issue #235): 0 Sunday, 1 Monday, 6 Saturday; null from the language. */
   weekStartsOn: 0 | 1 | 6 | null;
+  /** Light or dark in every app (issue #540); null follows each device. */
+  theme: "light" | "dark" | "auto" | null;
   /** Signed up asking for an organisation, not approved yet (issue #533): Oneverse shows where it stands, the apps send them there. */
   awaitingApproval?: boolean;
 }
@@ -33,7 +35,12 @@ interface BetterAuthUser {
   canUploadAudio?: boolean;
   locale?: string;
   weekStartsOn?: number | null;
+  theme?: string | null;
   awaitingApproval?: boolean;
+}
+
+function asTheme(value: string | null | undefined): "light" | "dark" | "auto" | null {
+  return value === "light" || value === "dark" || value === "auto" ? value : null;
 }
 
 function asLocale(value: string): LocaleValue {
@@ -75,6 +82,7 @@ export async function loadSession(): Promise<AppSession | null> {
     canUploadAudio: Boolean(data.user.canUploadAudio),
     locale: asLocale(data.user.locale ?? DEFAULT_LOCALE),
     weekStartsOn: data.user.weekStartsOn === 0 || data.user.weekStartsOn === 1 || data.user.weekStartsOn === 6 ? data.user.weekStartsOn : null,
+    theme: asTheme(data.user.theme),
     ...(data.user.awaitingApproval ? { awaitingApproval: true } : {}),
   };
 }
@@ -91,6 +99,7 @@ interface Me {
   canUploadAudio: boolean;
   locale: string;
   weekStartsOn: number | null;
+  theme?: string | null;
   awaitingApproval?: boolean;
 }
 
@@ -116,6 +125,7 @@ async function loadClientSession(): Promise<AppSession | null> {
     canUploadAudio: me.canUploadAudio,
     locale: asLocale(me.locale),
     weekStartsOn: me.weekStartsOn === 0 || me.weekStartsOn === 1 || me.weekStartsOn === 6 ? me.weekStartsOn : null,
+    theme: asTheme(me.theme),
     ...(me.awaitingApproval ? { awaitingApproval: true } : {}),
   };
 }

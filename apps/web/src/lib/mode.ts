@@ -101,6 +101,12 @@ export function setTheme(theme: Theme) {
   changed();
 }
 
+/** The account's light or dark (issue #540), shown on this device: "device" follows it. */
+export function setThemeChoice(choice: Theme | "device") {
+  store(THEME_KEY, choice === "device" ? null : choice);
+  changed();
+}
+
 /** The current mode and theme (Live's is always dark); Edit, light, while rendering on the server. */
 export function useMode(): Snapshot {
   return useSyncExternalStore(subscribe, snapshot, () => SERVER);

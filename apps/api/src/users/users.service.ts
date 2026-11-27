@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { INSTRUMENTS, type AppLink, mergeDisplaySettings, orderInstruments, orderTechRoles, type SavedDisplaySettings } from "@oneverse/core";
+import { ACCOUNT_THEMES, INSTRUMENTS, joinedName, nameParts, type AccountThemeValue, type AppLink, mergeDisplaySettings, orderInstruments, orderTechRoles, type SavedDisplaySettings } from "@oneverse/core";
 import type { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { ImageService } from "../images/image.service.js";
@@ -16,8 +16,11 @@ const SELECT = {
   id: true,
   email: true,
   displayName: true,
+  firstName: true,
+  lastName: true,
   avatarUrl: true,
   locale: true,
+  theme: true,
   displayMode: true,
   capoDisplayMode: true,
   chordNotation: true,
@@ -53,13 +56,15 @@ function asksProfile(user: { instruments: string[]; techRoles: string[]; profile
 }
 
 /** Stored roles no longer on the lists are dropped, the rest shown in list order; whether to ask what they play (issue #109), not when they skipped it. */
-function toProfile<T extends { instruments: string[]; techRoles: string[]; profilePromptSkippedAt: Date | null; awaitingApprovalSince?: Date | null }>(user: T, customInstruments: readonly string[]) {
+function toProfile<T extends { displayName: string; firstName: string | null; lastName: string | null; theme: string | null; instruments: string[]; techRoles: string[]; profilePromptSkippedAt: Date | null; awaitingApprovalSince?: Date | null }>(user: T, customInstruments: readonly string[]) {
   const rest: Omit<T, "profilePromptSkippedAt" | "awaitingApprovalSince"> & { profilePromptSkippedAt?: Date | null; awaitingApprovalSince?: Date | null } = { ...user };
   delete rest.profilePromptSkippedAt;
   delete rest.awaitingApprovalSince;
   // Waiting for their organisation's approval (issue #533): a global admin never waits.
   const awaitingApproval = !!user.awaitingApprovalSince && !(user as { isGlobalAdmin?: boolean }).isGlobalAdmin;
-  return { ...(rest as Omit<T, "profilePromptSkippedAt" | "awaitingApprovalSince">), instruments: orderInstruments(user.instruments, customInstruments), techRoles: orderTechRoles(user.techRoles), askProfile: asksProfile(user), awaitingApproval };
+  // The name in two parts and the theme (issue #540): a name never set in two is displayName split.
+  const theme: AccountThemeValue | null = (ACCOUNT_THEMES as readonly string[]).includes(user.theme ?? "") ? (user.theme as AccountThemeValue) : null;
+  return { ...(rest as Omit<T, "profilePromptSkippedAt" | "awaitingApprovalSince">), ...nameParts(user), theme, instruments: orderInstruments(user.instruments, customInstruments), techRoles: orderTechRoles(user.techRoles), askProfile: asksProfile(user), awaitingApproval };
 }
 
 @Injectable()
@@ -134,12 +139,25 @@ export class UsersService {
           dto.displaySettings,
         )
       : undefined;
+    // The name in two parts (issue #540): what isn't sent stays as it was, and others see them joined.
+    let names: { firstName: string; lastName: string; displayName: string } | undefined;
+    if (dto.firstName !== undefined || dto.lastName !== undefined) {
+      const current = nameParts(await this.prisma.client.user.findUniqueOrThrow({ where: { id: userId }, select: { displayName: true, firstName: true, lastName: true } }));
+      const firstName = (dto.firstName ?? current.firstName).trim();
+      const lastName = (dto.lastName ?? current.lastName).trim();
+      const displayName = joinedName(firstName, lastName);
+      if (!displayName) throw new BadRequestException(["firstName and lastName must not both be empty"]);
+      names = { firstName, lastName, displayName };
+    }
     const user = await this.prisma.client.user.update({
       where: { id: userId },
       data: {
         ...(displaySettings && { displaySettings: displaySettings as Prisma.InputJsonValue }),
         locale: dto.locale,
-        displayName: dto.displayName,
+        // A name in one piece (an older client) starts over: shown as it was typed, split again when read.
+        ...(dto.displayName !== undefined && !names && { displayName: dto.displayName, firstName: null, lastName: null }),
+        ...names,
+        theme: dto.theme,
         capoDisplayMode: dto.capoDisplayMode,
         chordNotation: dto.chordNotation,
         liveView: dto.liveView,

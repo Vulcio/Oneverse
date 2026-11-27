@@ -22,8 +22,9 @@ await step("add a passkey from the account settings", async () => {
   await signIn(page, me);
   // Songverse's settings send there.
   await page.goto(`${WEB}/dashboard#settings`);
-  await page.getByTestId("oneverse-account").getByRole("link", { name: "Manage at Oneverse" }).click();
-  await page.waitForURL(`${ONEVERSE}/account`);
+  await page.waitForURL(`${WEB}/settings/account`);
+  await page.getByTestId("oneverse-account").getByRole("link", { name: "Change at Oneverse" }).click();
+  await page.waitForURL(`${ONEVERSE}/settings/account`);
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Name (optional)").fill("My laptop");
   await page.getByRole("button", { name: "Add a passkey" }).click();

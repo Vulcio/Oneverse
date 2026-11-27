@@ -1,9 +1,7 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { MovedToSettings } from "@oneverse/app/components/moved-to-settings";
 
-// Account settings now live on the dashboard; kept so old links and
-// bookmarks still land somewhere useful.
+// Settings moved to one page (issue #540); old links and bookmarks land there, notifications' too.
 export const Route = createFileRoute("/_protected/account")({
-  beforeLoad: () => {
-    throw redirect({ to: "/dashboard", hash: "settings", replace: true });
-  },
+  component: () => <MovedToSettings moved={{ notifications: { section: "notifications" } }} />,
 });

@@ -1,10 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { DISPLAY_MODES, CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, LIVE_VIEWS, VOICING_PREFERENCES, SUPPORTED_LOCALES, TECH_ROLES } from "@oneverse/core";
+import { DISPLAY_MODES, CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, LIVE_VIEWS, VOICING_PREFERENCES, SUPPORTED_LOCALES, TECH_ROLES, ACCOUNT_THEMES } from "@oneverse/core";
 
 export class UserResponseDto {
   @ApiProperty() id!: string;
   @ApiProperty() email!: string;
   @ApiProperty() displayName!: string;
+  @ApiProperty({ description: "The name in two parts (issue #540): what was set, else displayName split at its first space" }) firstName!: string;
+  @ApiProperty() lastName!: string;
+  @ApiProperty({ enum: ACCOUNT_THEMES, nullable: true, description: "Light, dark or auto in every app (issue #540); null when never chosen, each device keeping its own" }) theme!: (typeof ACCOUNT_THEMES)[number] | null;
   @ApiProperty({ required: false, nullable: true }) avatarUrl!: string | null;
   @ApiProperty({ enum: SUPPORTED_LOCALES }) locale!: (typeof SUPPORTED_LOCALES)[number];
   @ApiProperty({ enum: DISPLAY_MODES }) displayMode!: (typeof DISPLAY_MODES)[number];

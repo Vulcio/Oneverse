@@ -15,7 +15,7 @@ function songverseUrl(): string | null {
 /** A set's own address, which opens its running order in the Oneverse app (issue #521). */
 const SET_PATH = /^\/sets\/[^/?#]+($|[?#])/;
 
-const PLANIVERSE_PATHS = /^\/(calendar|events|teams|organizations|account|notifications)(\/|$|[?#])/;
+const PLANIVERSE_PATHS = /^\/(calendar|events|teams|organizations|account|settings|notifications)(\/|$|[?#])/;
 
 /**
  * Planiverse's pages (issue #241); a set opens as its running order in the
@@ -35,7 +35,7 @@ export function planningHost(): PlanningHost {
       organizationEvents: (organizationId) => `/organizations/${organizationId}/events`,
       eventDate: (eventId, date) => `/events/${eventId}/${date}`,
       notifications: "/notifications",
-      notificationSettings: "/account#notifications",
+      notificationSettings: "/settings/notifications",
       // Its own pages here, and a set's running order (/sets/:id redirects there); the rest (a song, People) in Songverse - or My calendar without it.
       calendar: (of) => (of === "me" ? "/calendar" : `/calendar?of=${encodeURIComponent(of)}`),
       notification: (url) => (PLANIVERSE_PATHS.test(url) || SET_PATH.test(url) ? url : songverse ? `${songverse}${url}` : "/calendar"),

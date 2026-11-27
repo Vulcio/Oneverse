@@ -1,0 +1,7 @@
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/_protected/settings/")({
+  beforeLoad: () => {
+    throw redirect({ to: "/settings/$section", params: { section: "account" }, replace: true });
+  },
+});

@@ -50,7 +50,7 @@ await step("sign in and open account settings", async () => {
   await page.fill("#signin-password", "hunter2pass");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL("**/library");
-  await page.goto(`${WEB}/account`);
+  await page.goto(`${WEB}/settings/account`);
   await page.waitForLoadState("networkidle");
 });
 

@@ -41,7 +41,7 @@ async function choose(label, value) {
 }
 
 await step("Chart display: Nashville numbers; the key change keeps them, the capo too", async () => {
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.waitForLoadState("networkidle");
   await choose("Chord names", "NASHVILLE");
   await choose("With a capo", "FINGERED");
@@ -62,7 +62,7 @@ await step("Roman numerals from the Display panel (issue #220): Practice only, t
 });
 
 await step("Chart display: colours by chord type", async () => {
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.waitForLoadState("networkidle");
   await choose("Chord colours", "ON");
   await page.goto(`${WEB}/library/${song.id}`);

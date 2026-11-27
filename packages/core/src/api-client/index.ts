@@ -29,6 +29,7 @@ import type {
   SetTransitionValue,
   SetlistItemKind,
   TechRoleValue,
+  AccountThemeValue,
 } from "../constants/index.js";
 import type { ArrangementDocumentV2, ChartPreferences } from "../schemas/arrangement-document-v2.js";
 import type { CatalogEntryData, CatalogEntryFieldKey, CatalogFileProblem } from "../songbook-catalog-format/index.js";
@@ -817,8 +818,13 @@ export interface UserProfile {
   id: string;
   email: string;
   displayName: string;
+  /** The name in two parts (issue #540): what was set, else displayName split at its first space. */
+  firstName: string;
+  lastName: string;
   avatarUrl: string | null;
   locale: string;
+  /** Light or dark in every app (issue #540); null follows each device. */
+  theme: AccountThemeValue | null;
   isGlobalAdmin: boolean;
   /** From their roles, or their teams' (issue #160). */
   isReviewer: boolean;
@@ -2263,6 +2269,10 @@ export interface MyNotificationPreferences {
   emailAvailable: boolean;
   /** The server's VAPID public key, to turn a device on; null: push isn't set up. */
   pushKey: string | null;
+  /** Admin of a team or an organisation (issue #540): "Teams you run" is shown. Left out by an older API. */
+  runsTeams?: boolean;
+  /** A server admin: asks for an organisation reach them. */
+  serverAdmin?: boolean;
 }
 
 /** A device someone turned notifications on for (issue #236). */
@@ -3430,6 +3440,13 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     updateMe: (data: {
       locale?: string;
       displayName?: string;
+      /** The name in two parts (issue #540): displayName becomes them joined. */
+      firstName?: string;
+      lastName?: string;
+      /** Light or dark on every app (issue #540); null follows the device. */
+      theme?: AccountThemeValue | null;
+      /** 0 Sunday, 1 Monday, 6 Saturday; null from the language. */
+      weekStartsOn?: 0 | 1 | 6 | null;
       instruments?: string[];
       techRoles?: TechRoleValue[];
       capoDisplayMode?: CapoDisplayModeValue;

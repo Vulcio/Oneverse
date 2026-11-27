@@ -89,7 +89,7 @@ Teams and organisations also make roles of their own, on their pages, with the s
 
 ### Instruments
 
-The instruments people can pick as what they play (see [Roles](/account/#roles)). Under **Added**, add one the list lacks with its **Name** and, if it differs, its name **In French** (**Add instrument**); **Rename** changes it, **Remove** takes it away, and off whoever had picked it. **On the list already** shows the built-in ones.
+The instruments people can pick as what they play (see [Roles](/account/#what-you-play-or-do)). Under **Added**, add one the list lacks with its **Name** and, if it differs, its name **In French** (**Add instrument**); **Rename** changes it, **Remove** takes it away, and off whoever had picked it. **On the list already** shows the built-in ones.
 
 ### Auth
 

@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { NEW_NOTES, NOTE_COLORS, NOTE_LOOKS, NOTE_PLACEMENTS, NOTE_SHOWS, NOTE_SIZES } from "../notes/index.js";
-import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, CHART_LOOKS, CHART_SECTION_COLORS, CHART_CURRENT, CHART_CHORUS_AGAIN, WORDS_SUNG, METRONOME_DISPLAYS, METRONOME_LIGHT_UP, METRONOME_BRIGHTNESSES, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
+import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, CHART_LOOKS, CHART_SECTION_COLORS, CHART_CURRENT, CHART_CHORUS_AGAIN, WORDS_SUNG, METRONOME_DISPLAYS, METRONOME_LIGHT_UP, METRONOME_BRIGHTNESSES, SUPPORTED_LOCALES, ACCOUNT_THEMES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
 import { isTuningId, type InstrumentId } from "../chords/shapes.js";
 import { clearableInt, clearableText, optional, requiredText } from "./fields.js";
 
@@ -129,6 +129,11 @@ export const UpdateUserSchema = z.strictObject({
   displaySettings: optional(z.strictObject({ EDIT: optional(DisplaySettingsSchema), PRACTICE: optional(DisplaySettingsSchema), LIVE: optional(DisplaySettingsSchema) })),
   locale: optional(z.enum(SUPPORTED_LOCALES)),
   displayName: optional(requiredText(80)),
+  // The name in two parts (issue #540): saved together, displayName becomes them joined.
+  firstName: optional(z.string().trim().max(60)),
+  lastName: optional(z.string().trim().max(60)),
+  // Light or dark in every app; null follows each device.
+  theme: z.enum(ACCOUNT_THEMES).nullable().optional().describe("light, dark or auto (each device as it is) in every app; null, never chosen: each device keeps its own"),
   // A built-in instrument's key, or the id of one an admin added (issue #166); the API keeps the known ones.
   instruments: optional(z.array(z.string().trim().min(1).max(40)).max(INSTRUMENTS.length + 100)),
   techRoles: optional(z.array(z.enum(TECH_ROLES)).max(TECH_ROLES.length)),

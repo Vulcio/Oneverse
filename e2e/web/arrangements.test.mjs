@@ -177,7 +177,7 @@ const saved = (select, value) =>
   }, [select, value], { timeout: 10000 });
 
 await step("chord names and capo display are also set from the dashboard", async () => {
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Chord names").selectOption({ label: "Solfège (Do Ré Mi)" });
   await saved("#chord-notation", "SOLFEGE");
@@ -186,7 +186,7 @@ await step("chord names and capo display are also set from the dashboard", async
   await page.goto(`${WEB}/sets/${set.id}/songs/${itemId}`);
   await page.waitForLoadState("networkidle");
   await chord("Mim").first().waitFor(); // F#m as capo 2 shapes (Em), in solfège
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Chord names").selectOption({ label: "Letters (C D E)" });
   await saved("#chord-notation", "LETTERS");

@@ -9,8 +9,8 @@ const CHOICES: { value: ThemeChoice; icon: LucideIcon }[] = [
   { value: "device", icon: Monitor },
 ];
 
-/** Light, dark, or as the device is (issue #422), remembered on this device. */
-export function ThemeSwitch({ className }: { className?: string }) {
+/** Light, dark, or as the device is (issue #422), remembered on this device; signed in, `onChange` keeps it on the account too (issue #540). */
+export function ThemeSwitch({ className, onChange }: { className?: string; onChange?: (choice: ThemeChoice) => void }) {
   const { t } = useTranslation();
   const choice = useThemeChoice();
   return (
@@ -24,7 +24,10 @@ export function ThemeSwitch({ className }: { className?: string }) {
           aria-label={t(`theme.${value}`)}
           title={t(`theme.${value}`)}
           data-testid={`theme-${value}`}
-          onClick={() => setThemeChoice(value)}
+          onClick={() => {
+            setThemeChoice(value);
+            onChange?.(value);
+          }}
           className={cn(
             "flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 [&_svg]:size-4",
             choice === value && "bg-accent text-accent-foreground",

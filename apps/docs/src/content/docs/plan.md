@@ -9,7 +9,7 @@ Oneverse Plan (called Planiverse before) is Songverse's planning on its own: [My
 
 ## Signing in
 
-It's the same account as Songverse's, your Oneverse account: Oneverse Plan sends you to Oneverse to sign in (see [Signing in](/getting-started/#signing-in)), and back. Signing up from there makes an account that works in both: the email's link brings you back to Oneverse Plan. **Account settings**, in the menu under your picture, changes your name, picture and language, and **Manage at Oneverse** your email, password and passkeys, as in [your account](/account/) in Songverse; **Help** opens this page.
+It's the same account as Songverse's, your Oneverse account: Oneverse Plan sends you to Oneverse to sign in (see [Signing in](/getting-started/#signing-in)), and back. Signing up from there makes an account that works in both: the email's link brings you back to Oneverse Plan. **Settings**, in the menu under your picture, is the same page as in every app (see [Your account](/account/)): your name, picture, language and appearance, your notifications, and **Oneverse Plan**'s own - your availability, the first day of the week and your calendar link; **Change at Oneverse** changes your email, password and passkeys; **Help** opens this page.
 
 ## What's there
 
@@ -36,4 +36,4 @@ An invite link to an organisation or a team, opened on Oneverse Plan, joins you 
 
 ## Notifications
 
-The bell beside your picture lists your notifications, as in Songverse. **Account settings** also chooses how each kind reaches you, and turns them on for the device you're on. Notifications about a team that only plans, or an event you host, are Oneverse Plan's: their emails open Oneverse Plan, and they go to the devices you turned on in Oneverse Plan (to your others if there are none). The rest are Songverse's: pressing one about a song or your people opens it in Songverse, and one about a set its running order in the Oneverse app. **See all** opens the **Notifications** page.
+The bell beside your picture lists your notifications, as in Songverse. **Settings** > **Notifications** chooses how each kind reaches you, and turns them on for the device you're on. Notifications about a team that only plans, or an event you host, are Oneverse Plan's: their emails open Oneverse Plan, and they go to the devices you turned on in Oneverse Plan (to your others if there are none). The rest are Songverse's: pressing one about a song or your people opens it in Songverse, and one about a set its running order in the Oneverse app. **See all** opens the **Notifications** page.

@@ -89,7 +89,7 @@ await step("switching language in the app loads the new one and the page follows
   page.on("request", (request) => messagesOf(request.url()) && loaded.add(messagesOf(request.url())));
   const switcher = await user("Language switcher");
   await signIn(page, switcher);
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/account`);
   await page.waitForLoadState("networkidle");
   if ((await page.getAttribute("html", "lang")) !== "en" || loaded.has("fr")) throw new Error(`before: lang ${await page.getAttribute("html", "lang")}, loaded ${[...loaded]}`);
   await page.locator("#locale").selectOption("fr");

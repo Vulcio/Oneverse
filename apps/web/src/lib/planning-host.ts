@@ -15,7 +15,7 @@ export const planningHost: PlanningHost = {
     organizationEvents: (organizationId) => `/organizations/${organizationId}/events`,
     eventDate: (eventId, date) => `/events/${eventId}/${date}`,
     notifications: "/notifications",
-    notificationSettings: "/dashboard#notifications",
+    notificationSettings: "/settings/notifications",
     notification: (url) => url,
     // With Plan deployed (issue #551), events and event types are made there, in its Calendar.
     manageEvents: (of) => {

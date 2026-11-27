@@ -34,9 +34,9 @@ export interface AnnouncementTeam {
 
 /** Pages of the app an announcement can lead to, by their name in the reader's language. */
 const PAGES = [
-  ["roles", "/dashboard#roles"],
-  ["settings", "/dashboard#settings"],
-  ["notifications", "/dashboard#notifications"],
+  ["roles", "/settings/songverse#roles"],
+  ["settings", "/settings/account"],
+  ["notifications", "/settings/notifications"],
   ["calendar", "/calendar"],
   ["sets", "/sets"],
   ["library", "/library"],

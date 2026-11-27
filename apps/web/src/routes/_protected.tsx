@@ -12,6 +12,8 @@ import { WeekStartContext } from "@oneverse/ui/lib/dates";
 import { PlanningProvider } from "@oneverse/planning/host";
 import { planningHost } from "#/lib/planning-host";
 import { AppToaster } from "@oneverse/app/components/app-toaster";
+import { useAccountTheme } from "@oneverse/app/components/account-cards";
+import { setThemeChoice } from "#/lib/mode";
 
 /**
  * Pathless layout route — gates every route nested under `_protected/` in
@@ -27,7 +29,7 @@ export const Route = createFileRoute("/_protected")({
       throw redirect({ to: "/", search: { next: location.href } });
     }
     // Waiting for their organisation's approval (issue #533): Oneverse shows where it stands.
-    if (data.session.awaitingApproval) throw redirect({ href: `${oneverseUrl()}/account`, reloadDocument: true });
+    if (data.session.awaitingApproval) throw redirect({ href: `${oneverseUrl()}/settings/account`, reloadDocument: true });
     await loadLocale(data.session.locale);
     return data;
   },
@@ -49,6 +51,8 @@ function RouteComponent() {
   // every render - see createI18n's own note on why this isn't a
   // module-level singleton.
   const i18n = useMemo(() => createI18n(session.locale), [session.locale]);
+  // Edit and Practice light or dark as the account says (issue #540); Live stays dark.
+  useAccountTheme(session.theme, setThemeChoice);
 
   return (
     <I18nextProvider i18n={i18n}>

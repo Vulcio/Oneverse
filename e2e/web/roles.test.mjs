@@ -1,4 +1,4 @@
-// Browser test for the merged dashboard + roles (issue #17).
+// Browser test for the dashboard and what one plays or does (issues #17, #540).
 import { chromium } from "playwright";
 import { WEB, SP, stamp, tag, sql, stepper, user, api, signIn, finish } from "../lib/harness.mjs";
 
@@ -28,31 +28,28 @@ page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 
 await signIn(page, member);
 
-await step("dashboard shows overview and settings together", async () => {
+await step("the dashboard is the overview; what you play or do is in Settings > Songverse (issue #540)", async () => {
   await page.goto(`${WEB}/dashboard`);
   await page.waitForLoadState("networkidle");
   await page.getByRole("heading", { name: "Welcome back, Member Roles" }).waitFor();
-  for (const name of ["Recently updated", "Teams", "Profile", "Roles", "Your Oneverse account", "Storage", "Language"]) {
+  for (const name of ["Recently updated", "Teams"]) {
     if ((await page.getByText(name, { exact: true }).count()) === 0) throw new Error(`missing ${name}`);
   }
-  await page.getByRole("link", { name: "Add what you play or do" }).waitFor();
+  if ((await page.getByText("Storage", { exact: true }).count()) > 0) throw new Error("the settings should have left the dashboard");
+  await page.getByRole("link", { name: "Add what you play or do" }).click();
+  await page.waitForURL(/\/settings\/songverse#roles$/);
+  await page.waitForLoadState("networkidle");
+  await page.getByText("Storage", { exact: true }).waitFor();
 });
-await page.screenshot({ path: `${SP}/roles-dashboard-empty.png`, fullPage: true });
+await page.screenshot({ path: `${SP}/roles-settings-empty.png`, fullPage: true });
 
-await step("/account redirects to the dashboard's settings", async () => {
+await step("old links land in Settings", async () => {
   await page.goto(`${WEB}/account`);
-  await page.waitForURL(/\/dashboard#settings$/);
+  await page.waitForURL(/\/settings\/account$/);
+  await page.goto(`${WEB}/dashboard#roles`);
+  await page.waitForURL(/\/settings\/songverse#roles$/);
   await page.waitForLoadState("networkidle");
-  await page.getByRole("heading", { name: "Settings" }).waitFor();
-});
-
-await step("sidebar menu's Account settings goes to the settings section", async () => {
-  await page.goto(`${WEB}/library`);
-  await page.waitForLoadState("networkidle");
-  await page.locator("[data-slot=sidebar-footer] button").first().click();
-  await page.getByRole("menuitem", { name: "Account settings" }).click();
-  await page.waitForURL(/\/dashboard#settings$/);
-  await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: "Save roles" }).waitFor();
 });
 
 await step("pick instruments and a role, save, badges appear in the header", async () => {
@@ -64,25 +61,21 @@ await step("pick instruments and a role, save, badges appear in the header", asy
   if ((await page.getByRole("button", { name: "Drums", exact: true }).getAttribute("aria-pressed")) !== "true") throw new Error("not pressed");
   await save.click();
   await page.getByText("Saved.", { exact: true }).waitFor();
+  await page.goto(`${WEB}/dashboard`);
   await headerBadges("Lead vocals|Drums|Audio operator");
   if (sql(`select array_to_string(instruments, ',') || ';' || array_to_string("techRoles", ',') from "User" where id='${member.id}'`) !== "LEAD_VOCALS,DRUMS;SOUND_ENGINEER") throw new Error("db mismatch");
 });
 
 await step("roles survive a reload; unticking and saving removes one", async () => {
-  await page.reload();
+  await page.goto(`${WEB}/settings/songverse`);
   await page.waitForLoadState("networkidle");
   if ((await page.getByRole("button", { name: "Lead vocals", exact: true }).getAttribute("aria-pressed")) !== "true") throw new Error("lost after reload");
   await page.getByRole("button", { name: "Drums", exact: true }).click();
   await page.getByRole("button", { name: "Save roles" }).click();
   await page.getByText("Saved.", { exact: true }).waitFor();
+  await page.screenshot({ path: `${SP}/roles-settings.png`, fullPage: true });
+  await page.goto(`${WEB}/dashboard`);
   await headerBadges("Lead vocals|Audio operator");
-});
-await page.screenshot({ path: `${SP}/roles-dashboard.png`, fullPage: true });
-
-await step("profile name change still works from the dashboard", async () => {
-  await page.fill("#display-name", "Member Renamed");
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await page.getByRole("heading", { name: "Welcome back, Member Renamed" }).waitFor();
 });
 
 await step("team page shows members' roles", async () => {
@@ -97,7 +90,7 @@ await page.screenshot({ path: `${SP}/roles-team.png`, fullPage: true });
 
 await step("French labels", async () => {
   await api(member, "PATCH", "/users/me", { locale: "fr" });
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.waitForLoadState("networkidle");
   await page.getByRole("heading", { name: "Paramètres" }).waitFor();
   await page.getByRole("button", { name: "Chant principal", exact: true }).waitFor();
@@ -107,7 +100,7 @@ await step("French labels", async () => {
 
 await step("phone width: no horizontal scroll", async () => {
   await page.setViewportSize({ width: 390, height: 900 });
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.waitForLoadState("networkidle");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 0) throw new Error(`overflows by ${overflow}px`);

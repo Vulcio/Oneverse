@@ -92,7 +92,8 @@ try {
 
   await step("the account's settings from the header", async () => {
     await page.getByTestId("account-link").click();
-    await page.waitForURL(`${ONEVERSE}/account`);
+    await page.waitForURL(`${ONEVERSE}/settings/account`);
+    await page.getByTestId("settings-account").waitFor();
     await page.getByTestId("home-link").click();
     await page.waitForURL(`${ONEVERSE}/`);
     await page.getByTestId("home").waitFor();

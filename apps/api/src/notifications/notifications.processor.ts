@@ -158,7 +158,7 @@ export class NotificationsProcessor extends WorkerHost {
           open: messages.notifications.email.open.replace("{{app}}", first.app === "planiverse" && job.planiverseUrl ? "Oneverse Plan" : "Songverse"),
           url: linkOf(job, first.app, path),
           why: messages.notifications.email.why,
-          settingsUrl: `${appUrl(job, first.app)}/account`,
+          settingsUrl: `${appUrl(job, first.app)}/settings/notifications`,
         });
         emailed += 1;
       }
@@ -234,7 +234,7 @@ export class NotificationsProcessor extends WorkerHost {
     const user = await this.prisma.client.user.findUnique({ where: { id: job.userId }, select: { locale: true } });
     const devices = await this.prisma.client.pushSubscription.findMany({ where: { userId: job.userId } });
     const messages = MESSAGES[user?.locale ?? "en"] ?? en;
-    const { sent, errors } = await this.toDevices(devices, { title: messages.notifications.testTitle, body: messages.notifications.testBody, url: "/dashboard#notifications", tag: "test" }, config, job.webUrl);
+    const { sent, errors } = await this.toDevices(devices, { title: messages.notifications.testTitle, body: messages.notifications.testBody, url: "/settings/notifications", tag: "test" }, config, job.webUrl);
     // Reaching no device is a failure Admin > Background jobs shows, with why.
     if (sent === 0 && errors.length > 0) throw new Error(`The test push reached no device: ${errors.join("; ")}`);
     return sent;

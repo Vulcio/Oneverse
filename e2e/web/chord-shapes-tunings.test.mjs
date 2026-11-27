@@ -64,7 +64,7 @@ await step("a chord's card shows every shape; one tap keeps it for this song", a
 });
 
 await step("a tuning of one's own, typed as its strings", async () => {
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.waitForLoadState("networkidle");
   await page.getByTestId("account-tuning").selectOption("__own__");
   await page.getByTestId("account-tuning-own").fill("C G D G B D");

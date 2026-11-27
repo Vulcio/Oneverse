@@ -31,11 +31,12 @@ export function AppHeader({ awaitingApproval = false }: { awaitingApproval?: boo
             <span className="hidden sm:inline">{t("nav.teams")}</span>
           </Button>
         )}
-        <Button variant="ghost" size="sm" aria-label={t("nav.account")} render={<Link to="/account" data-testid="account-link" />}>
+        <Button variant="ghost" size="sm" aria-label={t("nav.account")} render={<Link to="/settings/$section" params={{ section: "account" }} data-testid="account-link" />}>
           <UserRound />
           <span className="hidden sm:inline">{t("nav.account")}</span>
         </Button>
-        <ThemeSwitch />
+        {/* Kept on the account (issue #540), so every app and device follows. */}
+        <ThemeSwitch onChange={(choice) => void apiClient.updateMe({ theme: choice === "device" ? "auto" : choice })} />
         <Button
           variant="ghost"
           size="sm"

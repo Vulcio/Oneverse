@@ -49,7 +49,7 @@ try {
   await step("Account: this device turned on, listed as this device", async () => {
     await page.context().clearCookies();
     await signIn(page, member);
-    await page.goto(`${WEB}/dashboard`);
+    await page.goto(`${WEB}/settings/notifications`);
     const card = page.getByTestId("notification-settings");
     await card.getByTestId("push-on").click();
     await card.locator("[data-device]").getByText("This device").waitFor();
@@ -100,7 +100,7 @@ try {
 
   await step("bell: Notification settings opens the card", async () => {
     await page.getByTestId("notification-settings-link").click();
-    await page.waitForURL(/\/dashboard#notifications$/);
+    await page.waitForURL(/\/settings\/notifications$/);
     await page.getByTestId("notification-settings").getByTestId("push-off").waitFor();
   });
 

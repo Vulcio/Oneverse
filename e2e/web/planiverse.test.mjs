@@ -105,14 +105,18 @@ try {
     if (!mine.organizations.some((one) => one.id === org.id)) throw new Error("not in the organisation");
   });
 
-  await step("the menu: Teams, every one of theirs, sub-groups under their group; Account settings, here", async () => {
+  await step("the menu: Teams, every one of theirs, sub-groups under their group; Settings, here", async () => {
     await page.getByTestId("nav-teams").click();
     await page.getByTestId("teams-list").getByText(`Welcome ${stamp}`).waitFor();
     await page.getByTestId("teams-list").locator('[data-depth="1"]', { hasText: `Parking ${stamp}` }).waitFor();
     await page.getByTestId("user-menu").click();
     await page.getByTestId("nav-account").click();
-    await page.waitForURL(`${PLANIVERSE}/account`);
-    await page.getByLabel("Display name").waitFor();
+    await page.waitForURL(`${PLANIVERSE}/settings/account`);
+    await page.getByLabel("First name").waitFor();
+    // Oneverse Plan's own settings are here; Songverse's open in Songverse (issue #540).
+    await page.getByTestId("settings-tab-plan").click();
+    await page.waitForURL(`${PLANIVERSE}/settings/plan`);
+    await page.getByTestId("plan-settings").getByTestId("week-start").waitFor();
     await page.getByTestId("notification-bell").waitFor();
   });
 

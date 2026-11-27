@@ -106,7 +106,7 @@ await step("the player's default (their settings): PDF for a song they haven't c
   f.append("type", "PDF");
   f.append("file", new Blob([await doc.save()], { type: "application/pdf" }), "Fresh.pdf");
   await fetch(`${API}/song-versions/${fresh.id}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${me.bearer}` }, body: f });
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.getByLabel("Songs read as").selectOption("PDF");
   for (let i = 0; i < 50 && (await api(me, "GET", "/users/me")).liveView !== "PDF"; i++) await page.waitForTimeout(100);
   await page.goto(`${WEB}/library/${fresh.id}`);

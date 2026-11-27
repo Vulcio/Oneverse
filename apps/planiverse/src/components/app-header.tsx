@@ -47,7 +47,7 @@ export function AppHeader({ session }: { session: AppSession }) {
               <span className="text-xs font-normal text-muted-foreground">{session.email}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link to="/account" />} data-testid="nav-account">
+            <DropdownMenuItem render={<Link to="/settings/$section" params={{ section: "account" }} />} data-testid="nav-account">
               <UserRound />
               {t("nav.account")}
             </DropdownMenuItem>

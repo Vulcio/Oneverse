@@ -214,7 +214,7 @@ export function AccountMenuContent({ session, side, align }: { session: AppSessi
             <LayoutDashboard />
             {t("nav.dashboard")}
           </DropdownMenuLinkItem>
-        <DropdownMenuLinkItem render={<Link to="/dashboard" hash="settings" />}>
+        <DropdownMenuLinkItem render={<Link to="/settings/$section" params={{ section: "account" }} />} data-testid="nav-settings">
             <KeyRound />
             {t("nav.account")}
           </DropdownMenuLinkItem>
@@ -264,7 +264,12 @@ function ThemeToggle() {
       className="flex size-8 shrink-0 items-center justify-center rounded-md border text-muted-foreground hover:bg-accent hover:text-accent-foreground [&_svg]:size-4"
       aria-label={label}
       title={label}
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={() => {
+        const next = theme === "dark" ? "light" : "dark";
+        setTheme(next);
+        // Kept on the account (issue #540), so every app and device follows.
+        void apiClient.updateMe({ theme: next }).catch(() => {});
+      }}
     >
       {theme === "dark" ? <Sun /> : <Moon />}
     </button>

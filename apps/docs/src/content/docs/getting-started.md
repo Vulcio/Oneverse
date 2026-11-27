@@ -17,7 +17,7 @@ On some of those, you can also sign up by asking for your organisation: **Sign u
 
 ## Your first steps
 
-Once your email is verified, you land in your library, empty for now. Songverse asks **What do you play or do?** (see [Roles](/account/#roles)), and the library shows **Getting started**, the steps from your first song to a set with your band, each ticked as you do it:
+Once your email is verified, you land in your library, empty for now. Songverse asks **What do you play or do?** (see [Roles](/account/#what-you-play-or-do)), and the library shows **Getting started**, the steps from your first song to a set with your band, each ticked as you do it:
 
 1. **Turn on notifications** - so you hear about the sets you're in, invites and changes on this phone or computer, even when Songverse is closed. **Turn on notifications** asks your browser for permission (see [Notifications](/account/#notifications)). This step isn't shown where the device can't have them, or when they're blocked in the browser.
 2. **Add a song** - type or paste its chords and words, or import a file (see [Adding a song](/library/#adding-a-song)). Only you see it until you share it: a lock on it says so.
@@ -44,7 +44,7 @@ Signing in at Oneverse yourself (not from an app) lands you on its home, at the 
 - **News**: the announcements you were sent - your organisation's, your teams', your server's. **All notifications** opens the rest. The bell at the top lists everything, from every app.
 - **Your teams**: each opens its page here, where its admins manage it; **All your teams** (or **Teams** at the top) lists them all and makes a new one (see [Teams](/teams/#creating-a-team-and-inviting-people)).
 - **Follow**: your organisation's website, social networks and WhatsApp groups, from its brand (see [Brands](/brands/)). Only its members see them.
-- **Settings**: your profile, picture, language and passkeys (**Account settings**, also at the top), and how notifications reach you.
+- **Settings**: your profile, picture, language and passkeys (**Settings**, also at the top), and how notifications reach you (see [Your account](/account/)).
 
 In several organisations, the list at the top picks the one the home shows: its teams, news and links. This device remembers it.
 
@@ -71,9 +71,9 @@ On a section's pages and lists (the library's home, **Songs**, **Favorites**, **
 
 The button at the top left, the sidebar's edge, or **Ctrl B** (**⌘ B** on a Mac) collapse it: the full sidebar to its icons, the panel out of the way, leaving just the rail. Clicking an icon on the rail opens it again, and Songverse remembers whether it's open. On a phone, the sidebar opens over the page from the top-left button instead: with every section and its lists on a list page, and on a song, set or songbook with the list you opened it from, full width - tap another to open it. **Menu**, at the top, switches to every section.
 
-Your name at the bottom of the sidebar opens a menu with the **Dashboard** (your songs and teams), **Account settings** and **Sign out**.
+Your name at the bottom of the sidebar opens a menu with the **Dashboard** (your songs and teams), **Settings** (see [Your account](/account/)) and **Sign out**.
 
-![The dashboard, with your songs, teams and settings](../../assets/screenshots/en/dashboard.jpg)
+![The dashboard, with your songs and teams](../../assets/screenshots/en/dashboard.jpg)
 
 ## Search
 
@@ -125,7 +125,7 @@ On an iPhone or iPad, **Share…** and the badge work (the badge once notificati
 
 ## Language
 
-Songverse is in English and French. Pick yours under **Account settings** > **Language**. These docs are in both languages too: use the language menu at the top of any page.
+Songverse is in English and French. Pick yours under **Settings** > **Account** > **Language**. These docs are in both languages too: use the language menu at the top of any page.
 
 ## Who sees what
 

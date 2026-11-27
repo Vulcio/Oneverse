@@ -17,7 +17,7 @@ Sur certains d'entre eux, vous pouvez aussi vous inscrire en demandant votre org
 
 ## Vos premiers pas
 
-Une fois votre adresse vérifiée, vous arrivez dans votre bibliothèque, vide pour l'instant. Songverse demande **Que jouez-vous ou que faites-vous ?** (voir [Rôles](/fr/account/#rôles)), et la bibliothèque affiche **Pour commencer**, les étapes de votre premier chant à une liste avec votre groupe, cochées au fur et à mesure :
+Une fois votre adresse vérifiée, vous arrivez dans votre bibliothèque, vide pour l'instant. Songverse demande **Que jouez-vous ou que faites-vous ?** (voir [Rôles](/fr/account/#ce-que-vous-jouez-ou-faites)), et la bibliothèque affiche **Pour commencer**, les étapes de votre premier chant à une liste avec votre groupe, cochées au fur et à mesure :
 
 1. **Activez les notifications** - pour être prévenu·e des listes où vous jouez, des invitations et des changements sur ce téléphone ou cet ordinateur, même quand Songverse est fermé. **Activer les notifications** demande l'autorisation à votre navigateur (voir [Notifications](/fr/account/#notifications)). Cette étape n'apparaît pas quand l'appareil ne peut pas les recevoir, ou qu'elles sont bloquées dans le navigateur.
 2. **Ajoutez un chant** - tapez ou collez ses accords et ses paroles, ou importez un fichier (voir [Ajouter un chant](/fr/library/#ajouter-un-chant)). Vous seul·e le voyez tant que vous ne le partagez pas : un cadenas l'indique.
@@ -44,7 +44,7 @@ Quand vous vous connectez vous-même sur Oneverse (pas depuis une application), 
 - **Nouvelles** : les annonces qui vous ont été envoyées - de votre organisation, de vos équipes, de votre serveur. **Toutes les notifications** ouvre le reste. La cloche en haut liste tout, de toutes les applications.
 - **Vos équipes** : chacune ouvre sa page ici, où ses administrateurs la gèrent ; **Toutes vos équipes** (ou **Équipes** en haut) les liste toutes et en crée une nouvelle (voir [Équipes](/fr/teams/#créer-une-équipe-et-inviter)).
 - **Suivre** : le site web, les réseaux sociaux et les groupes WhatsApp de votre organisation, tirés de sa marque (voir [Marques](/fr/brands/)). Seuls ses membres les voient.
-- **Réglages** : votre profil, votre photo, votre langue et vos clés d'accès (**Paramètres du compte**, aussi en haut), et la façon dont les notifications vous parviennent.
+- **Réglages** : votre profil, votre photo, votre langue et vos clés d'accès (**Paramètres**, aussi en haut), et la façon dont les notifications vous parviennent (voir [Votre compte](/fr/account/)).
 
 Dans plusieurs organisations, la liste en haut choisit celle que montre l'accueil : ses équipes, ses nouvelles et ses liens. Cet appareil s'en souvient.
 
@@ -71,9 +71,9 @@ Sur les pages et les listes d'une section (l'accueil de la bibliothèque, **Chan
 
 Le bouton en haut à gauche, le bord de la barre latérale ou **Ctrl B** (**⌘ B** sur Mac) la réduisent : la barre complète à ses icônes, le panneau mis de côté pour ne laisser que la colonne d'icônes. Un clic sur une icône de la colonne la rouvre, et Songverse retient si elle est ouverte. Sur téléphone, la barre latérale s'ouvre par-dessus la page depuis le bouton en haut à gauche : avec toutes les sections et leurs listes sur une page de liste, et sur un chant, une liste de chants ou un recueil avec la liste d'où vous l'avez ouvert, sur toute la largeur - touchez-en un autre pour l'ouvrir. **Menu**, en haut, passe à toutes les sections.
 
-Votre nom, en bas de la barre latérale, ouvre un menu avec le **Tableau de bord** (vos chants et vos équipes), les **Paramètres du compte** et **Se déconnecter**.
+Votre nom, en bas de la barre latérale, ouvre un menu avec le **Tableau de bord** (vos chants et vos équipes), les **Paramètres** (voir [Votre compte](/fr/account/)) et **Se déconnecter**.
 
-![Le tableau de bord, avec vos chants, vos équipes et vos paramètres](../../../assets/screenshots/fr/dashboard.jpg)
+![Le tableau de bord, avec vos chants et vos équipes](../../../assets/screenshots/fr/dashboard.jpg)
 
 ## Rechercher
 
@@ -127,7 +127,7 @@ Sur un iPhone ou un iPad, **Partager…** et la pastille fonctionnent (la pastil
 
 ## Langue
 
-Songverse existe en français et en anglais. Choisissez la vôtre dans **Paramètres du compte** > **Langue**. Cette documentation existe aussi dans les deux langues : utilisez le menu des langues en haut de chaque page.
+Songverse existe en français et en anglais. Choisissez la vôtre dans **Paramètres** > **Compte** > **Langue**. Cette documentation existe aussi dans les deux langues : utilisez le menu des langues en haut de chaque page.
 
 ## Qui voit quoi
 

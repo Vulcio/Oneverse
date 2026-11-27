@@ -5,6 +5,7 @@ import { createI18n, loadLocale } from "@oneverse/app/i18n";
 import { getSession } from "@oneverse/app/server-auth";
 import { AppHeader } from "#/components/app-header";
 import { AppToaster } from "@oneverse/app/components/app-toaster";
+import { useAccountTheme } from "@oneverse/app/components/account-cards";
 import { PlanningProvider } from "@oneverse/planning/host";
 import { planningHost } from "#/lib/apps";
 
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_protected")({
     const session = await getSession();
     if (!session) throw redirect({ to: "/sign-in" });
     // Waiting for their organisation's approval (issue #533): only the account page, where it stands.
-    if (session.awaitingApproval && location.pathname !== "/account") throw redirect({ to: "/account" });
+    if (session.awaitingApproval && !location.pathname.startsWith("/settings")) throw redirect({ to: "/settings/$section", params: { section: "account" } });
     await loadLocale(session.locale);
     return { session };
   },
@@ -25,6 +26,8 @@ function ProtectedLayout() {
   const { session } = Route.useRouteContext();
   // Per locale, not a module-level one (see createI18n).
   const i18n = useMemo(() => createI18n(session.locale), [session.locale]);
+  // Light or dark as the account says (issue #540).
+  useAccountTheme(session.theme);
   return (
     <I18nextProvider i18n={i18n}>
       {/* The planning screens' parts the home shows, and the bell (issue #538). */}

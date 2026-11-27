@@ -18,7 +18,7 @@ type Range = { from: string; to: string; note: string | null };
  * edited or removed; added or edited on a range calendar (the first day,
  * then the last), the other ranges shaded, with a note.
  */
-export function AwayDaysCard({ away, onAdd, onUpdate, onRemove }: { away: AwayDays[]; onAdd: (range: Range) => Promise<void>; onUpdate: (id: string, range: Range) => Promise<void>; onRemove: (id: string) => Promise<void> }) {
+export function AwayDaysCard({ away, onAdd, onUpdate, onRemove, title, description }: { away: AwayDays[]; onAdd: (range: Range) => Promise<void>; onUpdate: (id: string, range: Range) => Promise<void>; onRemove: (id: string) => Promise<void>; title?: string; description?: string }) {
   const { t, i18n } = useTranslation();
   // The range being added ("new") or edited (its ID); null: none.
   const [editing, setEditing] = useState<string | null>(null);
@@ -26,8 +26,8 @@ export function AwayDaysCard({ away, onAdd, onUpdate, onRemove }: { away: AwayDa
   return (
     <Card data-testid="away-card">
       <CardHeader>
-        <CardTitle className="text-sm">{t("teamCalendar.awayTitle")}</CardTitle>
-        <CardDescription>{t("teamCalendar.awayDescription")}</CardDescription>
+        <CardTitle className="text-sm">{title ?? t("teamCalendar.awayTitle")}</CardTitle>
+        <CardDescription>{description ?? t("teamCalendar.awayDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {away.length === 0 && editing !== "new" ? <p className="text-sm text-muted-foreground">{t("teamCalendar.noAway")}</p> : null}

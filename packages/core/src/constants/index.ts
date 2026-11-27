@@ -264,6 +264,23 @@ export const SUPPORTED_LOCALES = ["en", "fr"] as const;
 export type LocaleValue = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: LocaleValue = "en";
 
+// Light or dark in every app (issue #540); none chosen follows each device.
+export const ACCOUNT_THEMES = ["light", "dark", "auto"] as const;
+export type AccountThemeValue = (typeof ACCOUNT_THEMES)[number];
+
+/** A name in two parts (issue #540): what was set, else displayName split at its first space. */
+export function nameParts(user: { displayName: string; firstName?: string | null; lastName?: string | null }): { firstName: string; lastName: string } {
+  if (user.firstName != null || user.lastName != null) return { firstName: user.firstName ?? "", lastName: user.lastName ?? "" };
+  const name = user.displayName.trim();
+  const space = name.indexOf(" ");
+  return space < 0 ? { firstName: name, lastName: "" } : { firstName: name.slice(0, space), lastName: name.slice(space + 1).trim() };
+}
+
+/** First and last name as others see them (issue #540). */
+export function joinedName(firstName: string, lastName: string): string {
+  return [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+}
+
 // Seed tuning presets (Section 22 of the spec).
 export const SEED_TUNING_PRESETS = [
   { slug: "standard_guitar", name: "Standard", instrument: "GUITAR_STANDARD", notes: ["E", "A", "D", "G", "B", "E"], isDefault: true },

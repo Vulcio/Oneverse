@@ -33,6 +33,7 @@ const PAGES: [RegExp, string][] = [
   [/^\/(admin|review)/, "admin"],
   [/^\/dashboard/, "account"],
   [/^\/notifications/, "account"],
+  [/^\/settings/, "account"],
   [/^\/offline/, "offline"],
   [/^\/people/, "people"],
   [/^\/metronome/, "metronome"],

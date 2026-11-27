@@ -36,8 +36,8 @@ try {
     await page.getByTestId("announcement-title-fr").fill(`La ${title}`);
     await page.getByTestId("announcement-body-fr").fill("Zoomez sur les grilles.");
     // A page of the app by its name (issue #536): what they play or do.
-    await page.getByTestId("announcement-page-fr").selectOption("/dashboard#roles");
-    if ((await page.getByTestId("announcement-url-fr").inputValue()) !== "/dashboard#roles") throw new Error("the page wasn't put in the link");
+    await page.getByTestId("announcement-page-fr").selectOption("/settings/songverse#roles");
+    if ((await page.getByTestId("announcement-url-fr").inputValue()) !== "/settings/songverse#roles") throw new Error("the page wasn't put in the link");
     await page.getByTestId("announcement-preview").filter({ hasText: title }).waitFor();
     await page.getByTestId("announcement-audience").selectOption("ORGANIZATION");
     await page.getByTestId("announcement-organization").selectOption(organization.id);
@@ -62,7 +62,7 @@ try {
     await item.getByText(`${organization.name} · Zoomez sur les grilles.`).waitFor();
     if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/announcements-bell.png` });
     await item.getByRole("button").first().click();
-    await page.waitForURL("**/dashboard#roles");
+    await page.waitForURL("**/settings/songverse#roles");
     await page.locator("#roles").waitFor();
     await page.waitForFunction(() => {
       const box = document.getElementById("roles")?.getBoundingClientRect();
@@ -71,7 +71,10 @@ try {
   });
 
   await step("Account: news pushed, not emailed until chosen", async () => {
+    // An old link (issue #540) lands in Settings > Notifications.
     await page.goto(`${WEB}/dashboard#notifications`);
+    await page.waitForURL(`${WEB}/settings/notifications`);
+    await page.getByTestId("notify-open-news").click();
     const email = page.getByRole("checkbox", { name: /Les nouvelles de ce serveur.*E-mail/ });
     await email.waitFor();
     if (await email.isChecked()) throw new Error("emailed by default");

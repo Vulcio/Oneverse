@@ -195,9 +195,13 @@ await step("user renames themselves and the sidebar updates", async () => {
   await signInUi(userPage, claimant.email);
   await userPage.waitForURL("**/library");
   await userPage.goto(`${WEB}/account`);
+  await userPage.waitForURL(`${WEB}/settings/account`);
   await userPage.waitForLoadState("networkidle");
-  await userPage.getByLabel("Display name").fill("Renamed Claimant");
-  await userPage.getByRole("button", { name: "Save", exact: true }).click();
+  // First and last name (issue #540): others see them joined.
+  await userPage.getByLabel("First name").fill("Renamed");
+  await userPage.getByLabel("Last name").fill("Claimant");
+  await userPage.getByTestId("joined-name").getByText("Renamed Claimant").waitFor();
+  await userPage.getByTestId("save-name").click();
   await userPage.getByText("Saved.").waitFor();
   // The account menu, at the bottom of the sidebar's rail, is named after them (#80).
   await userPage.locator('[data-slot="sidebar-footer"]').getByRole("button", { name: "Renamed Claimant" }).waitFor();
@@ -223,13 +227,15 @@ await step("user removes the avatar", async () => {
   await userPage.getByRole("button", { name: "Remove picture" }).waitFor({ state: "detached" });
 });
 
-await step("storage card shows usage against the limit", async () => {
+await step("storage card, in Settings > Songverse, shows usage against the limit", async () => {
+  await userPage.getByTestId("settings-tab-songverse").click();
+  await userPage.waitForURL(`${WEB}/settings/songverse`);
   await userPage.getByText("of 50.0 MB used").waitFor();
 });
 
 await step("email change, at Oneverse, sends an approval to the current address", async () => {
   // Email and passkeys are Oneverse's (issue #303): signed in there already.
-  await userPage.goto(`${ONEVERSE}/account`);
+  await userPage.goto(`${ONEVERSE}/settings/account`);
   await userPage.waitForLoadState("networkidle");
   const offset = readFileSync(LOG, "utf8").length;
   await userPage.getByLabel("New email").fill(`ui-claimant-new-${stamp}@example.com`);

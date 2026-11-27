@@ -7,7 +7,7 @@ Songverse garde vos chants en sécurité sur son serveur, et ses admins sauvegar
 
 ## Ce que contient une archive
 
-**Sauvegardes** se trouve dans les réglages de votre tableau de bord. **Faire une archive maintenant** rassemble, dans un fichier zip :
+**Sauvegardes** se trouve dans **Paramètres** > **Songverse**. **Faire une archive maintenant** rassemble, dans un fichier zip :
 
 - vos propres chants, avec leurs grilles, détails, crédits, étiquettes, liens et fichiers (pièces jointes, enregistrements, pistes, pochettes) ;
 - vos arrangements, vos recueils et vos listes (leurs textes et passages aussi : un passage est sa référence, jamais le texte de la Bible) ;

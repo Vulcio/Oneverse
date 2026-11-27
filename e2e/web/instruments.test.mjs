@@ -1,5 +1,5 @@
 // Admin > Instruments (issue #166): an admin adds an instrument; anyone picks
-// it in Dashboard > Roles, and it's named on their dashboard.
+// it in Settings > Songverse, and it's named on their dashboard.
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -24,11 +24,12 @@ try {
     await page.getByTestId(`custom-instrument-${name}`).waitFor();
   });
 
-  await step("picked in Dashboard > Roles, and named on the dashboard", async () => {
-    await page.goto(`${WEB}/dashboard`);
+  await step("picked in Settings > Songverse, and named on the dashboard", async () => {
+    await page.goto(`${WEB}/settings/songverse`);
     await page.locator("#roles").getByRole("button", { name }).click();
     await page.locator("#roles").getByRole("button", { name: "Save roles" }).click();
     await page.locator("#roles").getByText("Saved.").waitFor();
+    await page.goto(`${WEB}/dashboard`);
     await page.getByRole("list", { name: "Roles" }).getByText(name).first().waitFor();
   });
 

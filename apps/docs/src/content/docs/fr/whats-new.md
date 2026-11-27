@@ -7,6 +7,10 @@ Ce qui a changé à chaque version, de la plus récente à la plus ancienne. Qua
 
 ## Prochaine version (0.10)
 
+### Paramètres
+
+- Une seule page **Paramètres**, la même dans toutes les applications : **Compte** et **Notifications** pour toutes, puis ceux de chaque application (**Songverse**, **Oneverse Plan**). Votre nom en deux parties, le clair ou le sombre gardé sur votre compte, un mot de passe que vous pouvez changer, et des notifications par sections, à activer d'un coup ou une par une (voir [Votre compte](/fr/account/)).
+
 ### Annonces
 
 - Les nouvelles des administrateurs de votre serveur - une nouvelle version, de nouvelles fonctionnalités - et des administrateurs de vos organisations et équipes arrivent maintenant avec vos notifications : sous la cloche et sur vos appareils. Choisissez comment elles vous parviennent dans les [réglages de notifications](/fr/account/#notifications) de votre compte.

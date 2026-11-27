@@ -17,8 +17,8 @@ try {
   await signIn(page, me);
   let archive;
 
-  await step("Backups in the dashboard's settings: an archive made, to download", async () => {
-    await page.goto(`${WEB}/dashboard#settings`);
+  await step("Backups in Settings > Songverse: an archive made, to download", async () => {
+    await page.goto(`${WEB}/settings/songverse`);
     await page.waitForLoadState("networkidle");
     const card = page.getByTestId("archives-card");
     await card.getByTestId("archive-make").click();

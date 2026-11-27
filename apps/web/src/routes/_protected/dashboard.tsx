@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMovedToSettings } from "@oneverse/app/components/moved-to-settings";
 import { ListMusic, Mic2, Music2, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RoleBadges } from "@oneverse/planning/components/role-badges";
@@ -9,32 +10,34 @@ import { apiClient } from "#/lib/api-client";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
 import { artistNames } from "#/lib/artists";
-import { LanguageCard, OneverseAccountCard, ProfileCard } from "@oneverse/app/components/account-cards";
-import { ChartDisplayCard, StorageCard } from "./-dashboard/account-cards";
-import { NotificationSettingsCard } from "@oneverse/planning/components/notification-settings-card";
 import { OwnershipRequestsCard } from "./-dashboard/ownership-requests-card";
-import { RolesCard } from "./-dashboard/roles-card";
-import { ArchivesCard } from "#/components/archives-card";
 import { Empty, EmptyContent, EmptyDescription, EmptyMedia } from "@oneverse/ui/components/empty";
+
+/** Where the dashboard's settings went (issue #540), for links and announcements made before. */
+const MOVED = {
+  settings: { section: "account" },
+  notifications: { section: "notifications" },
+  roles: { section: "songverse", hash: "roles" },
+} as const;
 
 export const Route = createFileRoute("/_protected/dashboard")({
   loader: async ({ context }) => {
-    const [recent, stats, profile, storage, ownershipRequests, customInstruments] = await Promise.all([
+    const [recent, stats, profile, ownershipRequests, customInstruments] = await Promise.all([
       apiClient.listSongVersions({ pageSize: 5 }),
       apiClient.getSongStats(),
       apiClient.getMe(),
-      apiClient.getMyStorage(),
       apiClient.listOwnershipRequests(),
       apiClient.listCustomInstruments(),
     ]);
-    return { teams: context.teams, recentVersions: recent.items, stats, profile, storage, ownershipRequests, customInstruments };
+    return { teams: context.teams, recentVersions: recent.items, stats, profile, ownershipRequests, customInstruments };
   },
   component: Dashboard,
 });
 
 function Dashboard() {
+  useMovedToSettings(MOVED);
   const { t } = useTranslation();
-  const { teams, recentVersions, stats, profile, storage, ownershipRequests, customInstruments } = Route.useLoaderData();
+  const { teams, recentVersions, stats, profile, ownershipRequests, customInstruments } = Route.useLoaderData();
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
@@ -61,7 +64,7 @@ function Dashboard() {
               <p className="text-sm font-medium">{t("dashboard.completeProfile")}</p>
               <p className="text-sm text-muted-foreground">{t("dashboard.completeProfileHint")}</p>
             </div>
-            <Button size="sm" render={<a href="#roles" />}>
+            <Button size="sm" render={<Link to="/settings/$section" params={{ section: "songverse" }} hash="roles" />}>
               {t("dashboard.addYourRoles")}
             </Button>
           </CardContent>
@@ -180,24 +183,6 @@ function Dashboard() {
         </Card>
       </div>
 
-      <section id="settings" className="flex scroll-mt-16 flex-col gap-4 border-t pt-6">
-        <div>
-          <h2 className="text-lg font-semibold">{t("dashboard.settings")}</h2>
-          <p className="text-sm text-muted-foreground">{t("dashboard.settingsDescription")}</p>
-        </div>
-        {/* Flowed down two columns, three with room (issue #177), in reading order: a card never split. */}
-        <div className="gap-6 lg:columns-2 @7xl:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
-          <ProfileCard api={apiClient} profile={profile} />
-          <RolesCard profile={profile} customInstruments={customInstruments} />
-          <OneverseAccountCard email={profile.email} />
-          <StorageCard storage={storage} />
-          {/* Your own backups (issue #351). */}
-          <ArchivesCard owner={{ scope: "user" }} />
-          <LanguageCard api={apiClient} locale={profile.locale} weekStartsOn={profile.weekStartsOn} />
-          <NotificationSettingsCard />
-          <ChartDisplayCard profile={profile} />
-        </div>
-      </section>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { WeekStartContext } from "@oneverse/ui/lib/dates";
 import { AppHeader } from "#/components/app-header";
 import { planningHost } from "#/lib/planning-host";
 import { AppToaster } from "@oneverse/app/components/app-toaster";
+import { useAccountTheme } from "@oneverse/app/components/account-cards";
 
 /** Every signed-in page (issue #241): signed out, back to signing in. */
 export const Route = createFileRoute("/_protected")({
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/_protected")({
     // Signed in again, back here (issue #303).
     if (!session) throw redirect({ to: "/", search: { next: location.href } });
     // Waiting for their organisation's approval (issue #533): Oneverse shows where it stands.
-    if (session.awaitingApproval) throw redirect({ href: `${oneverseUrl()}/account`, reloadDocument: true });
+    if (session.awaitingApproval) throw redirect({ href: `${oneverseUrl()}/settings/account`, reloadDocument: true });
     await loadLocale(session.locale);
     return { session };
   },
@@ -29,6 +30,8 @@ function ProtectedLayout() {
   // Per locale, not a module-level one (see createI18n).
   const i18n = useMemo(() => createI18n(session.locale), [session.locale]);
   const host = useMemo(() => planningHost(), []);
+  // Light or dark as the account says (issue #540).
+  useAccountTheme(session.theme);
   return (
     <I18nextProvider i18n={i18n}>
       <WeekStartContext.Provider value={session.weekStartsOn}>

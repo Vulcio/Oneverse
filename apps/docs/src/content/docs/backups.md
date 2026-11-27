@@ -7,7 +7,7 @@ Songverse keeps your songs safe on its server, and its admins back the server up
 
 ## What's in an archive
 
-**Backups** is in your dashboard's settings. **Make an archive now** puts together, in one zip file:
+**Backups** is under **Settings** > **Songverse**. **Make an archive now** puts together, in one zip file:
 
 - your own songs, with their charts, details, credits, tags, links and files (attachments, recordings, stems, artwork);
 - your arrangements, your songbooks and your sets (their text and passage items too: a passage is its reference, never the Bible's text);

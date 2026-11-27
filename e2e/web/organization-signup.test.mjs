@@ -94,13 +94,13 @@ try {
   });
 
   await step("signed in: only where the request stands", async () => {
-    await page.goto(`${ONEVERSE}/account`);
-    if (!page.url().includes("/account")) {
+    await page.goto(`${ONEVERSE}/settings/account`);
+    if (!page.url().includes("/settings/account")) {
       await page.goto(`${ONEVERSE}/sign-in`);
       await page.fill("#signin-email", address);
       await page.fill("#signin-password", "hunter2pass");
       await page.getByRole("button", { name: "Sign in" }).first().click();
-      await page.goto(`${ONEVERSE}/account`);
+      await page.goto(`${ONEVERSE}/settings/account`);
     }
     const card = page.getByTestId("awaiting-approval");
     await card.getByText("Your organisation is waiting for approval").waitFor();
@@ -111,7 +111,7 @@ try {
 
   await step("Songverse sends them back to Oneverse", async () => {
     await page.goto(`${WEB}/library`);
-    await page.waitForURL(`${ONEVERSE}/account`);
+    await page.waitForURL(`${ONEVERSE}/settings/account`);
     await page.getByTestId("awaiting-approval").waitFor();
   });
 
@@ -132,8 +132,10 @@ try {
     const requestId = sql(`select id from "OrganizationRequest" where "requestedById"='${userId}'`);
     const r = await call(admin, "POST", `/admin/organizations/requests/${requestId}/approve`);
     if (r.status !== 201) throw new Error(JSON.stringify(r.body));
-    await page.reload();
-    await page.getByText("Your apps").waitFor();
+    // Oneverse's home, no longer sent back to Settings.
+    await page.goto(`${ONEVERSE}/`);
+    await page.waitForURL(`${ONEVERSE}/`);
+    await page.getByTestId("home").waitFor();
     if (await page.getByTestId("awaiting-approval").count()) throw new Error("still waiting");
     check("approved: in", true);
   });

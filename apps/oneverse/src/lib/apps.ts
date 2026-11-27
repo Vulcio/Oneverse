@@ -55,8 +55,8 @@ export function planningHost(): PlanningHost {
       // A date's page is the home's own (issue #575), as in Plan and Songverse.
       eventDate: (eventId, date) => `/events/${eventId}/${date}`,
       notifications: `${planning}/notifications`,
-      // The Notifications settings (issue #568): Plan's account page, or Songverse's dashboard where Plan isn't deployed.
-      notificationSettings: plan ? `${plan}/account#notifications` : `${songverse}/dashboard#notifications`,
+      // The Notifications settings (issues #568, #540): here, as in every app.
+      notificationSettings: "/settings/notifications",
       notification: (url) => (/^https?:\/\//.test(url) || HOME_PATHS.test(url) ? url : `${PLAN_PATHS.test(url) ? planning : songverse}${url}`),
     },
     // A set opens here, as its running order (issue #521), and plays in Songverse.

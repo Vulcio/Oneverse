@@ -160,6 +160,8 @@ function buildAuth(settings: EffectiveAuthSettings) {
         locale: { type: "string", input: false, defaultValue: "en" },
         // Calendars' first day of the week (issue #235); null from the language.
         weekStartsOn: { type: "number", input: false, required: false },
+        // Light or dark in every app (issue #540); null follows each device.
+        theme: { type: "string", input: false, required: false },
       },
     },
     databaseHooks: {

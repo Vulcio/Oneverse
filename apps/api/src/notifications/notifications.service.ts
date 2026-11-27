@@ -111,9 +111,23 @@ export class NotificationsService {
 
   /** One's choices of how each kind reaches them and their quiet hours; whether this server emails, and pushes (with its public key, to subscribe). */
   async preferences(userId: string) {
-    const user = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { notificationSettings: true } });
-    const [{ emailEnabled }, push] = await Promise.all([getEffectiveNotificationSettings(), getPushConfig()]);
-    return { kinds: notificationPreferences(user?.notificationSettings), quiet: quietHoursOf(user?.notificationSettings), emailAvailable: emailEnabled, pushKey: push?.publicKey ?? null };
+    const db = this.prisma.client;
+    const user = await db.user.findUnique({ where: { id: userId }, select: { notificationSettings: true, isGlobalAdmin: true } });
+    // Which sections to show (issue #540): "Teams you run" to those who run one.
+    const [{ emailEnabled }, push, teams, organizations] = await Promise.all([
+      getEffectiveNotificationSettings(),
+      getPushConfig(),
+      db.teamMembership.count({ where: { userId, role: "ADMIN" } }),
+      db.organizationMembership.count({ where: { userId, role: "ADMIN" } }),
+    ]);
+    return {
+      kinds: notificationPreferences(user?.notificationSettings),
+      quiet: quietHoursOf(user?.notificationSettings),
+      emailAvailable: emailEnabled,
+      pushKey: push?.publicKey ?? null,
+      runsTeams: teams + organizations > 0,
+      serverAdmin: !!user?.isGlobalAdmin,
+    };
   }
 
   /** Choices changed: what's left out stays as it was; quiet hours null: none. */

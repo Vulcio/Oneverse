@@ -19,6 +19,8 @@ import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as RegisterPublicIdRouteImport } from './routes/register.$publicId'
 import { Route as RegistrationTokenRouteImport } from './routes/registration.$token'
 import { Route as ProtectedSetsSetlistIdRouteImport } from './routes/_protected/sets/$setlistId'
+import { Route as ProtectedSettingsIndexRouteImport } from './routes/_protected/settings.index'
+import { Route as ProtectedSettingsSectionRouteImport } from './routes/_protected/settings.$section'
 import { Route as ProtectedTeamsIndexRouteImport } from './routes/_protected/teams/index'
 import { Route as ProtectedTeamsTeamIdRouteImport } from './routes/_protected/teams/$teamId'
 import { Route as ProtectedEventsEventIdDateRouteImport } from './routes/_protected/events/$eventId.$date'
@@ -72,6 +74,17 @@ const ProtectedSetsSetlistIdRoute = ProtectedSetsSetlistIdRouteImport.update({
   path: '/sets/$setlistId',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedSettingsIndexRoute = ProtectedSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedSettingsSectionRoute =
+  ProtectedSettingsSectionRouteImport.update({
+    id: '/settings/$section',
+    path: '/settings/$section',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedTeamsIndexRoute = ProtectedTeamsIndexRouteImport.update({
   id: '/teams/',
   path: '/teams/',
@@ -99,7 +112,9 @@ export interface FileRoutesByFullPath {
   '/register/$publicId': typeof RegisterPublicIdRoute
   '/registration/$token': typeof RegistrationTokenRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/settings/$section': typeof ProtectedSettingsSectionRoute
   '/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
+  '/settings/': typeof ProtectedSettingsIndexRoute
   '/teams/': typeof ProtectedTeamsIndexRoute
   '/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
@@ -113,7 +128,9 @@ export interface FileRoutesByTo {
   '/registration/$token': typeof RegistrationTokenRoute
   '/': typeof ProtectedIndexRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/settings/$section': typeof ProtectedSettingsSectionRoute
   '/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
+  '/settings': typeof ProtectedSettingsIndexRoute
   '/teams': typeof ProtectedTeamsIndexRoute
   '/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
@@ -129,7 +146,9 @@ export interface FileRoutesById {
   '/registration/$token': typeof RegistrationTokenRoute
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/_protected/settings/$section': typeof ProtectedSettingsSectionRoute
   '/_protected/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
+  '/_protected/settings/': typeof ProtectedSettingsIndexRoute
   '/_protected/teams/': typeof ProtectedTeamsIndexRoute
   '/_protected/events/$eventId/$date': typeof ProtectedEventsEventIdDateRoute
 }
@@ -145,7 +164,9 @@ export interface FileRouteTypes {
     | '/register/$publicId'
     | '/registration/$token'
     | '/sets/$setlistId'
+    | '/settings/$section'
     | '/teams/$teamId'
+    | '/settings/'
     | '/teams/'
     | '/events/$eventId/$date'
   fileRoutesByTo: FileRoutesByTo
@@ -159,7 +180,9 @@ export interface FileRouteTypes {
     | '/registration/$token'
     | '/'
     | '/sets/$setlistId'
+    | '/settings/$section'
     | '/teams/$teamId'
+    | '/settings'
     | '/teams'
     | '/events/$eventId/$date'
   id:
@@ -174,7 +197,9 @@ export interface FileRouteTypes {
     | '/registration/$token'
     | '/_protected/'
     | '/_protected/sets/$setlistId'
+    | '/_protected/settings/$section'
     | '/_protected/teams/$teamId'
+    | '/_protected/settings/'
     | '/_protected/teams/'
     | '/_protected/events/$eventId/$date'
   fileRoutesById: FileRoutesById
@@ -261,6 +286,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedSetsSetlistIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/settings/': {
+      id: '/_protected/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof ProtectedSettingsIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/settings/$section': {
+      id: '/_protected/settings/$section'
+      path: '/settings/$section'
+      fullPath: '/settings/$section'
+      preLoaderRoute: typeof ProtectedSettingsSectionRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/teams/': {
       id: '/_protected/teams/'
       path: '/teams'
@@ -289,7 +328,9 @@ interface ProtectedRouteChildren {
   ProtectedAccountRoute: typeof ProtectedAccountRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedSetsSetlistIdRoute: typeof ProtectedSetsSetlistIdRoute
+  ProtectedSettingsSectionRoute: typeof ProtectedSettingsSectionRoute
   ProtectedTeamsTeamIdRoute: typeof ProtectedTeamsTeamIdRoute
+  ProtectedSettingsIndexRoute: typeof ProtectedSettingsIndexRoute
   ProtectedTeamsIndexRoute: typeof ProtectedTeamsIndexRoute
   ProtectedEventsEventIdDateRoute: typeof ProtectedEventsEventIdDateRoute
 }
@@ -298,7 +339,9 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountRoute: ProtectedAccountRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedSetsSetlistIdRoute: ProtectedSetsSetlistIdRoute,
+  ProtectedSettingsSectionRoute: ProtectedSettingsSectionRoute,
   ProtectedTeamsTeamIdRoute: ProtectedTeamsTeamIdRoute,
+  ProtectedSettingsIndexRoute: ProtectedSettingsIndexRoute,
   ProtectedTeamsIndexRoute: ProtectedTeamsIndexRoute,
   ProtectedEventsEventIdDateRoute: ProtectedEventsEventIdDateRoute,
 }

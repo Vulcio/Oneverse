@@ -7,6 +7,10 @@ What changed in each version, newest first. When your server is updated, its adm
 
 ## Next version (0.10)
 
+### Settings
+
+- One **Settings** page, the same in every app: **Account** and **Notifications** for every app, then each app's own (**Songverse**, **Oneverse Plan**). Your name in two parts, light or dark kept on your account, a password you can change, and notifications in sections you turn on at once or one by one (see [Your account](/account/)).
+
 ### Announcements
 
 - News from your server's admins - a new version, new features - and from your organisations' and teams' admins now arrives with your notifications: under the bell and on your devices. Choose how they reach you in your account's [notification settings](/account/#notifications).

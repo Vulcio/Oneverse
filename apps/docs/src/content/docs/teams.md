@@ -33,7 +33,7 @@ In **New event**, **Type** picks one: the event takes its name as its title (unl
 
 Under each date, say whether you can play: **Sign up**, **If needed** (free if asked, not first choice) or **Can't make it**. Press your answer again to take it back. Once you've answered, add a note for the team's admins ("Keys only", "arriving late"); only you and they see it. Not answering is never taken as available.
 
-With **Sign up** or **If needed**, the hand button beside your answer opens **What I'd like to play**: pick the positions you'd like that date - the positions the event asks for, or, when it lists none, the instruments and roles on your dashboard. The team's admins see them in **Who can play**, and those who edit the date's set see them on the set (see [Who can play](/sets/#who-can-play)). Answering **Can't make it** clears them.
+With **Sign up** or **If needed**, the hand button beside your answer opens **What I'd like to play**: pick the positions you'd like that date - the positions the event asks for, or, when it lists none, the instruments and roles in your settings (see [What you play or do](/account/#what-you-play-or-do)). The team's admins see them in **Who can play**, and those who edit the date's set see them on the set (see [Who can play](/sets/#who-can-play)). Answering **Can't make it** clears them.
 
 **My calendar**, in the sidebar, lists the coming dates of all your teams that use Songverse (a group that only plans is in Plan's), to answer them in one place. Under **Days away**, **Add days away** opens a calendar: pick the first day, then the last, add a note if you like, and **Add**. Every date in them reads **Can't make it**, marked **Away**, for all your teams - unless you answer that date yourself. Each range can be changed (**Edit**: pick the days again, change the note, **Save**) or removed; your other ranges show struck through on the calendar.
 
@@ -59,7 +59,7 @@ Members see the card with the link, to share it.
 
 ### Positions needed
 
-In an event's dialog, **Positions needed** lists what it needs and how many: **Add a position** picks one - **Host**, **Speaker**, **Music**, **Media operator**, **Audio operator**, **Lights**, **Technician** - the team's own positions (see [Positions](/organizations/#positions)), a name the team used before, or **Another name…** ("Welcome", "Coffee"). An event asks for roles, not instruments: on each date's set, whoever is on **Music** asks for the instruments that date needs (see [Who can play](/sets/#who-can-play)); events made before keep the instruments they asked for. A member covers the roles they listed under **Roles** on their dashboard, and the positions they ticked; anyone covers a position with a name of the team's own.
+In an event's dialog, **Positions needed** lists what it needs and how many: **Add a position** picks one - **Host**, **Speaker**, **Music**, **Media operator**, **Audio operator**, **Lights**, **Technician** - the team's own positions (see [Positions](/organizations/#positions)), a name the team used before, or **Another name…** ("Welcome", "Coffee"). An event asks for roles, not instruments: on each date's set, whoever is on **Music** asks for the instruments that date needs (see [Who can play](/sets/#who-can-play)); events made before keep the instruments they asked for. A member covers the roles they listed under **What you play or do** in their settings, and the positions they ticked; anyone covers a position with a name of the team's own.
 
 The team's admins then see, beside each coming date, what's short: **Short: Music, Audio operator** names the positions that not enough members who cover them have answered **Sign up**. **Who can play** starts with the positions: who covers each and is available, who would play if needed, or **No one signed up yet**.
 
@@ -71,7 +71,7 @@ Once a date's positions are set, its admins choose who plays what: **Line-up** b
 
 The line-up flags what clashes: someone **Away**, who **Said they can't make it**, or **Playing elsewhere then** - on another event at the same time, of any of their teams. Each position shows how many it has of how many it needs, and **Short** counts those on the line-up once a date has one.
 
-**Music** is a position like the others (people say they lead music under **Roles** on their dashboard). **Host** ("Présidence") and **Speaker** aren't: nobody lists them, and no role gives them. An event asks for either in **Positions needed**, like any position - not every event needs a host - and **From** says which team they come from: a "Présidence" team of the organisation's, say, whose members offer to host without being in the teams that play. Without one, the admins put someone on it. A host is always a member of the team or of its organisation - never a guest: hosting isn't for someone from outside. Whoever is on a date's line-up, and hasn't declined, can change that date's set - its songs, passages and texts - like the team's admins, unless the event's **The line-up edits the set** is off (see [Who edits a date's set](/sets/#who-edits-a-dates-set)). They can't delete the set or give it to someone else. **Leads the set**, under any position in **Positions needed** (or an event type's), names who leads it on the set's **Who can play**; until you tick it, **Host** and **Music** lead it.
+**Music** is a position like the others (people say they lead music under **What you play or do** in their settings). **Host** ("Présidence") and **Speaker** aren't: nobody lists them, and no role gives them. An event asks for either in **Positions needed**, like any position - not every event needs a host - and **From** says which team they come from: a "Présidence" team of the organisation's, say, whose members offer to host without being in the teams that play. Without one, the admins put someone on it. A host is always a member of the team or of its organisation - never a guest: hosting isn't for someone from outside. Whoever is on a date's line-up, and hasn't declined, can change that date's set - its songs, passages and texts - like the team's admins, unless the event's **The line-up edits the set** is off (see [Who edits a date's set](/sets/#who-edits-a-dates-set)). They can't delete the set or give it to someone else. **Leads the set**, under any position in **Positions needed** (or an event type's), names who leads it on the set's **Who can play**; until you tick it, **Host** and **Music** lead it.
 
 Unlike a host, a **Speaker** can always be a guest, even from outside the organisation: one of your People, or **Someone without an account…**.
 
@@ -144,14 +144,14 @@ Besides your teams' calendars, you're told when someone asks to connect with you
 
 **See all**, at the bottom of the list, opens the **Notifications** page: everything, a page at a time. Read notifications are deleted after 90 days, unread ones after a year.
 
-Whoever made the change isn't told about it. They can also come by email, as you choose in your [account settings](/account/#notifications), when the server sends them.
+Whoever made the change isn't told about it. They can also come by email, as you choose in your [settings](/account/#notifications), when the server sends them.
 
 ## Members and roles
 
 - **Admins** manage the team: they change its songs, versions and sets, and invite people.
 - **Members** see and use everything the team has.
 
-Next to each name, the team shows what they play or do (see [Roles](/account/#roles)). Its admins see who hasn't said yet.
+Next to each name, the team shows what they play or do (see [Roles](/account/#what-you-play-or-do)). Its admins see who hasn't said yet.
 
 ## Creating a team and inviting people
 
@@ -189,7 +189,7 @@ Under **Songs played often**, the team's admins choose over how many weeks a son
 
 ## Announcements
 
-A team's admins send news to its members from its page: **Announcements**, then **New announcement** - a **Title**, a **Text** and, if you like, a **Link**, typed or picked under **Or a page of the app** (**What I play or do (Dashboard > Roles)**, **Account settings**, **My calendar**…). **Under the bell** shows how it will look; it stays a **Draft** until **Send**, which says how many members it goes to. Members get it under the bell with the team's name, and on their devices; by email only if they turn that on. A sent one can still be fixed for everyone (**Save: fixes it for everyone**) or taken back (**Take back**). It goes to the team's own members, not the teams under it; an organisation's admins can send to several teams at once (see [Organisations](/organizations/#announcements)).
+A team's admins send news to its members from its page: **Announcements**, then **New announcement** - a **Title**, a **Text** and, if you like, a **Link**, typed or picked under **Or a page of the app** (**What I play or do (Settings > Songverse)**, **Settings**, **My calendar**…). **Under the bell** shows how it will look; it stays a **Draft** until **Send**, which says how many members it goes to. Members get it under the bell with the team's name, and on their devices; by email only if they turn that on. A sent one can still be fixed for everyone (**Save: fixes it for everyone**) or taken back (**Take back**). It goes to the team's own members, not the teams under it; an organisation's admins can send to several teams at once (see [Organisations](/organizations/#announcements)).
 
 ## Leaving or deleting a team
 

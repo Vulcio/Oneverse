@@ -36,7 +36,7 @@ await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
  */
 async function chooseDiagrams(value) {
   for (let tries = 0; ; tries++) {
-    await page.goto(`${WEB}/dashboard`);
+    await page.goto(`${WEB}/settings/songverse`);
     await page.waitForLoadState("networkidle");
     await page.getByLabel("Chord diagrams").selectOption(value);
     await page.waitForLoadState("networkidle");
@@ -195,7 +195,7 @@ await step("your own shape for a chord, for this song only (issue #207 phase 3)"
 
 await step("a tuning, and left-handed diagrams", async () => {
   check("only tunings it knows", (await call(me, "PATCH", "/users/me", { guitarTuning: "banjo" })).status === 400);
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.getByLabel("Guitar tuning").selectOption("drop-d");
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Left-handed diagrams").selectOption("YES");
@@ -232,7 +232,7 @@ await step("piano (phase 4): smooth voicings or root position, both hands or the
   if (!chosen || chosen.chord !== "D") throw new Error(JSON.stringify(chosen));
   await api(me, "PUT", `/song-versions/${song.id}/chord-shapes`, { instrument: "piano", tuning: "standard", chord: "D", frets: null });
   // Root position, right hand only.
-  await page.goto(`${WEB}/dashboard`);
+  await page.goto(`${WEB}/settings/songverse`);
   await page.getByLabel("Piano voicings").selectOption("ROOT");
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Hands").selectOption("right");

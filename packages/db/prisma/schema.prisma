@@ -245,6 +245,10 @@ model User {
   id            String   @id @default(cuid())
   email         String   @unique
   displayName   String
+  // The name in two parts (issue #540), shown joined as displayName; null until
+  // they set it, displayName split at its first space meanwhile.
+  firstName     String?
+  lastName      String?
   avatarUrl     String?
   // What the operator's console keeps at hand for their own sets (issue #358), as Team.operatorPresets.
   operatorPresets Json?
@@ -293,6 +297,8 @@ model User {
   chordColors       Boolean           @default(false)
   // Diagrams mirrored for a left-handed player, and each instrument's tuning (issue #207 phase 3): TUNINGS' ids in core.
   leftHanded        Boolean           @default(false)
+  // Light or dark in every app and on every device (issue #540); null follows each device.
+  theme             String?
   // The first day of calendars' weeks (issue #235): 0 Sunday, 1 Monday, 6 Saturday; null from the language.
   weekStartsOn      Int?
   guitarTuning      String            @default("standard")

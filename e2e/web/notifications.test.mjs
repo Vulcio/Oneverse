@@ -83,14 +83,20 @@ try {
     await all.getByText("Already answered").waitFor();
   });
 
-  await step("Account: each kind by email, off on this server until an admin turns it on", async () => {
-    await page.goto(`${WEB}/dashboard`);
+  await step("Settings > Notifications: sections by email, off on this server until an admin turns it on (issue #540)", async () => {
+    await page.goto(`${WEB}/settings/notifications`);
     const card = page.getByTestId("notification-settings");
-    // Its choices loaded.
-    const ready = () => page.locator('[data-testid="notification-settings"][data-ready="true"]').waitFor();
+    // Its choices loaded, the dates' kinds shown.
+    const ready = async () => {
+      await page.locator('[data-testid="notification-settings"][data-ready="true"]').waitFor();
+      await card.getByTestId("notify-open-dates").click();
+    };
     await ready();
     await card.getByTestId("notification-email-off").waitFor();
     if (!(await card.getByTestId("notify-email-EVENT_DATE_CHANGED").isDisabled())) throw new Error("the choices should wait for the server");
+    if (!(await card.getByTestId("notify-dates-email").isDisabled())) throw new Error("the section's switch should wait for the server");
+    // A member who runs no team isn't offered its section.
+    if (await card.getByTestId("notify-section-running").count()) throw new Error("Teams you run shown to a member");
     await api(admin, "PUT", "/admin/notifications", { emailEnabled: true });
     await page.reload();
     await ready();
@@ -99,6 +105,11 @@ try {
     await ready();
     if (await card.getByTestId("notify-email-EVENT_DATE_CHANGED").isChecked()) throw new Error("the choice wasn't kept");
     if (!(await card.getByTestId("notify-email-EVENT_DATE_CANCELLED").isChecked())) throw new Error("the other kinds should stay on");
+    // The section reads "n of m", and its switch turns them all back on at once.
+    if ((await card.getByTestId("notify-dates-email").getAttribute("data-state")) !== "some") throw new Error("the section should read some");
+    await Promise.all([page.waitForResponse((res) => res.url().includes("/notifications/settings") && res.request().method() === "PUT"), card.getByTestId("notify-dates-email").click()]);
+    await card.locator('[data-testid="notify-dates-email"][data-state="on"]').waitFor();
+    if (!(await card.getByTestId("notify-email-EVENT_DATE_CHANGED").isChecked())) throw new Error("the section's switch should turn each kind on");
   });
 
   await step("Admin > Notifications: the switch, where it comes from, back to the environment", async () => {

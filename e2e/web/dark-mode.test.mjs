@@ -14,9 +14,9 @@ try {
   await page.evaluate(() => localStorage.setItem("songverse.theme", "dark"));
 
   await step("on the dark theme, a drop-down's options are dark with light text", async () => {
-    await page.goto(`${WEB}/account`);
+    await page.goto(`${WEB}/settings/account`);
     await page.locator("html.dark").waitFor({ state: "attached" });
-    const select = page.locator("select").first();
+    const select = page.getByTestId("language-card").locator("select").first();
     await select.waitFor();
     const colours = await select.evaluate((element) => {
       const option = element.querySelector("option");

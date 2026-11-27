@@ -69,7 +69,7 @@ try {
     await row(plus(9)).getByTestId("answer-away").waitFor();
   });
 
-  await step("the first day of the week: from the language, or as chosen on the account page", async () => {
+  await step("the first day of the week: from the language, or as chosen in Settings", async () => {
     const firstWeekday = async () => {
       await page.goto(`${WEB}/calendar`);
       // Hydrated before the click, or the editor never opens (seen on CI).
@@ -79,12 +79,13 @@ try {
     };
     // English: Sunday first.
     if (!/sunday/i.test(await firstWeekday())) throw new Error("not Sunday by default in English");
-    await page.goto(`${WEB}/dashboard`);
+    // Settings > Oneverse Plan (issue #540).
+    await page.goto(`${WEB}/settings/plan`);
     await page.getByTestId("week-start").selectOption("1");
     await page.waitForFunction(() => document.querySelector('[data-testid="week-start"]')?.value === "1");
     await page.waitForTimeout(500);
     if (!/monday/i.test(await firstWeekday())) throw new Error("not Monday once chosen");
-    await page.goto(`${WEB}/dashboard`);
+    await page.goto(`${WEB}/settings/plan`);
     await page.getByTestId("week-start").selectOption("auto");
     await page.waitForTimeout(500);
   });
