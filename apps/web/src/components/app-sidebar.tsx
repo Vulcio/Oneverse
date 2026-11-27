@@ -267,8 +267,9 @@ function ThemeToggle() {
       onClick={() => {
         const next = theme === "dark" ? "light" : "dark";
         setTheme(next);
-        // Kept on the account (issue #540), so every app and device follows.
-        void apiClient.updateMe({ theme: next }).catch(() => {});
+        // Kept on the account (issue #540), so every app and device follows; as this device is, that's Auto.
+        const device = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        void apiClient.updateMe({ theme: next === device ? "auto" : next }).catch(() => {});
       }}
     >
       {theme === "dark" ? <Sun /> : <Moon />}
