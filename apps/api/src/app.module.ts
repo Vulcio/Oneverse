@@ -37,6 +37,7 @@ import { SongVersionsModule } from "./song-versions/song-versions.module.js";
 import { TagsModule } from "./tags/tags.module.js";
 import { SmartListsModule } from "./smart-lists/smart-lists.module.js";
 import { TeamEventsModule } from "./team-events/team-events.module.js";
+import { RegistrationsModule } from "./registrations/registrations.module.js";
 import { TeamsModule } from "./teams/teams.module.js";
 import { OrganizationsModule } from "./organizations/organizations.module.js";
 import { UsersModule } from "./users/users.module.js";
@@ -82,6 +83,7 @@ import { LookupsModule } from "./lookups/lookups.module.js";
     TeamsModule,
     OrganizationsModule,
     TeamEventsModule,
+    RegistrationsModule,
     NotificationsModule,
     AnnouncementsModule,
     WorksModule,

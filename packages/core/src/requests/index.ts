@@ -26,3 +26,4 @@ export * from "./scriptures.js";
 export * from "./backups.js";
 export * from "./plugins.js";
 export * from "./error-reports.js";
+export * from "./registrations.js";

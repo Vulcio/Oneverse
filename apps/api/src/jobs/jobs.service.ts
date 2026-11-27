@@ -6,7 +6,7 @@ import { BULK_UPLOAD_QUEUE } from "../bulk-upload/bulk-upload.types.js";
 import { USER_MAINTENANCE_QUEUE } from "../user-management/transfer-expiry.processor.js";
 import { BACKFILLS_QUEUE, HEARTBEAT_KEY, jobsInApi, LOOKUPS_QUEUE, RECORDINGS_QUEUE, settingsKeyCheck, STEM_SEPARATION_QUEUE, TEAM_EVENTS_QUEUE, NOTIFICATIONS_QUEUE, LIVE_SESSIONS_QUEUE } from "./jobs.constants.js";
 import { redis } from "./redis.js";
-import { ARCHIVES_QUEUE, BACKUPS_QUEUE, CHART_READING_QUEUE, OWN_STORAGE_QUEUE, SONG_INFO_QUEUE, WAVEFORMS_QUEUE } from "./jobs.constants.js";
+import { ARCHIVES_QUEUE, BACKUPS_QUEUE, CHART_READING_QUEUE, OWN_STORAGE_QUEUE, REGISTRATIONS_QUEUE, SONG_INFO_QUEUE, WAVEFORMS_QUEUE } from "./jobs.constants.js";
 import { latestMigration } from "../common/database-migration.js";
 import { serverVersion } from "../common/version.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -74,11 +74,12 @@ export class JobsService {
     @InjectQueue(SONG_INFO_QUEUE) private readonly songInfo: Queue,
     @InjectQueue(WAVEFORMS_QUEUE) private readonly waveforms: Queue,
     @InjectQueue(CHART_READING_QUEUE) private readonly chartReading: Queue,
+    @InjectQueue(REGISTRATIONS_QUEUE) private readonly registrations: Queue,
     private readonly prisma: PrismaService,
   ) {}
 
   private get queues(): Queue[] {
-    return [this.lookups, this.backfills, this.bulkUpload, this.maintenance, this.recordings, this.stemSeparation, this.teamEvents, this.notifications, this.scriptures, this.liveSessions, this.backups, this.archives, this.ownStorage, this.songInfo, this.waveforms, this.chartReading];
+    return [this.lookups, this.backfills, this.bulkUpload, this.maintenance, this.recordings, this.stemSeparation, this.teamEvents, this.notifications, this.scriptures, this.liveSessions, this.backups, this.archives, this.ownStorage, this.songInfo, this.waveforms, this.chartReading, this.registrations];
   }
 
   async status(): Promise<JobsStatus> {

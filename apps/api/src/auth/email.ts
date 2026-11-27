@@ -14,10 +14,12 @@ import { getEffectiveAuthSettings, type SmtpSettings } from "./auth-settings.js"
  * place Songverse sends email - keep it that way, since providers' free tiers
  * have low daily/monthly send caps and this app should only ever send
  * account mail (verification, password reset, email change), a person's
- * request to connect (#79, limited per requester in PeopleService) and -
- * only when an admin turns them on (Admin > Notifications, off by default)
- * - notifications (#236, from the notifications job, one email per person
- * per batch), never bulk or marketing mail.
+ * request to connect (#79, limited per requester in PeopleService),
+ * registrations for events (#593: to the person who registered, about their
+ * own registration) and - only when an admin turns them on (Admin >
+ * Notifications, off by default) - notifications (#236, from the
+ * notifications job, one email per person per batch), never bulk or
+ * marketing mail.
  *
  * Answers "logged" when nothing was sent.
  */
@@ -200,6 +202,24 @@ export async function sendNotificationEmail(
       ${items}
       <p><a href="${escapeHtml(email.url)}">${escapeHtml(email.open)}</a></p>
       <p style="color:#666;font-size:13px">${escapeHtml(email.why)} <a href="${escapeHtml(email.settingsUrl)}">${escapeHtml(email.settingsUrl)}</a></p>
+    `,
+  });
+}
+
+/**
+ * About someone's registration for an event (issue #593), to the address
+ * they registered with: put into words by the registrations' job, in the
+ * language of the page they registered on, with the link to see, change or
+ * cancel it.
+ */
+export async function sendRegistrationEmail(to: string, email: { subject: string; lines: string[]; open: string; url: string }): Promise<void> {
+  await sendEmail({
+    to,
+    subject: email.subject,
+    text: [...email.lines, `${email.open}: ${email.url}`].join("\n\n"),
+    html: `
+      ${email.lines.map((line) => `<p>${escapeHtml(line).replace(/\n/g, "<br>")}</p>`).join("\n")}
+      <p><a href="${escapeHtml(email.url)}">${escapeHtml(email.open)}</a></p>
     `,
   });
 }

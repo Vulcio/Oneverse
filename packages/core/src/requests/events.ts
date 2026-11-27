@@ -1,6 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { ASSIGNMENT_STATUSES, DATE_ASKS_LIMIT, isEventOnlyPart, OPEN_TO_LIMIT, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
+import { EVENT_DURATION_DAYS_MAX } from "../calendar/registration.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 import { EventResourcesSchema } from "./locations.js";
 
@@ -9,7 +10,8 @@ import { EventResourcesSchema } from "./locations.js";
 const date = (name: string) => z.string().refine(isCalendarDate, `${name} must be a date, YYYY-MM-DD`);
 const time = (name: string) => z.string().refine(isTimeOfDay, `${name} must be a time, HH:MM`);
 const timeZone = z.string().refine(isTimeZone, "timeZone must be a time zone, like Europe/Paris");
-const duration = z.number().int().min(5).max(24 * 60);
+/** Minutes; up to a weekend or a week (issue #593). */
+const duration = z.number().int().min(5).max(EVENT_DURATION_DAYS_MAX * 24 * 60);
 /** A call time (issue #240): how long before the start to be there. */
 const callMinutes = z.number().int().min(1).max(CALL_MINUTES_MAX).describe("Call time: minutes before the start to be there");
 

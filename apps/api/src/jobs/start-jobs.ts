@@ -18,13 +18,14 @@ import { OwnStorageProcessor } from "../own-storage/own-storage.processor.js";
 import { SongInfoProcessor } from "../song-versions/song-info.js";
 import { WaveformsProcessor } from "../waveforms/waveforms.processor.js";
 import { ChartReadingProcessor } from "../chart-reading/chart-reading.processor.js";
+import { RegistrationsProcessor } from "../registrations/registrations.processor.js";
 import { HEARTBEAT_KEY, settingsKeyCheck } from "./jobs.constants.js";
 import { redis } from "./redis.js";
 import { serverVersion } from "../common/version.js";
 import { reportError } from "../error-reporting/error-reporter.js";
 
 /** Every job processor: a new one needs adding here, or no process runs its jobs. */
-const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor, BibleImportProcessor, LiveSessionsProcessor, BackupsProcessor, ArchivesProcessor, OwnStorageProcessor, SongInfoProcessor, WaveformsProcessor, ChartReadingProcessor];
+const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor, BibleImportProcessor, LiveSessionsProcessor, BackupsProcessor, ArchivesProcessor, OwnStorageProcessor, SongInfoProcessor, WaveformsProcessor, ChartReadingProcessor, RegistrationsProcessor];
 
 const logger = new Logger("Jobs");
 

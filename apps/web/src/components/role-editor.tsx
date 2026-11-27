@@ -10,7 +10,7 @@ import { FieldError } from "@oneverse/ui/components/field";
 
 /** What a role allows, all optional: the server's roles have every field, a team's or an organisation's some. */
 export type EditableRole = { name: string; description: string } & Partial<
-  Record<"canReview" | "canSeparateStems" | "canKeepLosslessAudio" | "canUploadAudio" | "canOperateScreens" | "canCue" | "canRoute" | "canManageScreens" | "canUseOwnStorage" | "canStoreFiles" | "teamAssignable", boolean>
+  Record<"canReview" | "canSeparateStems" | "canKeepLosslessAudio" | "canUploadAudio" | "canOperateScreens" | "canCue" | "canRoute" | "canManageScreens" | "canManageRegistrations" | "canUseOwnStorage" | "canStoreFiles" | "teamAssignable", boolean>
 > & { stemSeparationMonthlyLimit?: number | null; storageLimitMb?: number | null };
 
 /**
@@ -36,6 +36,7 @@ export function RoleEditor({ kind, role, onClose, onSubmit }: { kind: RoleEditor
   const [canCue, setCanCue] = useState(role?.canCue ?? false);
   const [canRoute, setCanRoute] = useState(role?.canRoute ?? false);
   const [canManageScreens, setCanManageScreens] = useState(role?.canManageScreens ?? false);
+  const [canManageRegistrations, setCanManageRegistrations] = useState(role?.canManageRegistrations ?? false);
   const [canUseOwnStorage, setCanUseOwnStorage] = useState(role?.canUseOwnStorage ?? false);
   const [teamAssignable, setTeamAssignable] = useState(role?.teamAssignable ?? false);
   const [canStoreFiles, setCanStoreFiles] = useState(role?.canStoreFiles ?? false);
@@ -57,6 +58,7 @@ export function RoleEditor({ kind, role, onClose, onSubmit }: { kind: RoleEditor
       canCue,
       canRoute,
       canManageScreens,
+      canManageRegistrations,
       ...(server || organization ? { canUploadAudio, canKeepLosslessAudio: canKeepLossless, storageLimitMb: hasStorage && storageMb.trim() ? Number(storageMb) : null } : {}),
       ...(server ? { canReview, canUseOwnStorage, teamAssignable } : {}),
       // An organisation's: keeping files in its bucket, its tier there optional (else its default).
@@ -122,6 +124,7 @@ export function RoleEditor({ kind, role, onClose, onSubmit }: { kind: RoleEditor
             {check(canCue, setCanCue, t("admin.roleCue"), hint("roleCue"), "role-cue")}
             {check(canRoute, setCanRoute, t("admin.roleRoute"), hint("roleRoute"), "role-route")}
             {check(canManageScreens, setCanManageScreens, t("admin.roleManageScreens"), hint("roleManageScreens"), "role-manage-screens")}
+            {check(canManageRegistrations, setCanManageRegistrations, t("admin.roleManageRegistrations"), hint("roleManageRegistrations"), "role-manage-registrations")}
             {server ? check(canUseOwnStorage, setCanUseOwnStorage, t("admin.roleOwnStorage"), hint("roleOwnStorage"), "role-own-storage") : null}
             {server ? check(teamAssignable, setTeamAssignable, t("admin.roleTeamAssignable"), hint("roleTeamAssignable"), "role-team-assignable") : null}
             {server ? check(hasStorage, setHasStorage, t("admin.roleStorageTier"), hint("roleStorageTier"), "role-storage") : null}

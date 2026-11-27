@@ -47,6 +47,8 @@ import type { NewNotes, NoteAnchor, NoteColor, NoteLook, NotePlace, NotePlacemen
 import type { AnnouncementTexts, NotificationData, NotificationKind, NotificationPreferences, QuietHours } from "../notifications/index.js";
 import type { AnnouncementAudience, CreateAnnouncementRequest, SaveOrganizationAnnouncementRequest, SaveTeamAnnouncementRequest, UpdateAnnouncementRequest } from "../requests/announcements.js";
 import type { LyricsMatch } from "../search-text/lyrics.js";
+import type { PlaceKind, Places, RegistrationAnswers, RegistrationQuestion, RegistrationState, RegistrationStatus } from "../calendar/registration.js";
+import type { ManageRegistrationRequest, RegisterRequest, RegistrationFormRequest, UpdateRegistrationRequest } from "../requests/registrations.js";
 import type { SecondChordRow } from "../display/chord-rows.js";
 import type { SectionProgression } from "../chords/progressions.js";
 import type { CuePoint } from "../recording/cues.js";
@@ -1277,7 +1279,7 @@ export interface ScreenCurrent {
  */
 export interface ScopedRolesView {
   /** The server's roles teams may give. */
-  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean; canRoute: boolean; canManageScreens: boolean }[];
+  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean; canRoute: boolean; canManageScreens: boolean; canManageRegistrations: boolean }[];
   /** The team's or organisation's own (issue #206). */
   own: OwnRole[];
   members: { userId: string; roleIds: string[] }[];
@@ -1297,10 +1299,108 @@ export interface OwnRole {
   canCue: boolean;
   canRoute: boolean;
   canManageScreens: boolean;
+  /** Manages the registrations of its events (issue #593). */
+  canManageRegistrations: boolean;
   /** An organisation's: keeps files in its own bucket. */
   canStoreFiles: boolean;
   stemSeparationMonthlyLimit: number | null;
   storageLimitMb: number | null;
+}
+
+/** An event's registration (issue #593): its settings, for its managers. */
+export interface RegistrationForm {
+  id: string;
+  teamEventId: string | null;
+  organizationEventId: string | null;
+  publicId: string;
+  /** The public page's address, in the Oneverse app. */
+  publicUrl: string;
+  open: boolean;
+  opensDaysBefore: number | null;
+  closesHoursBefore: number;
+  limit: number | null;
+  placeKinds: PlaceKind[];
+  currency: string | null;
+  questions: RegistrationQuestion[];
+  waitingList: boolean;
+  intro: string | null;
+}
+
+/** GET /registration-forms: an event's registration (null when off), and whether the viewer manages it. */
+export interface EventRegistration {
+  form: RegistrationForm | null;
+  canManage: boolean;
+}
+
+/** One date's registration: open or not, places taken and left, in all and by kind. */
+export interface RegistrationDate {
+  date: string;
+  startsAt: string;
+  endsAt: string;
+  state: RegistrationState;
+  /** When it opens, when it isn't open yet. */
+  opensAt: string | null;
+  taken: { total: number; byKind: Places };
+  left: { total: number | null; byKind: Record<string, number | null> };
+  waiting: number;
+}
+
+/** Someone's registration, as its managers see it. */
+export interface RegistrationEntry {
+  id: string;
+  date: string;
+  name: string;
+  email: string;
+  /** Registered while signed in. */
+  member: boolean;
+  places: Places;
+  count: number;
+  answers: RegistrationAnswers;
+  status: RegistrationStatus;
+  paid: boolean;
+  /** In cents; null when nothing has a price. */
+  price: number | null;
+  createdAt: string;
+}
+
+/** GET /registration-forms/:id/dates/:date: a date's registrations, for its managers. */
+export interface RegistrationList {
+  form: RegistrationForm;
+  date: RegistrationDate;
+  registrations: RegistrationEntry[];
+}
+
+/** What the public registration page shows: the event, its form, its coming dates. */
+export interface PublicRegistrationPage {
+  publicId: string;
+  title: string;
+  /** The team's or organisation's name. */
+  organizer: string;
+  place: string | null;
+  timeZone: string;
+  intro: string | null;
+  placeKinds: PlaceKind[];
+  currency: string | null;
+  questions: RegistrationQuestion[];
+  waitingList: boolean;
+  dates: Omit<RegistrationDate, "taken" | "waiting">[];
+}
+
+/** Someone's own registration, from the link in its email (or right after registering). */
+export interface MyRegistration {
+  /** The secret that opens it: kept by the page, never shown to others. */
+  token?: string;
+  date: string;
+  name: string;
+  email: string;
+  places: Places;
+  answers: RegistrationAnswers;
+  status: RegistrationStatus;
+  paid: boolean;
+  price: number | null;
+  /** Whether places and answers can still change (its date's registration is open). */
+  canChange: boolean;
+  page: Omit<PublicRegistrationPage, "dates"> & { date: PublicRegistrationPage["dates"][number] | null };
 }
 
 /** Admin > Roles (issue #160): what a role allows, and how many have it. */
@@ -1324,6 +1424,8 @@ export interface AdminRole {
   canRoute: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations, without being their admin (issue #322). */
   canManageScreens: boolean;
+  /** Manages the registrations of their teams' and organisations' events, without being their admin (issue #593). */
+  canManageRegistrations: boolean;
   /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
   canUseOwnStorage: boolean;
   /** A team's or an organisation's admins give it to their own members, on their team or organisation only (issue #270). */
@@ -3534,6 +3636,27 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<MyEventAnswer>(`/teams/${teamId}/events/${eventId}/dates/${date}/answers/${userId}`, { method: "PUT", body: JSON.stringify(data) }),
     clearTeamEventDateAnswerFor: (teamId: string, eventId: string, date: string, userId: string) =>
       request<void>(`/teams/${teamId}/events/${eventId}/dates/${date}/answers/${userId}`, { method: "DELETE" }),
+    // Registration for event dates (issue #593).
+    getEventRegistration: (event: { teamEventId: string } | { organizationEventId: string }) => request<EventRegistration>(`/registration-forms?${new URLSearchParams(event)}`),
+    saveEventRegistration: (data: RegistrationFormRequest) => request<RegistrationForm>("/registration-forms", { method: "PUT", body: JSON.stringify(data) }),
+    removeEventRegistration: (formId: string) => request<void>(`/registration-forms/${formId}`, { method: "DELETE" }),
+    listRegistrations: (formId: string, date: string) => request<RegistrationList>(`/registration-forms/${formId}/dates/${date}`),
+    exportRegistrations: async (formId: string, date: string): Promise<Blob> => {
+      const token = await getToken();
+      const headers = new Headers();
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      const response = await fetch(`${baseUrl}/registration-forms/${formId}/dates/${date}/export`, { headers });
+      if (!response.ok) throw await failed(response);
+      return response.blob();
+    },
+    manageRegistration: (registrationId: string, data: ManageRegistrationRequest) => request<RegistrationEntry>(`/registrations/${registrationId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    getRegistrationPage: (publicId: string) => request<PublicRegistrationPage>(`/public/registrations/${publicId}`),
+    /** Signed in, it's tied to their account; signed out, to the email. */
+    register: (publicId: string, date: string, data: RegisterRequest, signedIn = false) =>
+      request<MyRegistration>(`${signedIn ? "/registrations" : "/public/registrations"}/${publicId}/${date}`, { method: "POST", body: JSON.stringify(data) }),
+    getMyRegistration: (token: string) => request<MyRegistration>(`/public/registration/${encodeURIComponent(token)}`),
+    updateMyRegistration: (token: string, data: UpdateRegistrationRequest) => request<MyRegistration>(`/public/registration/${encodeURIComponent(token)}`, { method: "PATCH", body: JSON.stringify(data) }),
+    cancelMyRegistration: (token: string) => request<MyRegistration>(`/public/registration/${encodeURIComponent(token)}/cancel`, { method: "POST" }),
     listMyEventDates: (from: string, to: string) => request<MyEventDate[]>(`/users/me/event-dates?${new URLSearchParams({ from, to })}`),
     getMyEventDate: (eventId: string, date: string) => request<MyEventDateDetail>(`/users/me/event-dates/${eventId}/${date}`),
     listOpenPlaces: (from: string, to: string) => request<OpenPlace[]>(`/users/me/open-places?${new URLSearchParams({ from, to })}`),

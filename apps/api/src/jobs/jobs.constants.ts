@@ -29,6 +29,8 @@ export const SONG_INFO_QUEUE = "song-info";
 export const OWN_STORAGE_QUEUE = "own-storage";
 /** Audio files' waveforms worked out (issue #388): new ones soon after they're stored, the rest a few at a time. */
 export const WAVEFORMS_QUEUE = "waveforms";
+/** Emails about people's registrations for events, and the reminders before their dates (issue #593). */
+export const REGISTRATIONS_QUEUE = "registrations";
 /** PDFs and pictures of charts read for a device that couldn't (issue #124): their text, or OCR. */
 export const CHART_READING_QUEUE = "chart-reading";
 

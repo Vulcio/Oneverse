@@ -22,6 +22,8 @@ export interface Capabilities {
   canRoute: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations (issue #322), without being their admin. */
   canManageScreens: boolean;
+  /** Manages the registrations of their teams' and organisations' events (issue #593), without being their admin. */
+  canManageRegistrations: boolean;
   /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
   canUseOwnStorage: boolean;
   /** An organisation's own roles: keeps files in its own bucket (issue #206). */
@@ -46,6 +48,7 @@ type RoleRow = {
   canCue: boolean;
   canRoute: boolean;
   canManageScreens: boolean;
+  canManageRegistrations: boolean;
   canUseOwnStorage: boolean;
   canStoreFiles: boolean;
   stemSeparationMonthlyLimit: number | null;
@@ -63,6 +66,7 @@ const ROLE_FIELDS = {
   canCue: true,
   canRoute: true,
   canManageScreens: true,
+  canManageRegistrations: true,
   canUseOwnStorage: true,
   canStoreFiles: true,
   stemSeparationMonthlyLimit: true,
@@ -87,6 +91,7 @@ export function combineRoles(roles: RoleRow[]): Capabilities {
     canCue: roles.some((role) => role.canCue),
     canRoute: roles.some((role) => role.canRoute),
     canManageScreens: roles.some((role) => role.canManageScreens),
+    canManageRegistrations: roles.some((role) => role.canManageRegistrations),
     canUseOwnStorage: roles.some((role) => role.canUseOwnStorage),
     canStoreFiles: roles.some((role) => role.canStoreFiles),
     stemSeparationMonthlyLimits: separating.map((role) => role.stemSeparationMonthlyLimit),
@@ -171,6 +176,27 @@ export async function screenManagerScope(prisma: PrismaClient, userId: string, m
   const teams = new Set(given.flatMap((one) => (one.scopeTeamId ? [one.scopeTeamId] : [])));
   if (organizations.size) for (const team of await prisma.team.findMany({ where: { organizationId: { in: [...organizations] } }, select: { id: true } })) teams.add(team.id);
   return { teams, organizations };
+}
+
+/**
+ * Whether a user manages registrations (issue #593) for a team's or an
+ * organisation's events by a role: given everywhere, or given them (or a
+ * team of theirs) on that team, its organisation, or that organisation.
+ * Admins and an event's organiser manage them without one.
+ */
+export async function managesRegistrationsByRole(prisma: PrismaClient, userId: string, scope: { teamId: string } | { organizationId: string }): Promise<boolean> {
+  if ((await capabilitiesOf(prisma, userId)).canManageRegistrations) return true;
+  const organizationId = "organizationId" in scope ? scope.organizationId : (await prisma.team.findUnique({ where: { id: scope.teamId }, select: { organizationId: true } }))?.organizationId;
+  const places = [...("teamId" in scope ? [{ scopeTeamId: scope.teamId }] : []), ...(organizationId ? [{ scopeOrganizationId: organizationId }] : [])];
+  const given = await prisma.roleAssignment.findFirst({
+    where: {
+      OR: places,
+      AND: [{ OR: [{ userId }, { team: { memberships: { some: { userId } } } }] }],
+      role: { OR: [{ teamAssignable: true }, { ownerKey: { not: "" } }], canManageRegistrations: true },
+    },
+    select: { roleId: true },
+  });
+  return !!given;
 }
 
 /** A team's own roles: what its pool may hold. */

@@ -402,6 +402,8 @@ model User {
   bookingsDecided              BookingApproval[]     @relation("BookingDecidedBy")
 
   @@index([email])
+  // Their registrations for events (issue #593).
+  registrations Registration[] @relation("Registrations")
 }
 
 // ============================================================
@@ -1596,6 +1598,8 @@ model TeamEvent {
   bookingApprovals  BookingApproval[]
   // The resources it takes, and how many (issue #564).
   resources         EventResource[]
+  // People register for its dates (issue #593).
+  registrationForm  RegistrationForm?
 
   @@unique([organizationEventId, teamId])
   @@index([teamId])
@@ -1638,9 +1642,81 @@ model OrganizationEvent {
   bookingApprovals BookingApproval[]
   // The resources it takes, and how many (issue #564).
   resources    EventResource[]
+  // People register for its dates (issue #593).
+  registrationForm RegistrationForm?
 
   @@index([organizationId])
   @@index([locationId])
+}
+
+// Registration for an event's dates (issue #593): a team's event or an
+// organisation's (one or the other), each date with its own registrations.
+// People register on its public page in the Oneverse app, with or without
+// an account. placeKinds: [{ id, name, limit, price }] - what a
+// registration counts (Adult, Child, Bus seat), price in cents of
+// `currency`, shown only (no online payment). questions: [{ id, label,
+// type, options, required }].
+model RegistrationForm {
+  id                  String             @id @default(cuid())
+  teamEventId         String?            @unique
+  organizationEventId String?            @unique
+  // The public page's address: /register/<publicId>.
+  publicId            String             @unique
+  // Turned off by its managers: nobody registers, those registered stay.
+  open                Boolean            @default(true)
+  // Opens this many days before a date; null: as soon as it's made.
+  opensDaysBefore     Int?
+  // Closes this many hours before a date starts.
+  closesHoursBefore   Int                @default(0)
+  // Places a date takes in all; null: no limit but the place kinds'.
+  limit               Int?
+  placeKinds          Json
+  currency            String?
+  questions           Json               @default("[]")
+  // Past the limits, registrations wait, taken in order when places free up; off: refused.
+  waitingList         Boolean            @default(true)
+  intro               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  teamEvent         TeamEvent?         @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  organizationEvent OrganizationEvent? @relation(fields: [organizationEventId], references: [id], onDelete: Cascade)
+  registrations     Registration[]
+}
+
+// Someone registered for one date of an event (issue #593): their places
+// ({ placeKindId: count }), answers ({ questionId: value }), and status -
+// CONFIRMED, WAITING (on the waiting list) or CANCELLED. A member's is tied
+// to their account; anyone's is changed from the link in its emails (its
+// token, like an invite link's, sent again with each email about it).
+model Registration {
+  id              String           @id @default(cuid())
+  formId          String
+  date            DateTime         @db.Date
+  name            String
+  email           String
+  userId          String?
+  places          Json
+  // The places it takes, all kinds together.
+  count           Int
+  answers         Json             @default("{}")
+  status          String           @default("CONFIRMED")
+  // Marked paid by a manager (cash, transfer).
+  paidAt          DateTime?
+  manageToken     String           @unique
+  cancelledAt     DateTime?
+  // When its date's reminder was emailed.
+  remindedAt      DateTime?
+  // The language its emails are in: the page's when they registered.
+  locale          String           @default("en")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  form RegistrationForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user User?            @relation("Registrations", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([formId, date])
+  @@index([userId])
 }
 
 // A kind of event a team holds (issue #523): "Service" asks for a Host and a
@@ -3395,6 +3471,9 @@ model Role {
   // and Pulses of the teams and organisations it's given for, without being
   // their admin - nothing over the sets they show or who owns them.
   canManageScreens           Boolean  @default(false)
+  // Manages registrations (issue #593) for the events of the teams and organisations it's given
+  // for, beside their admins and an event's organiser: the settings, the list, marking paid.
+  canManageRegistrations     Boolean  @default(false)
   // Connects an organisation's own bucket for its teams' files (issue #206),
   // as one of its admins, when Admin > Organisations allows it.
   canUseOwnStorage           Boolean  @default(false)
