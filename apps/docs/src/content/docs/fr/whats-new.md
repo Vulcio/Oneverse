@@ -13,6 +13,8 @@ Ce qui a changé à chaque version, de la plus récente à la plus ancienne. Qua
 
 ### Sets et planification
 
+- Inscriptions aux événements : des places par type avec leurs limites et leurs prix, vos propres questions, une liste d'attente, une page publique où l'on s'inscrit sans compte, et des e-mails avec un lien pour modifier ou annuler (voir [Inscriptions](/fr/teams/#inscriptions)). Un nouveau droit de rôle, **Gérer les inscriptions**. Un événement peut maintenant durer plusieurs jours : un week-end est une seule date.
+
 - La page d'un set est un déroulé : un tableau sur ordinateur, une ligne par chant sur téléphone, avec les réglages de chaque chant dans un panneau.
 - Les transitions sont plus faciles à trouver : des colonnes nommées, et **Après ce chant** entre les chants et en Répétition.
 - Qui peut jouer s'affiche sur la page du set, avec les parties que chacun aimerait jouer, l'hôte et le responsable musical.

@@ -299,6 +299,12 @@ export class RegistrationsService {
     return found && found.date === date && !found.cancelled ? found : null;
   }
 
+  /** A date as the public pages show it: without the places taken or how many wait. */
+  private shown(form: FormRow, date: EventDate, rows: { places: Prisma.JsonValue; status: string }[], now = new Date()): PublicRegistrationPage["dates"][number] {
+    const { date: day, startsAt, endsAt, state, opensAt, left } = this.summary(form, date, rows, now);
+    return { date: day, startsAt, endsAt, state, opensAt, left };
+  }
+
   private summary(form: FormRow, date: EventDate, rows: { places: Prisma.JsonValue; status: string }[], now = new Date()): RegistrationDate {
     const limits = { limit: form.limit, placeKinds: kindsOf(form) };
     const taken = placesTaken(rows.map((row) => ({ places: placesOf(row), status: row.status })));
@@ -428,10 +434,7 @@ export class RegistrationsService {
     const rows = await this.prisma.client.registration.findMany({ where: { formId: form.id, date: { in: dates.map((one) => day(one.date)) }, status: "CONFIRMED" }, select: { date: true, places: true, status: true } });
     return {
       ...this.pageHead(form, event),
-      dates: dates.map((one) => {
-        const { taken: _taken, waiting: _waiting, ...shown } = this.summary(form, one, rows.filter((row) => dateText(row.date) === one.date), now);
-        return shown;
-      }),
+      dates: dates.map((one) => this.shown(form, one, rows.filter((row) => dateText(row.date) === one.date), now)),
     };
   }
 
@@ -496,8 +499,7 @@ export class RegistrationsService {
     let shown: PublicRegistrationPage["dates"][number] | null = null;
     if (found) {
       const rows = await this.prisma.client.registration.findMany({ where: { formId: form.id, date: row.date, status: "CONFIRMED" }, select: { places: true, status: true } });
-      const { taken: _taken, waiting: _waiting, ...rest } = this.summary(form, found, rows, now);
-      shown = rest;
+      shown = this.shown(form, found, rows, now);
     }
     return {
       date,

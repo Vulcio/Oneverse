@@ -10,6 +10,7 @@ import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { FieldError } from "@oneverse/ui/components/field";
 import { EventAnswer } from "../components/event-answer";
 import { LineupDialog, LineupLine, usePartLabel } from "../components/lineup";
+import { RegistrationCard } from "../components/registration-card";
 import { SetAvailabilityCard } from "../components/set-availability";
 import { HostLink, usePlanning } from "../host";
 
@@ -79,6 +80,10 @@ export function EventDatePage({ eventId, date: day }: { eventId: string; date: s
   const longDay = new Intl.DateTimeFormat(i18n.language, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const shortDay = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short" });
   const time = new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit", timeZone: date.timeZone });
+  // A date over several days (a weekend, issue #593) says the day it ends on.
+  const endDay = new Intl.DateTimeFormat("en-CA", { timeZone: date.timeZone }).format(new Date(date.endsAt));
+  const severalDays = endDay !== date.date;
+  const dayAndTime = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: date.timeZone });
   const noon = (value: string) => new Date(`${value}T12:00:00Z`);
   const open = !date.cancelled;
 
@@ -117,7 +122,7 @@ export function EventDatePage({ eventId, date: day }: { eventId: string; date: s
           </span>
           <span className="flex items-center gap-1.5">
             <Clock className="size-4" aria-hidden />
-            {time.format(new Date(date.startsAt))} – {time.format(new Date(date.endsAt))}
+            {time.format(new Date(date.startsAt))} – {(severalDays ? dayAndTime : time).format(new Date(date.endsAt))}
             {date.callAt ? <span data-testid="calendar-call">· {t("teamCalendar.callAt", { time: time.format(new Date(date.callAt)) })}</span> : null}
           </span>
           {wherePlace(date.place, date.rooms) ? (
@@ -178,6 +183,8 @@ export function EventDatePage({ eventId, date: day }: { eventId: string; date: s
             </CardContent>
           </Card>
         ) : null}
+        {/* Registration (issue #593): its managers set it up and see who registered; members get the link. */}
+        {open && !date.rehearsalFor ? <RegistrationCard teamEventId={date.eventId} date={date.date} title={date.title} /> : null}
         {date.rehearsals.length > 0 ? (
           <Card data-testid="event-date-rehearsals">
             <CardHeader>

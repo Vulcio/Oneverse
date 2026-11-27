@@ -26,6 +26,7 @@ import { HostLink, usePlanning } from "../host";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
 import { cn } from "@oneverse/ui/lib/utils";
 import { FieldError } from "@oneverse/ui/components/field";
+import { DurationField } from "./duration-field";
 
 /** How far the calendar shows, then how much more each "Show more" adds. */
 const SHOWN_WEEKS = 8;
@@ -1052,10 +1053,7 @@ function EventDialog({
             <Label htmlFor="event-time">{t("teamCalendar.startTime")}</Label>
             <Input id="event-time" type="time" value={startTime} required onChange={(e) => setStartTime(e.target.value)} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="event-duration">{t("teamCalendar.duration")}</Label>
-            <Input id="event-duration" type="number" min={5} max={1440} value={duration} required onChange={(e) => setDuration(e.target.value)} />
-          </div>
+          <DurationField id="event-duration" value={duration} onChange={setDuration} startTime={startTime} required />
           {!parentEvent ? (
           <>
           <div className="flex flex-col gap-1.5">

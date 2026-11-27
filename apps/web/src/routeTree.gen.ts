@@ -32,6 +32,8 @@ import { Route as AuthSignOutRouteImport } from './routes/auth.sign-out'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as JoinOrganizationTokenRouteImport } from './routes/join-organization.$token'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
+import { Route as RegisterPublicIdRouteImport } from './routes/register.$publicId'
+import { Route as RegistrationTokenRouteImport } from './routes/registration.$token'
 import { Route as SetInviteTokenRouteImport } from './routes/set-invite.$token'
 import { Route as TransferTokenRouteImport } from './routes/transfer.$token'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
@@ -201,6 +203,16 @@ const JoinOrganizationTokenRoute = JoinOrganizationTokenRouteImport.update({
 const JoinTokenRoute = JoinTokenRouteImport.update({
   id: '/join/$token',
   path: '/join/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterPublicIdRoute = RegisterPublicIdRouteImport.update({
+  id: '/register/$publicId',
+  path: '/register/$publicId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistrationTokenRoute = RegistrationTokenRouteImport.update({
+  id: '/registration/$token',
+  path: '/registration/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SetInviteTokenRoute = SetInviteTokenRouteImport.update({
@@ -532,6 +544,8 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof InviteTokenRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
+  '/register/$publicId': typeof RegisterPublicIdRoute
+  '/registration/$token': typeof RegistrationTokenRoute
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
   '/admin/announcements': typeof ProtectedAdminAnnouncementsRoute
@@ -610,6 +624,8 @@ export interface FileRoutesByTo {
   '/invite/$token': typeof InviteTokenRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
+  '/register/$publicId': typeof RegisterPublicIdRoute
+  '/registration/$token': typeof RegistrationTokenRoute
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
   '/admin/announcements': typeof ProtectedAdminAnnouncementsRoute
@@ -692,6 +708,8 @@ export interface FileRoutesById {
   '/invite/$token': typeof InviteTokenRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
+  '/register/$publicId': typeof RegisterPublicIdRoute
+  '/registration/$token': typeof RegistrationTokenRoute
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
   '/_protected/admin/announcements': typeof ProtectedAdminAnnouncementsRoute
@@ -774,6 +792,8 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/join-organization/$token'
     | '/join/$token'
+    | '/register/$publicId'
+    | '/registration/$token'
     | '/set-invite/$token'
     | '/transfer/$token'
     | '/admin/announcements'
@@ -852,6 +872,8 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/join-organization/$token'
     | '/join/$token'
+    | '/register/$publicId'
+    | '/registration/$token'
     | '/set-invite/$token'
     | '/transfer/$token'
     | '/admin/announcements'
@@ -933,6 +955,8 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/join-organization/$token'
     | '/join/$token'
+    | '/register/$publicId'
+    | '/registration/$token'
     | '/set-invite/$token'
     | '/transfer/$token'
     | '/_protected/admin/announcements'
@@ -1001,6 +1025,8 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   JoinOrganizationTokenRoute: typeof JoinOrganizationTokenRoute
   JoinTokenRoute: typeof JoinTokenRoute
+  RegisterPublicIdRoute: typeof RegisterPublicIdRoute
+  RegistrationTokenRoute: typeof RegistrationTokenRoute
   SetInviteTokenRoute: typeof SetInviteTokenRoute
   TransferTokenRoute: typeof TransferTokenRoute
 }
@@ -1166,6 +1192,20 @@ declare module '@tanstack/react-router' {
       path: '/join/$token'
       fullPath: '/join/$token'
       preLoaderRoute: typeof JoinTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register/$publicId': {
+      id: '/register/$publicId'
+      path: '/register/$publicId'
+      fullPath: '/register/$publicId'
+      preLoaderRoute: typeof RegisterPublicIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registration/$token': {
+      id: '/registration/$token'
+      path: '/registration/$token'
+      fullPath: '/registration/$token'
+      preLoaderRoute: typeof RegistrationTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/set-invite/$token': {
@@ -1746,6 +1786,8 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   JoinOrganizationTokenRoute: JoinOrganizationTokenRoute,
   JoinTokenRoute: JoinTokenRoute,
+  RegisterPublicIdRoute: RegisterPublicIdRoute,
+  RegistrationTokenRoute: RegistrationTokenRoute,
   SetInviteTokenRoute: SetInviteTokenRoute,
   TransferTokenRoute: TransferTokenRoute,
 }

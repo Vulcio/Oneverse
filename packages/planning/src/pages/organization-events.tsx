@@ -29,6 +29,7 @@ export { loadOrganizationEventsPage };
 import { cn } from "@oneverse/ui/lib/utils";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
 import { FieldError } from "@oneverse/ui/components/field";
+import { DurationField } from "../components/duration-field";
 
 const SHOWN_WEEKS = 8;
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -638,10 +639,7 @@ function OrganizationEventDialog({
             <Label htmlFor="org-event-time">{t("teamCalendar.startTime")}</Label>
             <Input id="org-event-time" type="time" value={startTime} required onChange={(e) => setStartTime(e.target.value)} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="org-event-duration">{t("teamCalendar.duration")}</Label>
-            <Input id="org-event-duration" type="number" min={5} max={1440} value={duration} required onChange={(e) => setDuration(e.target.value)} />
-          </div>
+          <DurationField id="org-event-duration" value={duration} onChange={setDuration} startTime={startTime} required />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="org-event-zone">{t("teamCalendar.timeZone")}</Label>
             <NativeSelect id="org-event-zone" value={timeZone} onChange={(e) => setTimeZone(e.target.value)}>

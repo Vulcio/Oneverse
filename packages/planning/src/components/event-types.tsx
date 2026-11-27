@@ -14,6 +14,7 @@ import { usePlanning } from "../host";
 import { LocationField, useLocations } from "./locations";
 import { resourceChoices, ResourcesField, useResources } from "./resources";
 import { DEFAULT_START, partBody, PartsEditor, useOpenToTeams } from "./team-calendar";
+import { DurationField } from "./duration-field";
 
 /**
  * Whose event types: a team's own, or (issue #528) an organisation's, which
@@ -305,10 +306,7 @@ function EventTypeDialog({
             <Label htmlFor="event-type-time">{t("teamCalendar.startTime")}</Label>
             <Input id="event-type-time" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="event-type-duration">{t("teamCalendar.duration")}</Label>
-            <Input id="event-type-duration" type="number" min={5} max={1440} value={duration} onChange={(e) => setDuration(e.target.value)} />
-          </div>
+          <DurationField id="event-type-duration" value={duration} onChange={setDuration} startTime={startTime} />
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="event-type-call">{t("teamCalendar.callMinutes")}</Label>
             <Input id="event-type-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} />

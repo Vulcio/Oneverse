@@ -13,6 +13,8 @@ What changed in each version, newest first. When your server is updated, its adm
 
 ### Sets and planning
 
+- Registration for events: places by kind with their limits and prices, your own questions, a waiting list, a public page anyone can register on without an account, and emails with a link to change or cancel (see [Registration](/teams/#registration)). A new role right, **Manage registrations**. An event can now last several days: a weekend is one date.
+
 - The set page is a running order: a table on a computer, one line per song on a phone, with each song's settings in a sheet.
 - Transitions are easier to find: named columns, and **After this song** between songs and in Practice.
 - Who can play shows on the set's page, with the parts people would like to play, the host and the music leader.

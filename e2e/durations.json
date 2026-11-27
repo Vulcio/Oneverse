@@ -329,5 +329,7 @@
 "web/version-lines": 6,
 "web/version-media": 7,
 "web/waveforms": 6,
-"web/words-view": 14
+"web/words-view": 14,
+"api/registrations": 5,
+"web/registrations": 30
 }

@@ -13,7 +13,7 @@ The team's page starts with its **Calendar**: its services, rehearsals and other
 
 On a server with [Oneverse Plan](/plan/), the events themselves are made and changed there: in Songverse, the team's admins have **Events in Plan**, which opens the team's calendar in Plan's [Calendar](/plan/#calendar), instead of **New event** and **Event types**, and a date's menu keeps only what's about its set. Answers, line-ups, **Ask for answers** and sets stay in Songverse. The same goes for an organisation's events. Without Plan, everything is done here.
 
-- **New event**: its **Title**, its **Date** and **Start time**, how long it lasts, its **Time zone** (yours by default) and, if you like, a place and a note. **Repeats**: **Every week**, every 2 weeks and so on, on the weekday of its date, **Until** a date or for ever; or **Doesn't repeat**. Times stay the same when the clocks change.
+- **New event**: its **Title**, its **Date** and **Start time**, how long it lasts, its **Time zone** (yours by default) and, if you like, a place and a note. For a weekend or a camp, tick **Several days (a weekend, a week)** under its length and say how many days and when it ends: up to 14 days, one date from start to end. **Repeats**: **Every week**, every 2 weeks and so on, on the weekday of its date, **Until** a date or for ever; or **Doesn't repeat**. Times stay the same when the clocks change.
 - **Call time (minutes before)**: when to be there, that many minutes before it starts - for a sound check or a prayer time. Each date then shows "Call 9:15" under its time, on the calendar and on **My calendar**; it's in your calendar link and in the reminder the day before. Leave it blank for none.
 - **Each date gets its own set**, named after the event and its date in your language ("Morning service - Oct 12"): **Open set** plans it like any set. Sets are made ahead of time - **Create sets ahead**, under the calendar, says how many weeks, from 1 to 52 (4 by default; 13 is about three months). A date further out has **Plan the set**, which makes its set straight away.
 - **Dates** and **Events**, at the top of the calendar: **Dates** lists each coming date; **Events** lists each event once - a series with how it repeats ("Every week · Sunday 10:00 · from Nov 23"), a one-off with its date, a rehearsal with its event - and **Edit the series** (**Edit event** for one that doesn't repeat) changes it as a whole.
@@ -42,6 +42,20 @@ The team's admins see, beside each date, how many members signed up, answered if
 ### A date's page
 
 Each date has its own page: its title on the team's calendar, on **My calendar** and in Oneverse's **Your next dates** opens it, and so do the notifications and reminders about that date and its entry in your calendar link. It's the same page in Songverse, Plan and Oneverse: when and where (with **Moved from** if the date moved), the event's note, **Your answer**, its **Line-up** - **You're on Drums** to accept or decline, the places you can take - its **Rehearsals**, and **Open set**. Those who change the set see **Who can play** too. The team's admins have **Edit the line-up** and a link to the team's calendar, where the event itself is changed. A date that isn't on your calendar - another team's, or cancelled for good - says so.
+
+### Registration
+
+Some events need people to register: a concert with limited seats and a bus, a church weekend counting adults and children, a meal. On a date's page, the event's admins - for an organisation's event, its admins and its organiser - and anyone with the **Manage registrations** right (see [Roles](/admin/#roles)) have **Set up registration**. Registration is for every date of the event, and each date has its own places and its own list:
+
+- **Places per date**: how many in all (empty for no limit), and **Place kinds** - what people register for, each with its own **Limit** and **Price** if it has one: Adult, Child, Bus seat, Meal. Prices are only shown: nothing is paid online, people pay as you tell them.
+- **Opens (days before)** and **Closes (hours before)**: when people can register, before each date. Untick **Open: people can register** to close it; those registered stay.
+- **Questions**: your own, answered as **Text**, a **Choice** of options, a **Number** or **Yes or no**, each optional or **Must be answered**.
+- **Waiting list**: past the limits, people wait, and get the places that free up in the order they came - as long as their places fit. Off, they're told it's full.
+- **Message on the registration page**: what to bring, how to pay.
+
+The card then shows the registration page's link (**Copy link**, **Share**), which anyone can open - with no account, or signed in, their name and email filled in. Each person picks a date and their places, answers the questions and gets an email with a link to their registration, where they can change it while registration is open and cancel it until the date starts; they're reminded the day before. The date's card lists who registered, in order, with their places, answers and price: tick **Paid** when they've paid, **Cancel** a registration (the places go to the waiting list), and **Export as CSV** for a spreadsheet. **Registration settings** changes it all; **Turn registration off** deletes its registrations.
+
+Members see the card with the link, to share it.
 
 ### Positions needed
 

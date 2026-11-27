@@ -172,6 +172,17 @@ _Avoid_: proposal, change request, pull request
 **Open place**:
 A position of an event date that members of other teams may take.
 
+**Registration**:
+Someone signed up for an event date, with or without an account: the places they take, their answers, and what it costs. An event's registration is set up once and each date has its own list.
+_Avoid_: booking (that's a room's or resource's), signup, RSVP (that's a member's answer), ticket (a QR code for one place, later)
+
+**Place kind**:
+What a registration counts, with its own limit and maybe a price: Adult, Child, Bus seat, Meal.
+_Avoid_: ticket type, category
+
+**Waiting list**:
+Registrations past the limits, given the places that free up in the order they came, each when its places fit.
+
 **Venue**:
 A place events happen at, with its address and time zone: a church building, a rented hall, a home where a homegroup meets. An organisation's or a team's.
 _Avoid_: location, site

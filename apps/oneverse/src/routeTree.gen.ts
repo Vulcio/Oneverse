@@ -16,6 +16,8 @@ import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
+import { Route as RegisterPublicIdRouteImport } from './routes/register.$publicId'
+import { Route as RegistrationTokenRouteImport } from './routes/registration.$token'
 import { Route as ProtectedSetsSetlistIdRouteImport } from './routes/_protected/sets/$setlistId'
 import { Route as ProtectedTeamsIndexRouteImport } from './routes/_protected/teams/index'
 import { Route as ProtectedTeamsTeamIdRouteImport } from './routes/_protected/teams/$teamId'
@@ -55,6 +57,16 @@ const JoinTokenRoute = JoinTokenRouteImport.update({
   path: '/join/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterPublicIdRoute = RegisterPublicIdRouteImport.update({
+  id: '/register/$publicId',
+  path: '/register/$publicId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistrationTokenRoute = RegistrationTokenRouteImport.update({
+  id: '/registration/$token',
+  path: '/registration/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedSetsSetlistIdRoute = ProtectedSetsSetlistIdRouteImport.update({
   id: '/sets/$setlistId',
   path: '/sets/$setlistId',
@@ -84,6 +96,8 @@ export interface FileRoutesByFullPath {
   '/sign-out': typeof SignOutRoute
   '/account': typeof ProtectedAccountRoute
   '/join/$token': typeof JoinTokenRoute
+  '/register/$publicId': typeof RegisterPublicIdRoute
+  '/registration/$token': typeof RegistrationTokenRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
   '/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
   '/teams/': typeof ProtectedTeamsIndexRoute
@@ -95,6 +109,8 @@ export interface FileRoutesByTo {
   '/sign-out': typeof SignOutRoute
   '/account': typeof ProtectedAccountRoute
   '/join/$token': typeof JoinTokenRoute
+  '/register/$publicId': typeof RegisterPublicIdRoute
+  '/registration/$token': typeof RegistrationTokenRoute
   '/': typeof ProtectedIndexRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
   '/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
@@ -109,6 +125,8 @@ export interface FileRoutesById {
   '/sign-out': typeof SignOutRoute
   '/_protected/account': typeof ProtectedAccountRoute
   '/join/$token': typeof JoinTokenRoute
+  '/register/$publicId': typeof RegisterPublicIdRoute
+  '/registration/$token': typeof RegistrationTokenRoute
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
   '/_protected/teams/$teamId': typeof ProtectedTeamsTeamIdRoute
@@ -124,6 +142,8 @@ export interface FileRouteTypes {
     | '/sign-out'
     | '/account'
     | '/join/$token'
+    | '/register/$publicId'
+    | '/registration/$token'
     | '/sets/$setlistId'
     | '/teams/$teamId'
     | '/teams/'
@@ -135,6 +155,8 @@ export interface FileRouteTypes {
     | '/sign-out'
     | '/account'
     | '/join/$token'
+    | '/register/$publicId'
+    | '/registration/$token'
     | '/'
     | '/sets/$setlistId'
     | '/teams/$teamId'
@@ -148,6 +170,8 @@ export interface FileRouteTypes {
     | '/sign-out'
     | '/_protected/account'
     | '/join/$token'
+    | '/register/$publicId'
+    | '/registration/$token'
     | '/_protected/'
     | '/_protected/sets/$setlistId'
     | '/_protected/teams/$teamId'
@@ -161,6 +185,8 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   SignOutRoute: typeof SignOutRoute
   JoinTokenRoute: typeof JoinTokenRoute
+  RegisterPublicIdRoute: typeof RegisterPublicIdRoute
+  RegistrationTokenRoute: typeof RegistrationTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +238,20 @@ declare module '@tanstack/react-router' {
       path: '/join/$token'
       fullPath: '/join/$token'
       preLoaderRoute: typeof JoinTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register/$publicId': {
+      id: '/register/$publicId'
+      path: '/register/$publicId'
+      fullPath: '/register/$publicId'
+      preLoaderRoute: typeof RegisterPublicIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registration/$token': {
+      id: '/registration/$token'
+      path: '/registration/$token'
+      fullPath: '/registration/$token'
+      preLoaderRoute: typeof RegistrationTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protected/sets/$setlistId': {
@@ -273,6 +313,8 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   SignOutRoute: SignOutRoute,
   JoinTokenRoute: JoinTokenRoute,
+  RegisterPublicIdRoute: RegisterPublicIdRoute,
+  RegistrationTokenRoute: RegistrationTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
