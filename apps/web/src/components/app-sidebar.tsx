@@ -1,3 +1,5 @@
+import { AppSwitcher } from "@oneverse/app/components/app-switcher";
+import { apiClient } from "#/lib/api-client";
 import type { SetlistSummary, SongbookSummary, TeamSummary } from "@oneverse/core";
 import { Link, useRouterState, type LinkProps } from "@tanstack/react-router";
 import {
@@ -124,16 +126,20 @@ export function AppSidebar({
     return (
       <Sidebar>
         <div className="flex h-full min-h-0 flex-col" data-testid="sidebar-item-sheet">
-          <button
-            type="button"
-            onClick={() => setShowMenu(true)}
-            className="flex items-center gap-1 border-b px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground"
-            data-testid="sidebar-menu"
-          >
-            <ChevronLeft className="size-4" />
-            <Music2 className="size-4" />
-            {t("nav.menu")}
-          </button>
+          <div className="flex items-center border-b pr-2">
+            <button
+              type="button"
+              onClick={() => setShowMenu(true)}
+              className="flex flex-1 items-center gap-1 px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground"
+              data-testid="sidebar-menu"
+            >
+              <ChevronLeft className="size-4" />
+              <Music2 className="size-4" />
+              {t("nav.menu")}
+            </button>
+            {/* The other apps beside Songverse's mark, as in every app (issue #552). */}
+            <AppSwitcher current="songverse" api={apiClient} className="size-8" />
+          </div>
           {itemPanel}
         </div>
       </Sidebar>
@@ -142,11 +148,13 @@ export function AppSidebar({
 
   return (
     <Sidebar>
-      <SidebarHeader>
-        <Link to="/library" className="flex items-center gap-2 px-2 py-1.5 font-semibold">
+      {/* The other apps beside Songverse's name, as in every app (issue #552); under it when the sidebar is icons only. */}
+      <SidebarHeader className="flex-row items-center group-data-[state=collapsed]/sidebar:flex-col">
+        <Link to="/library" className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 font-semibold">
           <Music2 className="size-5 shrink-0" />
           <SidebarLabel>Songverse</SidebarLabel>
         </Link>
+        <AppSwitcher current="songverse" api={apiClient} className="size-8 shrink-0" />
       </SidebarHeader>
       {inAdmin ? (
         <AdminNav pathname={pathname} />

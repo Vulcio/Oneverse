@@ -43,13 +43,14 @@ function Header({ name }: { name: string }) {
   return (
     <header className="border-b">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-        <Link to="/operate" className="flex flex-1 items-center gap-2 font-semibold">
+        <Link to="/operate" className="flex items-center gap-2 font-semibold">
           <MonitorUp className="size-5" />
           {t("screens.operator.pickTitle")}
         </Link>
+        {/* The other apps right beside its name, as in every app (issue #552). */}
+        <AppSwitcher current="screen" api={apiClient} className="-ml-2" />
+        <span className="flex-1" />
         <span className="truncate text-sm text-muted-foreground">{name}</span>
-        {/* The other apps (issue #552). */}
-        <AppSwitcher current="screen" api={apiClient} />
         <Button
           variant="ghost"
           size="icon"

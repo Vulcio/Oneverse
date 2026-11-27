@@ -1,3 +1,4 @@
+import { AppSwitcher } from "@oneverse/app/components/app-switcher";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -146,9 +147,11 @@ export function NestedSidebar({
       className="group/sidebar sticky top-0 relative hidden h-screen shrink-0 self-start border-r bg-sidebar text-sidebar-foreground md:flex"
     >
       <nav className="flex w-12 shrink-0 flex-col items-center gap-1 border-r py-2" data-testid="sidebar-rail">
-        <Link to="/library" className="mb-2 flex size-9 items-center justify-center" aria-label="Songverse">
+        <Link to="/library" className="flex size-9 items-center justify-center" aria-label="Songverse">
           <Music2 className="size-5" />
         </Link>
+        {/* The other apps, right under Songverse's mark (issue #552). */}
+        <AppSwitcher current="songverse" api={apiClient} className="mb-2" />
         {rail.map(railItem)}
         {/* My calendar (issue #235): the dates of all one's teams, a page of its own. */}
         <Tooltip>
