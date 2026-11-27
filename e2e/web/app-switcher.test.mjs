@@ -95,6 +95,24 @@ try {
     await page.keyboard.press("Escape");
   });
 
+  await step("the button comes with the header, before the API answers; the device's last list meanwhile", async () => {
+    let release;
+    const held = new Promise((resolve) => (release = resolve));
+    await page.route("**/users/me/apps", async (route) => {
+      await held;
+      // The page may have moved on meanwhile.
+      await route.continue().catch(() => {});
+    });
+    await page.goto(`${WEB}/library`);
+    await page.getByTestId("app-switcher").waitFor({ timeout: 10000 });
+    await page.getByTestId("app-switcher").click();
+    await page.getByTestId("app-switcher-plan").waitFor();
+    check("the remembered list, before the answer", (await page.getByTestId("app-switcher-loading").count()) === 0);
+    await page.keyboard.press("Escape");
+    release();
+    await page.unrouteAll({ behavior: "wait" });
+  });
+
   await step("Ctrl K in Songverse finds Plan by its name", async () => {
     await page.goto(`${WEB}/library`);
     await page.waitForLoadState("networkidle");
